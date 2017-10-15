@@ -4,7 +4,7 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #0000FF;
+            background-color: #FF0000;
         }
 
     </style>
@@ -22,7 +22,7 @@
         alert(1);
 
         var h = 600;
-        var w = 800;
+        var w = 600;
 
         var game = new PIXI.Application(w, h, {
             antialias: false,
@@ -30,17 +30,39 @@
             resolution: 1
         });
 
-        //var renderer = PIXI.autoDetectRenderer(
-        //    );
         game.view.style.position = "absolute";
         game.view.style.display = "block";
         document.body.appendChild(game.view);
         game.renderer.autoResize = true;
         resize();
 
-        //Create a container object called the `stage`
-        //var stage = new PIXI.Container();
+        PIXI.loader.add('bunny', 'bunny.png').load(function(loader, resources) {
 
+            // This creates a texture from a 'bunny.png' image.
+            var bunny = new PIXI.Sprite(resources.bunny.texture);
+
+            // Setup the position of the bunny
+            bunny.x = game.renderer.width / 2;
+            bunny.y = game.renderer.height / 2;
+
+            // Rotate around the center
+            bunny.anchor.x = 0.5;
+            bunny.anchor.y = 0.5;
+
+            // Add the bunny to the scene we are building.
+            game.stage.addChild(bunny);
+
+            // Listen for frame updates
+            game.ticker.add(function() {
+                // each frame we spin the bunny around a bit
+                bunny.rotation += 0.01;
+                bunny.x += 5
+            });
+
+            resize();
+        });
+
+        /*
         //Use Pixi's built-in `loader` object to load an image
         PIXI.loader
             .add("bunny.png")
@@ -63,10 +85,7 @@
             resize();
             //Render the stage   
             //renderer.render(stage);
-        }
-
-        //Tell the `renderer` to `render` the `stage`
-        //renderer.render(stage);
+        }*/
 
         function resize() {
             window.scrollTo(0, 0);
@@ -76,30 +95,16 @@
             var ratio = height / h;
 
             game.renderer.resize(width, height);
-            game.stage.height = height;
-            game.stage.width = w / 2; // wtf? magic number?
-            game.renderer.view.width = width / ratio;
+            game.view.style.width = width + "px";
+            game.view.style.height = height + "px";
+            game.renderer.view.width = width;
+            game.renderer.view.height = height;
 
-            //game.width = (width / ratio);
-            //game.height = h;
-
-            //var view = game.renderer.view;
-            //view.style.height = h * ratio + "px";
-            //var newWidth = (width / ratio);
-            //view.style.width = width + "px";
-
-            //view.resize(newWidth, h);
-
-            //game.width = (width / ratio);
-            // game.height = h;
-
-            //game.view.style.width = width + "px";
-            //game.view.style.height = height + "px";
-            //renderer.resize(window.innerWidth, window.innerHeight);
+            game.stage.setTransform(0, 0, ratio, ratio, 0, 0, 0, 0, 0);
         }
 
 
-        //renderer.backgroundColor = 0x061639;
+        game.renderer.backgroundColor = 0x00FFFF;
 
 
         //
