@@ -45727,10 +45727,10 @@ function resize() {
     viewport.screenWidth = width;
     viewport.screenHeight = height;
 
-    console.log('v-width: ' + viewport.screenWidth +
+    /*console.log('v-width: ' + viewport.screenWidth +
         '\nv-height: ' + viewport.screenHeight +
         '\nw-width: ' + viewport.worldWidth +
-        '\nw-height: ' + viewport.worldHeight);
+        '\nw-height: ' + viewport.worldHeight);*/
 
     viewport.update();
 }

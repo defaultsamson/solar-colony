@@ -5,8 +5,6 @@ window.PIXI = PIXI;
 window.PIXI["default"] = PIXI;
 const Keyboard = require('pixi-keyboard');
 
-console.log('keys1: ' + Key)
-
 function updateKeyboard() {
 
     if (PIXI.keyboardManager.isPressed(38)) {
