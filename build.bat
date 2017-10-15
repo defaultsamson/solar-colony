@@ -1,3 +1,3 @@
-browserify work-game.js -o game.js
+browserify work-game.js -o ./game/game.js
 pause
 

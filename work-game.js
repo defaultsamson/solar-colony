@@ -61,7 +61,7 @@ viewport
     .decelerate()
     .start();
 
-PIXI.loader.add('bunny', 'bunny.png').load(function (loader, resources) {
+PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
 
     // This creates a texture from a 'bunny.png' image.
     var bunny = new PIXI.Sprite(resources.bunny.texture);
@@ -107,10 +107,10 @@ function resize() {
     viewport.screenWidth = width;
     viewport.screenHeight = height;
 
-    console.log('v-width: ' + viewport.screenWidth +
+    /*console.log('v-width: ' + viewport.screenWidth +
         '\nv-height: ' + viewport.screenHeight +
         '\nw-width: ' + viewport.worldWidth +
-        '\nw-height: ' + viewport.worldHeight);
+        '\nw-height: ' + viewport.worldHeight);*/
 
     viewport.update();
 }

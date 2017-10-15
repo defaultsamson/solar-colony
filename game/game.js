@@ -45643,25 +45643,29 @@ function updateKeyboard() {
 window.addEventListener('resize', resize);
 window.onorientationchange = resize;
 
+// h is the constant height of the viewport.
 var h = 600;
+// w is less important because the width can change. Mostly just used for initializing other objects
+var w = 600;
 
 // Creates the PIXI application
-var game = new PIXI.Application(600, h, {
+var game = new PIXI.Application(w, h, {
     antialias: false,
     transparent: false,
     resolution: 1
 });
 
+// Sets up the element
 game.view.style.position = "absolute";
 game.view.style.display = "block";
 document.body.appendChild(game.view);
 game.renderer.autoResize = true;
 
+// Adds the keyboard update loop to the ticker
 game.ticker.add(updateKeyboard);
 
-
-
-
+// Viewport options. Not very important because it can vary (see resize() )
+// These are mostly just used for initialization so that no errors occur
 var options = {
     screenWidth: w * 2,
     screenHeight: h,
@@ -45677,9 +45681,7 @@ viewport
     .decelerate()
     .start();
 
-//var keyboard = require('pixi-keyboard');
-
-PIXI.loader.add('bunny', 'bunny.png').load(function (loader, resources) {
+PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
 
     // This creates a texture from a 'bunny.png' image.
     var bunny = new PIXI.Sprite(resources.bunny.texture);
@@ -45737,19 +45739,7 @@ function resize() {
 game.renderer.backgroundColor = 0x00FFFF;
 
 
-//
-
-//var app = new PIXI.Application();
-
-// The application will create a renderer using WebGL, if possible,
-// with a fallback to a canvas render. It will also setup the ticker
-// and the root stage PIXI.Container.
-/*var app = new PIXI.Application();
-
-// The application will create a canvas element for you that you
-// can then insert into the DOM.
-document.body.appendChild(app.view);
-
+/*
 // load the texture we need
 PIXI.loader.add('bunny', 'bunny.png').load(function(loader, resources) {
 
