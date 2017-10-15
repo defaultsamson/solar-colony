@@ -5563,12 +5563,28 @@ game.view.style.position = "absolute";
 game.view.style.display = "block";
 document.body.appendChild(game.view);
 game.renderer.autoResize = true;
-resize();
 
-const Viewport = require('pixi-viewport')
+const Viewport = require('pixi-viewport');
 
-const container = new PIXI.Container()
-const viewport = new Viewport(container)
+//const container = new PIXI.Container();
+
+var options = {
+    screenWidth: w * 2,
+    screenHeight: h,
+    worldWidth: w,
+    worldHeight: h,
+};
+
+var viewport = new Viewport(game.stage, options);
+
+viewport
+    .drag()
+    .hitArea()
+    .decelerate()
+    .start();
+
+//var keyboard = require('pixi-keyboard');
+
 
 PIXI.loader.add('bunny', 'bunny.png').load(function (loader, resources) {
 
@@ -5595,32 +5611,8 @@ PIXI.loader.add('bunny', 'bunny.png').load(function (loader, resources) {
 
     resize();
 
+    viewport.follow(bunny);
 });
-
-/*
-//Use Pixi's built-in `loader` object to load an image
-PIXI.loader
-    .add("bunny.png")
-    .load(setup);
-
-//This `setup` function will run when the image has loaded
-function setup() {
-
-    //Create the `cat` sprite from the texture
-    var cat = new PIXI.Sprite(
-        PIXI.loader.resources["bunny.png"].texture
-    );
-
-
-
-    //Add the cat to the stage
-    game.stage.addChild(cat);
-
-
-    resize();
-    //Render the stage   
-    //renderer.render(stage);
-}*/
 
 function resize() {
     window.scrollTo(0, 0);
@@ -5630,12 +5622,22 @@ function resize() {
     var ratio = height / h;
 
     game.renderer.resize(width, height);
-    game.view.style.width = width + "px";
+    /*game.view.style.width = width + "px";
     game.view.style.height = height + "px";
     game.renderer.view.width = width;
-    game.renderer.view.height = height;
+    game.renderer.view.height = height;*/
 
     game.stage.setTransform(0, 0, ratio, ratio, 0, 0, 0, 0, 0);
+
+    viewport.screenWidth = width;
+    viewport.screenHeight = height;
+
+    console.log('v-width: ' + viewport.screenWidth +
+        '\nv-height: ' + viewport.screenHeight +
+        '\nw-width: ' + viewport.worldWidth +
+        '\nw-height: ' + viewport.worldHeight);
+
+    viewport.update();
 }
 
 
