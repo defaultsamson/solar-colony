@@ -1,29 +1,51 @@
-window.addEventListener('resize', function () {
-    resize();
-});
+require('pixi.js');
+const Viewport = require('pixi-viewport');
+// Prevents error from pixi-keyboard
+window.PIXI = PIXI;
+window.PIXI["default"] = PIXI;
+const Keyboard = require('pixi-keyboard');
 
+console.log('keys1: ' + Key)
+
+function updateKeyboard() {
+
+    if (PIXI.keyboardManager.isPressed(38)) {
+        console.log('Up key is pressed');
+    }
+
+    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
+        console.log('Down key is pressed');
+    }
+
+    PIXI.keyboardManager.update();
+}
+
+window.addEventListener('resize', resize);
 window.onorientationchange = resize;
 
-alert(1);
-
+// h is the constant height of the viewport.
 var h = 600;
+// w is less important because the width can change. Mostly just used for initializing other objects
 var w = 600;
 
+// Creates the PIXI application
 var game = new PIXI.Application(w, h, {
     antialias: false,
     transparent: false,
     resolution: 1
 });
 
+// Sets up the element
 game.view.style.position = "absolute";
 game.view.style.display = "block";
 document.body.appendChild(game.view);
 game.renderer.autoResize = true;
 
-const Viewport = require('pixi-viewport');
+// Adds the keyboard update loop to the ticker
+game.ticker.add(updateKeyboard);
 
-//const container = new PIXI.Container();
-
+// Viewport options. Not very important because it can vary (see resize() )
+// These are mostly just used for initialization so that no errors occur
 var options = {
     screenWidth: w * 2,
     screenHeight: h,
@@ -38,9 +60,6 @@ viewport
     .hitArea()
     .decelerate()
     .start();
-
-//var keyboard = require('pixi-keyboard');
-
 
 PIXI.loader.add('bunny', 'bunny.png').load(function (loader, resources) {
 
@@ -100,19 +119,7 @@ function resize() {
 game.renderer.backgroundColor = 0x00FFFF;
 
 
-//
-
-//var app = new PIXI.Application();
-
-// The application will create a renderer using WebGL, if possible,
-// with a fallback to a canvas render. It will also setup the ticker
-// and the root stage PIXI.Container.
-/*var app = new PIXI.Application();
-
-// The application will create a canvas element for you that you
-// can then insert into the DOM.
-document.body.appendChild(app.view);
-
+/*
 // load the texture we need
 PIXI.loader.add('bunny', 'bunny.png').load(function(loader, resources) {
 
@@ -136,51 +143,3 @@ PIXI.loader.add('bunny', 'bunny.png').load(function(loader, resources) {
         bunny.rotation += 0.0003;
     });
 });*/
-
-
-/*
-var rendererOptions = {
-    antialiasing: false,
-    transparent: false,
-    resolution: window.devicePixelRatio,
-    autoResize: true,
-}
-
-// Create the canvas in which the game will show, and a
-// generic container for all the graphical objects
-renderer = PIXI.autoDetectRenderer(800, 600,
-    rendererOptions);
-
-// Put the renderer on screen in the corner
-renderer.view.style.position = "absolute";
-renderer.view.style.top = "0px";
-renderer.view.style.left = "0px";
-
-// The stage is essentially a display list of all game objects
-// for Pixi to render; it's used in resize(), so it must exist
-stage = new PIXI.Container();
-
-// Size the renderer to fill the screen
-resize();
-
-// Actually place the renderer onto the page for display
-document.body.appendChild(renderer.view);
-
-// Listen for and adapt to changes to the screen size, e.g.,
-// user changing the window or rotating their device
-window.addEventListener("resize", resize);
-
-
-function resize() {
-
-    // Determine which screen dimension is most constrained
-    ratio = Math.min(window.innerWidth / 800,
-        window.innerHeight / 600);
-
-    // Scale the view appropriately to fill that dimension
-    stage.scale.x = stage.scale.y = ratio;
-
-    // Update the renderer dimensions
-    renderer.resize(Math.ceil(800 * ratio),
-        Math.ceil(600 * ratio));
-}*/
