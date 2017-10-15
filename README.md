@@ -10,7 +10,7 @@ npm i -g browserify
 
 ### 2. Install required modules
 ```
-npm i pixi.js pixi-viewport pixi-keyboard
+npm i pixi.js pixi-viewport pixi-keyboard mouse-wheel
 ```
 
 ### 3. Build

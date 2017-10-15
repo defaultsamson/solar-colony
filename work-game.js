@@ -6,17 +6,30 @@ window.PIXI["default"] = PIXI;
 const Keyboard = require('pixi-keyboard');
 
 function updateKeyboard() {
-
-    if (PIXI.keyboardManager.isPressed(38)) {
-        console.log('Up key is pressed');
-    }
-
+    /*
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
         console.log('Down key is pressed');
-    }
+    }*/
 
     PIXI.keyboardManager.update();
 }
+
+//document.addEventListener("mousewheel", mouseWheelHandler, false);
+
+const maxHeight = 1000;
+const minHeight = 100;
+const zoomRate = 40 / 100;
+
+function updateMouse(dx, dy, dz, ev) {
+    //console.log('mouse: ' + dx + ', ' + dy + ', ' + dz + ', ' + ev);
+
+    var currentHeight = viewport.bottom - viewport.top;
+    var newHeight = currentHeight + (zoomRate * dy);
+    viewport.fitHeight(Math.min(Math.max(newHeight, minHeight), maxHeight));
+    viewport.update();
+}
+
+require('mouse-wheel')(updateMouse, true);
 
 window.addEventListener('resize', resize);
 window.onorientationchange = resize;
@@ -78,7 +91,7 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
     // Listen for frame updates
     game.ticker.add(function () {
         // each frame we spin the bunny around a bit
-        bunny.rotation += 0.01;
+        //bunny.rotation += 0.01;
         bunny.x += 5
     });
 
