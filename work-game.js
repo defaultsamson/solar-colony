@@ -18,18 +18,6 @@ function updateKeyboard() {
 
 const maxHeight = 1000;
 const minHeight = 100;
-const zoomRate = 40 / 100;
-
-function updateMouse(dx, dy, dz, ev) {
-    //console.log('mouse: ' + dx + ', ' + dy + ', ' + dz + ', ' + ev);
-
-    var currentHeight = viewport.bottom - viewport.top;
-    var newHeight = currentHeight + (zoomRate * dy);
-    viewport.fitHeight(Math.min(Math.max(newHeight, minHeight), maxHeight));
-    viewport.update();
-}
-
-require('mouse-wheel')(updateMouse, true);
 
 window.addEventListener('resize', resize);
 window.onorientationchange = resize;
@@ -58,7 +46,7 @@ game.ticker.add(updateKeyboard);
 // Viewport options. Not very important because it can vary (see resize() )
 // These are mostly just used for initialization so that no errors occur
 var options = {
-    screenWidth: w * 2,
+    screenWidth: w,
     screenHeight: h,
     worldWidth: w,
     worldHeight: h,
@@ -66,9 +54,19 @@ var options = {
 
 var viewport = new Viewport(game.stage, options);
 
+var scrollOptions = {
+    noDrag: false,
+    minWidth: 10,
+    minHeight: minHeight,
+    maxWidth: 1000000,
+    maxHeight: maxHeight,
+}
+
 viewport
     .drag()
     .hitArea()
+    .wheel(scrollOptions)
+    .pinch(scrollOptions)
     .decelerate()
     .start();
 
@@ -92,13 +90,14 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
     game.ticker.add(function () {
         // each frame we spin the bunny around a bit
         //bunny.rotation += 0.01;
-        bunny.x += 5
+        //bunny.x += 0.2
     });
 
     resize();
 
-    viewport.follow(bunny);
+    //viewport.follow(bunny);
 });
+
 
 function resize() {
     window.scrollTo(0, 0);
@@ -113,7 +112,7 @@ function resize() {
     game.renderer.view.width = width;
     game.renderer.view.height = height;*/
 
-    game.stage.setTransform(0, 0, ratio, ratio, 0, 0, 0, 0, 0);
+    //game.stage.setTransform(0, 0, ratio, ratio, 0, 0, 0, 0, 0);
 
     viewport.screenWidth = width;
     viewport.screenHeight = height;
