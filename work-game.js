@@ -103,12 +103,24 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
 function resize() {
     window.scrollTo(0, 0);
 
+    var oldCenter;
+    if (viewport.center) {
+        oldCenter = viewport.center;
+    }
+
+    var prevHeight = viewport.worldScreenHeight;
+
     var width = window.innerWidth;
     var height = window.innerHeight;
     var ratio = height / h;
 
     game.renderer.resize(width, height);
     viewport.resize(width, height);
+    viewport.fitHeight(prevHeight, false);
 
-    // viewport.update();
+    // Must maintain the center manually instad of using fitHeight's built in one because the
+    // center value will change upon resizing the viewport and game window
+    if (oldCenter) {
+        viewport.moveCenter(oldCenter);
+    }
 }
