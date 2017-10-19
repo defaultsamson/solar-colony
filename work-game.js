@@ -39,7 +39,7 @@ game.view.style.position = "absolute";
 game.view.style.display = "block";
 document.body.appendChild(game.view);
 game.renderer.autoResize = true;
-game.renderer.backgroundColor = 0x00FFFF;
+game.renderer.backgroundColor = 0x000000;
 
 // Adds the keyboard update loop to the ticker
 game.ticker.add(updateKeyboard);
@@ -85,7 +85,7 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
     bunny.anchor.y = 0.5;
 
     // Add the bunny to the scene we are building.
-    game.stage.addChild(bunny);
+    //    game.stage.addChild(bunny);
 
     // Listen for frame updates
     game.ticker.add(function () {
@@ -94,8 +94,22 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
         //bunny.x += 0.2
     });
 
-    resize();
+    game.stage.addChild(dottedCircle(30, 30, 10, 10));
+    game.stage.addChild(dottedCircle(60, 30, 10, 14));
+    game.stage.addChild(dottedCircle(90, 30, 10, 18));
+    game.stage.addChild(dottedCircle(120, 30, 10, 24));
+    game.stage.addChild(dottedCircle(150, 30, 10, 28));
+    game.stage.addChild(dottedCircle(180, 30, 10, 32));
+    game.stage.addChild(dottedCircle(210, 30, 10, 36));
+    game.stage.addChild(dottedCircle(240, 30, 10, 40));
 
+    game.stage.addChild(dottedCircle(200, 200, 100, 10));
+    game.stage.addChild(dottedCircle(200, 200, 90, 10));
+    game.stage.addChild(dottedCircle(200, 200, 80, 10));
+    game.stage.addChild(dottedCircle(200, 200, 70, 10));
+    game.stage.addChild(dottedCircle(200, 200, 60, 10));
+
+    resize();
     //viewport.follow(bunny);
 });
 
@@ -124,3 +138,35 @@ function resize() {
         viewport.moveCenter(oldCenter);
     }
 }
+
+const minDashes = 2;
+
+function dottedCircle(x, y, radius, dashLength) {
+
+    var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes);
+    var dashRadians = dashLength / radius;
+    var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians;
+
+    var pixiCircle = new PIXI.Graphics();
+
+    // If it's a full circle, draw it full (more optimised)
+    if (spacingRadians <= 0) {
+        pixiCircle.lineStyle(2, 0xFF00FF); //(thickness, color)
+        pixiCircle.arc(x, y, radius, 0, 2 * Math.PI);
+    } else { // Else, draw it dashed
+        for (i = 0; i < numOfDashes; i++) {
+            var start = i * (dashRadians + spacingRadians);
+            var end1 = start + dashRadians;
+            var end2 = end1 + spacingRadians;
+            pixiCircle.lineStyle(2, 0xFF00FF); //(thickness, color)
+            pixiCircle.arc(x, y, radius, start, end1);
+            pixiCircle.lineStyle(2, 0xFFFF00, 0);
+            pixiCircle.arc(x, y, radius, end1, end2);
+        }
+    }
+
+    return pixiCircle;
+}
+
+// Make black once done loading
+game.renderer.backgroundColor = 0x00FFFF;
