@@ -1,9 +1,11 @@
 require('pixi.js');
 const Viewport = require('pixi-viewport');
-// Prevents error from pixi-keyboard
+// Prevents error from pixi-keyboard and pivi-particles
 window.PIXI = PIXI;
 window.PIXI["default"] = PIXI;
-const Keyboard = require('pixi-keyboard');
+// const Keyboard = require('pixi-keyboard');
+require('pixi-particles');
+require('pixi-keyboard');
 
 function updateKeyboard() {
     /*
@@ -39,7 +41,7 @@ game.view.style.position = "absolute";
 game.view.style.display = "block";
 document.body.appendChild(game.view);
 game.renderer.autoResize = true;
-game.renderer.backgroundColor = 0x000000;
+game.renderer.backgroundColor = Colour.background;
 
 // Adds the keyboard update loop to the ticker
 game.ticker.add(updateKeyboard);
@@ -66,12 +68,19 @@ viewport
     .drag()
     .hitArea()
     .wheel()
-    .pinch()
+    .pinch({
+        percent: 4.5
+    })
     .clampZoom(clampOptions)
     .decelerate()
     .start();
 
-PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
+PIXI.loader
+    .add('bunny', 'game/bunny.png')
+    .add('sunTexture', 'game/sun.png')
+    .load(onLoad);
+
+function onLoad(loader, resources) {
 
     // This creates a texture from a 'bunny.png' image.
     var bunny = new PIXI.Sprite(resources.bunny.texture);
@@ -93,26 +102,24 @@ PIXI.loader.add('bunny', 'game/bunny.png').load(function (loader, resources) {
         //bunny.rotation += 0.01;
         //bunny.x += 0.2
     });
-
-    game.stage.addChild(dottedCircle(30, 30, 10, 10));
-    game.stage.addChild(dottedCircle(60, 30, 10, 14));
-    game.stage.addChild(dottedCircle(90, 30, 10, 18));
-    game.stage.addChild(dottedCircle(120, 30, 10, 24));
-    game.stage.addChild(dottedCircle(150, 30, 10, 28));
-    game.stage.addChild(dottedCircle(180, 30, 10, 32));
-    game.stage.addChild(dottedCircle(210, 30, 10, 36));
-    game.stage.addChild(dottedCircle(240, 30, 10, 40));
-
-    game.stage.addChild(dottedCircle(200, 200, 100, 10));
-    game.stage.addChild(dottedCircle(200, 200, 90, 10));
-    game.stage.addChild(dottedCircle(200, 200, 80, 10));
-    game.stage.addChild(dottedCircle(200, 200, 70, 10));
-    game.stage.addChild(dottedCircle(200, 200, 60, 10));
+    game.stage.addChild(dottedCircle(0, 0, 150, 20));
+    game.stage.addChild(dottedCircle(0, 0, 200, 20));
+    game.stage.addChild(dottedCircle(0, 0, 270, 20));
+    game.stage.addChild(dottedCircle(0, 0, 300, 20));
 
     resize();
-    //viewport.follow(bunny);
-});
 
+    this.elapsed = Date.now();
+    var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle);
+    sun.emit = true;
+    game.ticker.add(function () {
+        var now = Date.now();
+        sun.update((now - elapsed) * 0.001);
+        elapsed = now;
+    });
+
+    viewport.moveCenter(0, 0);
+}
 
 function resize() {
     window.scrollTo(0, 0);
@@ -140,6 +147,7 @@ function resize() {
 }
 
 const minDashes = 2;
+const dashThickness = 3;
 
 function dottedCircle(x, y, radius, dashLength) {
 
@@ -151,22 +159,22 @@ function dottedCircle(x, y, radius, dashLength) {
 
     // If it's a full circle, draw it full (more optimised)
     if (spacingRadians <= 0) {
-        pixiCircle.lineStyle(2, 0xFF00FF); //(thickness, color)
+        pixiCircle.lineStyle(dashThickness, Colour.dashedLine); //(thickness, color)
         pixiCircle.arc(x, y, radius, 0, 2 * Math.PI);
     } else { // Else, draw it dashed
         for (i = 0; i < numOfDashes; i++) {
             var start = i * (dashRadians + spacingRadians);
             var end1 = start + dashRadians;
             var end2 = end1 + spacingRadians;
-            pixiCircle.lineStyle(2, 0xFF00FF); //(thickness, color)
+            pixiCircle.lineStyle(dashThickness, Colour.dashedLine); //(thickness, color)
             pixiCircle.arc(x, y, radius, start, end1);
-            pixiCircle.lineStyle(2, 0xFFFF00, 0);
+            pixiCircle.lineStyle(dashThickness, Colour.background, 0);
             pixiCircle.arc(x, y, radius, end1, end2);
         }
     }
 
+    // disgusting
+    // pixiCircle.cacheAsBitmap = true;
+
     return pixiCircle;
 }
-
-// Make black once done loading
-game.renderer.backgroundColor = 0x00FFFF;
