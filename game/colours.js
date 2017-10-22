@@ -1,6 +1,6 @@
 const Colour = {
     background: 0x2A2C31,
-    dashedLine: 0x32343A,
+    dashedLine: 0x484B51,
 
     dark1: 0x1E2124,
     dark2: 0x2A2C31,

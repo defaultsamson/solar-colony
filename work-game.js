@@ -14,10 +14,26 @@ function updateKeyboard() {
     }*/
 
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
+        viewport.on('snap-start', function () {
+            if (viewport.plugin('drag')) {
+                viewport.plugin('drag').pause();
+            }
+            if (viewport.plugin('pinch')) {
+                viewport.plugin('pinch').pause();
+            }
+        })
+        viewport.on('snap-end', function () {
+            if (viewport.plugin('drag')) {
+                viewport.plugin('drag').resume();
+            }
+            if (viewport.plugin('pinch')) {
+                viewport.plugin('pinch').resume();
+            }
+        })
+        //_viewport.on('snap-end', () => addCounter('snap-end'))
         viewport.snap(0, 0, {
             time: 1000,
-            dragInterrupt: false,
-            center: true
+            removeOnComplete: true
         });
     }
 
