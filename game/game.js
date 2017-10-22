@@ -7363,8 +7363,6 @@ const Plugin = require('./plugin')
 module.exports = class Bounce extends Plugin
 {
     /**
-     * bounce on borders
-     * NOTE: screenWidth, screenHeight, worldWidth, and worldHeight needs to be set for this to work properly
      * @param {Viewport} parent
      * @param {object} [options]
      * @param {number} [options.friction=0.5] friction to apply to decelerate if active
@@ -7377,6 +7375,7 @@ module.exports = class Bounce extends Plugin
         options = options || {}
         this.time = options.time || 150
         this.ease = options.ease || 'easeInOutSine'
+        this.friction = option.friction || 0.5
     }
 
     down()
@@ -7391,6 +7390,11 @@ module.exports = class Bounce extends Plugin
 
     update(elapsed)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         this.bounce()
         if (this.toX)
         {
@@ -7410,6 +7414,11 @@ module.exports = class Bounce extends Plugin
 
     bounce()
     {
+        if (this.paused)
+        {
+            return
+        }
+
         let oob
         let decelerate = this.parent.plugin('decelerate')
         if (decelerate && (decelerate.x || decelerate.y))
@@ -7491,6 +7500,11 @@ module.exports = class ClampZoom extends Plugin
 
     clamp()
     {
+        if (this.paused)
+        {
+            return
+        }
+
         let width = this.parent.worldScreenWidth
         let height = this.parent.worldScreenHeight
         if (this.minWidth && width < this.minWidth)
@@ -7551,6 +7565,11 @@ module.exports = class clamp extends Plugin
 
     update()
     {
+        if (this.paused)
+        {
+            return
+        }
+
         const oob = this.parent.OOB()
         const point = oob.cornerPoint
         const decelerate = this.parent.plugin('decelerate') || {}
@@ -7591,6 +7610,7 @@ module.exports = class Decelerate extends Plugin
      * @param {Viewport} parent
      * @param {object} [options]
      * @param {number} [options.friction=0.95] percent to decelerate after movement
+     * @param {number} [options.bounce=0.8] percent to decelerate when past boundaries (only applicable when viewport.bounce() is active)
      * @param {number} [options.minSpeed=0.01] minimum velocity before stopping/reversing acceleration
      */
     constructor(parent, options)
@@ -7598,7 +7618,6 @@ module.exports = class Decelerate extends Plugin
         super(parent)
         options = options || {}
         this.friction = options.friction || 0.95
-        this.snap = options.snap || 0.8
         this.bounce = options.bounce || 0.5
         this.minSpeed = typeof options.minSpeed !== 'undefined' ? options.minSpeed : 0.01
         this.saved = []
@@ -7612,6 +7631,11 @@ module.exports = class Decelerate extends Plugin
 
     move(x, y, data)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         const pointers = data.input.pointers
         if (pointers.length === 1 || (pointers.length > 1 && !this.parent.plugin('pinch')))
         {
@@ -7645,6 +7669,11 @@ module.exports = class Decelerate extends Plugin
 
     update(elapsed)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         if (this.x)
         {
             this.parent.container.x += this.x * elapsed
@@ -7678,10 +7707,16 @@ module.exports = class Drag extends Plugin
     constructor(parent)
     {
         super(parent)
+        this.inMove = false
     }
 
     down(x, y, data)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         const pointers = data.input.pointers
         if (pointers.length === 1)
         {
@@ -7691,6 +7726,11 @@ module.exports = class Drag extends Plugin
 
     move(x, y, data)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         if (!this.last)
         {
             this.last = { x, y }
@@ -7702,7 +7742,7 @@ module.exports = class Drag extends Plugin
             {
                 const distX = x - this.last.x
                 const distY = y - this.last.y
-                if (this.parent.checkThreshold(distX) || this.parent.checkThreshold(distY))
+                if (this.parent.checkThreshold(distX) || this.parent.checkThreshold(distY) || this.inMove)
                 {
                     this.parent.container.x += distX
                     this.parent.container.y += distY
@@ -7710,12 +7750,22 @@ module.exports = class Drag extends Plugin
                     this.inMove = true
                 }
             }
+            else
+            {
+                this.inMove = false
+            }
         }
     }
 
     up()
     {
         this.last = null
+    }
+
+    resume()
+    {
+        this.last = null
+        this.paused = false
     }
 }
 },{"./plugin":61}],58:[function(require,module,exports){
@@ -7741,6 +7791,11 @@ module.exports = class Follow extends Plugin
 
     update()
     {
+        if (this.paused)
+        {
+            return
+        }
+
         if (this.radius)
         {
             const center = this.parent.center
@@ -7777,6 +7832,10 @@ const Plugin = require('./plugin')
 
 module.exports = class HitArea extends Plugin
 {
+    /**
+     * @param {Viewport} parent
+     * @param {PIXI.Rectangle} [rect] if no rect is provided, it will use the value of container.getBounds()
+     */
     constructor(parent, rect)
     {
         super(parent)
@@ -7799,6 +7858,10 @@ module.exports = class Pinch extends Plugin
      * @param {object} [options]
      * @param {boolean} [options.noDrag] disable two-finger dragging
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of two fingers
+     * @param {number} [options.minWidth] clamp minimum width
+     * @param {number} [options.minHeight] clamp minimum height
+     * @param {number} [options.maxWidth] clamp maximum width
+     * @param {number} [options.maxHeight] clamp maximum height
      */
     constructor(parent, options)
     {
@@ -7815,6 +7878,11 @@ module.exports = class Pinch extends Plugin
 
     move(x, y, data)
     {
+        if (this.paused)
+        {
+            return
+        }
+
         const pointers = data.input.pointers
         if (pointers.length >= 2)
         {
@@ -7887,6 +7955,7 @@ module.exports = class Plugin
     constructor(parent)
     {
         this.parent = parent
+        this.paused = false
     }
 
     down() { }
@@ -7895,6 +7964,15 @@ module.exports = class Plugin
     wheel() { }
     update() { }
     resize() { }
+    onRemove() { }
+    pause() 
+    {
+        this.paused = true
+    }
+    resume() 
+    {
+        this.paused = false
+    }
 }
 },{}],62:[function(require,module,exports){
 const Plugin = require('./plugin')
@@ -7908,8 +7986,13 @@ module.exports = class Snap extends Plugin
      * @param {number} y
      * @param {object} [options]
      * @param {number} [options.friction=0.8] friction/frame to apply if decelerate is active
+     * @param {boolean} [options.center] move the center of the camera to {x, y} (if false, move the top left corner to {x, y})
      * @param {number} [options.time=1000]
-     * @param {number} [options.ease=EaseInOutSine]
+     * @param {string|function} [ease='easeInOutSine'] ease function or name (see http://easings.net/ for supported names)
+     * @param {boolean} [options.stopOnResize] Stops performing the snap upon resizing
+     * @param {boolean} [options.dragInterrupt] Allows users to stop the snapping by dragging (via the 'drag' plugin)
+     * @param {boolean} [options.zoomInterrupt] Allows users to stop the snapping by zooming (via the 'wheel' or 'pinch'  plugins)
+     * @param {boolean} [options.remove] Removes this plugin after having completed the operation
      */
     constructor(parent, x, y, options)
     {
@@ -7920,11 +8003,53 @@ module.exports = class Snap extends Plugin
         this.ease = options.ease || 'easeInOutSine'
         this.x = x
         this.y = y
+        this.center = options.center
+        this.stopOnResize = options.stopOnResize
+        this.dragInterrupt = options.dragInterrupt
+        this.zoomInterrupt = options.zoomInterrupt
+        this.remove = options.remove
+
+        if (this.parent.plugins['decelerate'])
+        {
+            this.parent.plugins['decelerate'].reset();
+        }
+        if (!this.dragInterrupt && this.parent.plugins['drag'])
+        {
+            this.parent.plugins['drag'].pause()
+        }
+        if (!this.zoomInterrupt)
+        {
+            if (this.parent.plugins['wheel'])
+            {
+                this.parent.plugins['wheel'].pause()
+            }
+            if (this.parent.plugins['pinch'])
+            {
+                this.parent.plugins['pinch'].pause()
+            }
+        }
+
+        if (this.center)
+        {
+            this.x = ((this.parent.worldScreenWidth / 2 - this.x) * this.parent.container.scale.x)
+            this.y = (this.parent.worldScreenHeight / 2 - this.y) * this.parent.container.scale.y
+        }
+        this.moving = new Ease.to(this.parent.container, { x: this.x, y: this.y }, this.time, { ease: this.ease })
+    }
+
+    resize()
+    {
+        if (this.stopOnResize)
+        {
+            this.reset()        }
     }
 
     down()
     {
-        this.moving = null
+        if (this.dragInterrupt)
+        {
+            this.reset()
+        }
     }
 
     up()
@@ -7938,19 +8063,45 @@ module.exports = class Snap extends Plugin
 
     update(elapsed)
     {
-        if (!this.moving)
+        if (this.paused)
         {
-            const decelerate = this.parent.plugins['decelerate']
-            if (this.parent.pointers.length === 0 && (!decelerate || (!decelerate.x && !decelerate.y)))
-            {
-                this.moving = new Ease.to(this.parent.container, { x: this.x, y: this.y }, this.time, { ease: this.ease })
-            }
+            return
+        }
+
+        if (this.moving && this.moving.update(elapsed))
+        {
+            this.reset()
+        }
+    }
+
+    reset()
+    {
+        this.moving = null
+        if (this.remove) 
+        {
+            this.parent.removePlugin('snap')
         }
         else
         {
-            if (this.moving.update(elapsed))
+            this.onRemove()
+        }
+    }
+
+    onRemove()
+    {
+        if (!this.dragInterrupt && this.parent.plugins['drag'])
+        {
+            this.parent.plugins['drag'].resume()
+        }
+        if (!this.zoomInterrupt)
+        {
+            if (this.parent.plugins['wheel'])
             {
-                this.moving = null
+                this.parent.plugins['wheel'].resume()
+            }
+            if (this.parent.plugins['pinch'])
+            {
+                this.parent.plugins['pinch'].resume()
             }
         }
     }
@@ -8431,6 +8582,10 @@ module.exports = class Viewport extends Loop
         {
             this.plugins['decelerate'].reset()
         }
+        if (this.plugins['snap'])
+        {
+            this.plugins['snap'].reset()
+        }
         if (this.plugins['clamp'])
         {
             this.plugins['clamp'].update()
@@ -8449,7 +8604,11 @@ module.exports = class Viewport extends Loop
      */
     removePlugin(type)
     {
-        this.plugins[type] = null
+        if (this.plugins[type])
+        {
+            this.plugins[type].onRemove()
+            this.plugins[type] = null
+        }
     }
 
     /**
@@ -8501,8 +8660,9 @@ module.exports = class Viewport extends Loop
      * bounce on borders
      * NOTE: screenWidth, screenHeight, worldWidth, and worldHeight needs to be set for this to work properly
      * @param {object} [options]
-     * @param {number} [time] time to finish bounce
-     * @param {string|function} [ease] ease function or name (see http://easings.net/ for supported names)
+     * @param {number} [options.friction=0.5] friction to apply to decelerate if active
+     * @param {number} [options.time=150] time in ms to finish bounce
+     * @param {string|function} [ease='easeInOutSine'] ease function or name (see http://easings.net/ for supported names)
      * @return {Viewport} this
      */
     bounce(options)
@@ -8545,7 +8705,14 @@ module.exports = class Viewport extends Loop
      * @param {number} x
      * @param {number} y
      * @param {object} [options]
-     * @param {number} [options.speed=1] speed (in world pixels/ms) to snap to location
+     * @param {number} [options.friction=0.8] friction/frame to apply if decelerate is active
+     * @param {boolean} [options.center] move the center of the camera to {x, y} (if false, move the top left corner to {x, y})
+     * @param {number} [options.time=1000]
+     * @param {string|function} [ease='easeInOutSine'] ease function or name (see http://easings.net/ for supported names)
+     * @param {boolean} [options.stopOnResize] Stops performing the snap upon resizing
+     * @param {boolean} [options.dragInterrupt] Allows users to stop the snapping by dragging (via the 'drag' plugin)
+     * @param {boolean} [options.zoomInterrupt] Allows users to stop the snapping by zooming (via the 'wheel' or 'pinch'  plugins)
+     * @param {boolean} [options.remove] Removes this plugin after having completed the operation
      * @return {Viewport} this
      */
     snap(x, y, options)
@@ -8634,6 +8801,10 @@ module.exports = class Wheel extends Plugin
 
     wheel(dx, dy, dz, data)
     {
+        if (this.paused)
+        {
+            return
+        }
         let change
         if (this.reverse)
         {
@@ -45902,6 +46073,18 @@ function updateKeyboard() {
         console.log('Down key is pressed');
     }*/
 
+    if (PIXI.keyboardManager.isPressed(Key.UP)) {
+        viewport.snap(0, 0, {
+            time: 1000,
+            dragInterrupt: false,
+            center: true
+        });
+    }
+
+    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
+        viewport.removePlugin('snap');
+    }
+
     PIXI.keyboardManager.update();
 }
 
@@ -45920,9 +46103,8 @@ var w = 600;
 
 // Creates the PIXI application
 var game = new PIXI.Application(w, h, {
-    antialias: false,
-    transparent: false,
-    resolution: 1
+    antialias: true,
+    transparent: false
 });
 
 // Sets up the element
@@ -45965,46 +46147,84 @@ viewport
     .start();
 
 PIXI.loader
-    .add('bunny', 'game/bunny.png')
     .add('sunTexture', 'game/sun.png')
+    .add('planet1', 'game/planet1.png')
+    .add('planet2', 'game/planet2.png')
     .load(onLoad);
 
 function onLoad(loader, resources) {
 
-    // This creates a texture from a 'bunny.png' image.
-    var bunny = new PIXI.Sprite(resources.bunny.texture);
-
-    // Setup the position of the bunny
-    bunny.x = game.renderer.width / 2;
-    bunny.y = game.renderer.height / 2;
-
-    // Rotate around the center
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.5;
-
-    // Add the bunny to the scene we are building.
-    //    game.stage.addChild(bunny);
-
-    // Listen for frame updates
-    game.ticker.add(function () {
-        // each frame we spin the bunny around a bit
-        //bunny.rotation += 0.01;
-        //bunny.x += 0.2
-    });
-    game.stage.addChild(dottedCircle(0, 0, 150, 20));
-    game.stage.addChild(dottedCircle(0, 0, 200, 20));
-    game.stage.addChild(dottedCircle(0, 0, 270, 20));
-    game.stage.addChild(dottedCircle(0, 0, 300, 20));
+    var orbit1 = game.stage.addChild(dottedCircle(0, 0, 150, 25));
+    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 200, 25));
+    var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25));
+    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 300, 25));
 
     resize();
 
-    this.elapsed = Date.now();
     var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle);
     sun.emit = true;
+
+    var planet1 = new PIXI.Sprite(resources.planet1.texture);
+    planet1.pivot.set(0.5 * planet1.width, 0.5 * planet1.height);
+    planet1.scale.set(0.1);
+    planet1.age = 0;
+    planet1.position.x = orbit1.radius;
+    game.stage.addChild(planet1);
+
+    var planet2 = new PIXI.Sprite(resources.planet2.texture);
+    planet2.pivot.set(0.5 * planet2.width, 0.5 * planet2.height);
+    planet2.scale.set(0.1);
+    planet2.age = 0;
+    planet2.position.x = orbit2.radius;
+    game.stage.addChild(planet2);
+
+    var planet3 = new PIXI.Sprite(resources.planet1.texture);
+    planet3.pivot.set(0.5 * planet3.width, 0.5 * planet3.height);
+    planet3.scale.set(0.1);
+    planet3.age = 0;
+    planet3.position.x = orbit3.radius;
+    game.stage.addChild(planet3);
+
+    var planet4 = new PIXI.Sprite(resources.planet2.texture);
+    planet4.pivot.set(0.5 * planet4.width, 0.5 * planet4.height);
+    planet4.scale.set(0.1);
+    planet4.age = 0;
+    planet4.position.x = orbit4.radius;
+    game.stage.addChild(planet4);
+
+
+    this.lastElapsed = Date.now();
     game.ticker.add(function () {
         var now = Date.now();
-        sun.update((now - elapsed) * 0.001);
-        elapsed = now;
+        var elasped = now - lastElapsed;
+        lastElapsed = now;
+        sun.update(elasped * 0.001);
+
+        // Rotate the orbits (purely for visual effects)
+        orbit1.rotation += (elasped * 0.001) / 50;
+        orbit2.rotation += (elasped * 0.001) / 80;
+        orbit3.rotation += (elasped * 0.001) / 140;
+        orbit4.rotation += (elasped * 0.001) / 200;
+
+        planet1.age += (elasped * 0.001);
+        planet1.rotation -= (elasped * 0.001) / 4;
+        planet1.position.x = Math.cos(planet1.age / 3) * orbit1.radius;
+        planet1.position.y = Math.sin(planet1.age / 3) * orbit1.radius;
+
+        planet2.age += (elasped * 0.001);
+        planet2.rotation -= (elasped * 0.001) / 6;
+        planet2.position.x = Math.cos(planet2.age / 5) * orbit2.radius;
+        planet2.position.y = Math.sin(planet2.age / 5) * orbit2.radius;
+
+        planet3.age += (elasped * 0.001);
+        planet3.rotation += (elasped * 0.001) / 3;
+        planet3.position.x = Math.cos(planet3.age / 9) * orbit3.radius;
+        planet3.position.y = Math.sin(planet3.age / 9) * orbit3.radius;
+
+        planet4.age += (elasped * 0.001);
+        planet4.rotation -= (elasped * 0.001) / 2;
+        planet4.position.x = Math.cos(planet4.age / 17) * orbit4.radius;
+        planet4.position.y = Math.sin(planet4.age / 17) * orbit4.radius;
     });
 
     viewport.moveCenter(0, 0);
@@ -46036,7 +46256,7 @@ function resize() {
 }
 
 const minDashes = 2;
-const dashThickness = 3;
+const dashThickness = 1.4;
 
 function dottedCircle(x, y, radius, dashLength) {
 
@@ -46045,6 +46265,7 @@ function dottedCircle(x, y, radius, dashLength) {
     var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians;
 
     var pixiCircle = new PIXI.Graphics();
+    pixiCircle.radius = radius;
 
     // If it's a full circle, draw it full (more optimised)
     if (spacingRadians <= 0) {

@@ -1,25 +1,25 @@
 const sunParticle = {
     alpha: {
-        start: 1,
+        start: 0.2,
         end: 0
     },
     scale: {
-        start: 1.5,
-        end: 1.5,
+        start: 1,
+        end: 1,
         minimumScaleMultiplier: 1
     },
     color: {
         start: 'ffffff',
-        end: '7e8084'
+        end: 'f0ffff'
     },
     speed: {
-        start: 80,
+        start: 20,
         end: 0,
-        minimumSpeedMultiplier: 0.75
+        minimumSpeedMultiplier: 0.2
     },
     acceleration: {
-        x: 0,
-        y: 0
+        x: 1,
+        y: 1
     },
     maxSpeed: 0,
     startRotation: {
@@ -33,12 +33,12 @@ const sunParticle = {
     },
     lifetime: {
         min: 1,
-        max: 1.2
+        max: 1
     },
     blendMode: 'normal',
-    frequency: 0.005,
+    frequency: 0.03333,
     emitterLifetime: -1,
-    maxParticles: 500,
+    maxParticles: 32,
     pos: {
         x: 0,
         y: 0

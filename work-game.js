@@ -13,6 +13,18 @@ function updateKeyboard() {
         console.log('Down key is pressed');
     }*/
 
+    if (PIXI.keyboardManager.isPressed(Key.UP)) {
+        viewport.snap(0, 0, {
+            time: 1000,
+            dragInterrupt: false,
+            center: true
+        });
+    }
+
+    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
+        viewport.removePlugin('snap');
+    }
+
     PIXI.keyboardManager.update();
 }
 
@@ -31,9 +43,8 @@ var w = 600;
 
 // Creates the PIXI application
 var game = new PIXI.Application(w, h, {
-    antialias: false,
-    transparent: false,
-    resolution: 1
+    antialias: true,
+    transparent: false
 });
 
 // Sets up the element
@@ -76,46 +87,84 @@ viewport
     .start();
 
 PIXI.loader
-    .add('bunny', 'game/bunny.png')
     .add('sunTexture', 'game/sun.png')
+    .add('planet1', 'game/planet1.png')
+    .add('planet2', 'game/planet2.png')
     .load(onLoad);
 
 function onLoad(loader, resources) {
 
-    // This creates a texture from a 'bunny.png' image.
-    var bunny = new PIXI.Sprite(resources.bunny.texture);
-
-    // Setup the position of the bunny
-    bunny.x = game.renderer.width / 2;
-    bunny.y = game.renderer.height / 2;
-
-    // Rotate around the center
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.5;
-
-    // Add the bunny to the scene we are building.
-    //    game.stage.addChild(bunny);
-
-    // Listen for frame updates
-    game.ticker.add(function () {
-        // each frame we spin the bunny around a bit
-        //bunny.rotation += 0.01;
-        //bunny.x += 0.2
-    });
-    game.stage.addChild(dottedCircle(0, 0, 150, 20));
-    game.stage.addChild(dottedCircle(0, 0, 200, 20));
-    game.stage.addChild(dottedCircle(0, 0, 270, 20));
-    game.stage.addChild(dottedCircle(0, 0, 300, 20));
+    var orbit1 = game.stage.addChild(dottedCircle(0, 0, 150, 25));
+    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 200, 25));
+    var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25));
+    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 300, 25));
 
     resize();
 
-    this.elapsed = Date.now();
     var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle);
     sun.emit = true;
+
+    var planet1 = new PIXI.Sprite(resources.planet1.texture);
+    planet1.pivot.set(0.5 * planet1.width, 0.5 * planet1.height);
+    planet1.scale.set(0.1);
+    planet1.age = 0;
+    planet1.position.x = orbit1.radius;
+    game.stage.addChild(planet1);
+
+    var planet2 = new PIXI.Sprite(resources.planet2.texture);
+    planet2.pivot.set(0.5 * planet2.width, 0.5 * planet2.height);
+    planet2.scale.set(0.1);
+    planet2.age = 0;
+    planet2.position.x = orbit2.radius;
+    game.stage.addChild(planet2);
+
+    var planet3 = new PIXI.Sprite(resources.planet1.texture);
+    planet3.pivot.set(0.5 * planet3.width, 0.5 * planet3.height);
+    planet3.scale.set(0.1);
+    planet3.age = 0;
+    planet3.position.x = orbit3.radius;
+    game.stage.addChild(planet3);
+
+    var planet4 = new PIXI.Sprite(resources.planet2.texture);
+    planet4.pivot.set(0.5 * planet4.width, 0.5 * planet4.height);
+    planet4.scale.set(0.1);
+    planet4.age = 0;
+    planet4.position.x = orbit4.radius;
+    game.stage.addChild(planet4);
+
+
+    this.lastElapsed = Date.now();
     game.ticker.add(function () {
         var now = Date.now();
-        sun.update((now - elapsed) * 0.001);
-        elapsed = now;
+        var elasped = now - lastElapsed;
+        lastElapsed = now;
+        sun.update(elasped * 0.001);
+
+        // Rotate the orbits (purely for visual effects)
+        orbit1.rotation += (elasped * 0.001) / 50;
+        orbit2.rotation += (elasped * 0.001) / 80;
+        orbit3.rotation += (elasped * 0.001) / 140;
+        orbit4.rotation += (elasped * 0.001) / 200;
+
+        planet1.age += (elasped * 0.001);
+        planet1.rotation -= (elasped * 0.001) / 4;
+        planet1.position.x = Math.cos(planet1.age / 3) * orbit1.radius;
+        planet1.position.y = Math.sin(planet1.age / 3) * orbit1.radius;
+
+        planet2.age += (elasped * 0.001);
+        planet2.rotation -= (elasped * 0.001) / 6;
+        planet2.position.x = Math.cos(planet2.age / 5) * orbit2.radius;
+        planet2.position.y = Math.sin(planet2.age / 5) * orbit2.radius;
+
+        planet3.age += (elasped * 0.001);
+        planet3.rotation += (elasped * 0.001) / 3;
+        planet3.position.x = Math.cos(planet3.age / 9) * orbit3.radius;
+        planet3.position.y = Math.sin(planet3.age / 9) * orbit3.radius;
+
+        planet4.age += (elasped * 0.001);
+        planet4.rotation -= (elasped * 0.001) / 2;
+        planet4.position.x = Math.cos(planet4.age / 17) * orbit4.radius;
+        planet4.position.y = Math.sin(planet4.age / 17) * orbit4.radius;
     });
 
     viewport.moveCenter(0, 0);
@@ -147,7 +196,7 @@ function resize() {
 }
 
 const minDashes = 2;
-const dashThickness = 3;
+const dashThickness = 1.4;
 
 function dottedCircle(x, y, radius, dashLength) {
 
@@ -156,6 +205,7 @@ function dottedCircle(x, y, radius, dashLength) {
     var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians;
 
     var pixiCircle = new PIXI.Graphics();
+    pixiCircle.radius = radius;
 
     // If it's a full circle, draw it full (more optimised)
     if (spacingRadians <= 0) {
