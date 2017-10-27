@@ -3759,6 +3759,1269 @@ module.exports = function parseURI (str, opts) {
 }).call(this);
 
 },{}],19:[function(require,module,exports){
+const list = require('./src/list')
+
+module.exports = {
+    list,
+    wait: require('./src/wait'),
+    to: require('./src/to'),
+    shake: require('./src/shake'),
+    tint: require('./src/tint'),
+    face: require('./src/face'),
+    angle: require('./src/angle'),
+    target: require('./src/target'),
+    movie: require('./src/movie'),
+    load: require('./src/load'),
+
+    default: new list()
+}
+},{"./src/angle":20,"./src/face":21,"./src/list":22,"./src/load":23,"./src/movie":24,"./src/shake":25,"./src/target":26,"./src/tint":27,"./src/to":28,"./src/wait":29}],20:[function(require,module,exports){
+const wait = require('./wait')
+
+/** animate object's {x, y} using an angle */
+module.exports = class angle extends wait
+{
+    /**
+     * @param {object} object to animate
+     * @param {number} angle in radians
+     * @param {number} speed in pixels/millisecond
+     * @param {number} [duration=0] in milliseconds; if 0, then continues forever
+     * @param {object} [options] @see {@link Wait}
+     */
+    constructor(object, angle, speed, duration, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Angle'
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            this.angle = angle
+            this.speed = speed
+            this.duration = duration || 0
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.angle = this.angle
+        save.speed = this.speed
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.angle = load.angle
+        this.speed = load.speed
+    }
+
+    get angle()
+    {
+        return this._angle
+    }
+    set angle(value)
+    {
+        this._angle = value
+        this.sin = Math.sin(this._angle)
+        this.cos = Math.cos(this._angle)
+    }
+
+    calculate(elapsed)
+    {
+        this.object.x += this.cos * elapsed * this.speed
+        this.object.y += this.sin * elapsed * this.speed
+    }
+
+    reverse()
+    {
+        this.angle += Math.PI
+    }
+}
+},{"./wait":29}],21:[function(require,module,exports){
+const Angle = require('yy-angle')
+const wait = require('./wait')
+
+/** Rotates an object to face the target */
+module.exports = class face extends wait
+{
+    /**
+     * @param {object} object
+     * @param {Point} target
+     * @param {number} speed in radians/millisecond
+     * @param {object} [options] @see {@link Wait}
+     * @param {boolean} [options.keepAlive] don't stop animation when complete
+     */
+    constructor(object, target, speed, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Face'
+        this.target = target
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            this.speed = speed
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.speed = this.speed
+        save.keepAlive = this.options.keepAlive
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.speed = load.speed
+        this.options.keepAlive = load.keepAlive
+    }
+
+    calculate(elapsed)
+    {
+        var angle = Angle.angleTwoPoints(this.object.position, this.target)
+        var difference = Angle.differenceAngles(angle, this.object.rotation)
+        if (difference === 0)
+        {
+            this.emit('done', this.object)
+            if (!this.options.keepAlive)
+            {
+                return true
+            }
+        }
+        else
+        {
+            var sign = Angle.differenceAnglesSign(angle, this.object.rotation)
+            var change = this.speed * elapsed
+            var delta = (change > difference) ? difference : change
+            this.object.rotation += delta * sign
+        }
+    }
+}
+},{"./wait":29,"yy-angle":226}],22:[function(require,module,exports){
+const Loop = require('yy-loop')
+
+const Angle = require('./angle')
+const Face = require('./face')
+const Load = require('./load')
+const Movie = require('./movie')
+const Shake = require('./shake')
+const Target = require('./target')
+const Tint = require('./tint')
+const To = require('./to')
+const Wait = require('./wait')
+
+/** Helper list for multiple animations */
+module.exports = class List extends Loop
+{
+    /**
+     * @param [options]
+     * @param {number} [options.maxFrameTime=1000 / 60] maximum time in milliseconds for a frame
+     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
+     * @event List#done(List) final animation completed in the list
+     * @event List#each(elapsed, List) each update
+     */
+    constructor(options)
+    {
+        options = options || {}
+        super(options)
+        this.empty = true
+    }
+
+    /**
+     * Add animation(s) to animation list
+     * @param {object|object[]...} any animation class
+     */
+    add()
+    {
+        for (let arg of arguments)
+        {
+            if (Array.isArray(arg))
+            {
+                for (let entry of arg)
+                {
+                    this.list.push(entry)
+                }
+            }
+            else
+            {
+                this.list.push(arg)
+            }
+        }
+        this.empty = false
+        return arguments[0]
+    }
+
+    /**
+     * remove animation(s)
+     * @param {object|array} animate - the animation (or array of animations) to remove; can be null
+     * @inherited from yy-loop
+     */
+    // remove(animate)
+
+    /**
+     * remove all animations from list
+     * @inherited from yy-loop
+     */
+    // removeAll()
+
+    /**
+     * update frame; can be called manually or automatically with start()
+     */
+    update()
+    {
+        super.update()
+        if (this.list.length === 0 && !this.empty)
+        {
+            this.emit('done', this)
+            this.empty = true
+        }
+    }
+
+    /**
+     * @type {number} number of animations
+     * @inherited yy-looop
+     */
+    // get count()
+
+    /**
+     * @type {number} number of active animations
+     * @inherited yy-looop
+     */
+    // get countRunning()
+
+    /**
+     * starts an automatic requestAnimationFrame() loop based on yy-loop
+     * alternatively, you can call update() manually
+     * @inherited yy-loop
+     */
+    // start()
+
+    /**
+     * stops the automatic requestAnimationFrame() loop
+     * @inherited yy-loop
+     */
+    // stop()
+
+    /** helper to add to the list a new Ease.to class; see Ease.to class below for parameters */
+    to() { return this.add(new To(...arguments)) }
+
+    /** helper to add to the list a new Ease.angle class; see Ease.to class below for parameters */
+    angle() { return this.add(new Angle(...arguments)) }
+
+    /** helper to add to the list a new Ease.face class; see Ease.to class below for parameters */
+    face() { return this.add(new Face(...arguments)) }
+
+    /** helper to add to the list a new Ease.load class; see Ease.to class below for parameters */
+    load() { return this.add(new Load(...arguments)) }
+
+    /** helper to add to the list a new Ease.movie class; see Ease.to class below for parameters */
+    movie() { return this.add(new Movie(...arguments)) }
+
+    /** helper to add to the list a new Ease.shake class; see Ease.to class below for parameters */
+    shake() { return this.add(new Shake(...arguments)) }
+
+    /** helper to add to the list a new Ease.target class; see Ease.to class below for parameters */
+    target() { return this.add(new Target(...arguments)) }
+
+    /** helper to add to the list a new Ease.angle tint; see Ease.to class below for parameters */
+    tint() { return this.add(new Tint(...arguments)) }
+
+    /** helper to add to the list a new Ease.wait class; see Ease.to class below for parameters */
+    wait() { return this.add(new Wait(...arguments)) }
+
+    /** Inherited functions from yy-loop */
+
+    /**
+     * adds an interval
+     * @param {function} callback
+     * @param {number} time
+     * @param {number} count
+     * @inherited from yy-loop
+     */
+    // interval(callback, time, count)
+
+    /**
+     * adds a timeout
+     * @param {function} callback
+     * @param {number} time
+     * @inherited from yy-loop
+     */
+    // timeout(callback, time)
+}
+},{"./angle":20,"./face":21,"./load":23,"./movie":24,"./shake":25,"./target":26,"./tint":27,"./to":28,"./wait":29,"yy-loop":229}],23:[function(require,module,exports){
+const wait = require('./wait')
+const to = require('./to')
+const tint = require('./tint')
+const shake = require('./shake')
+const angle = require('./angle')
+const face = require('./face')
+const target = require('./target')
+const movie = require('./movie')
+
+/**
+ * restart an animation = requires a saved state
+ * @param {object} object(s) to animate
+ */
+module.exports = function load(object, load)
+{
+    if (!load)
+    {
+        return null
+    }
+    const options = { load }
+    switch (load.type)
+    {
+        case 'Wait':
+            return new wait(object, options)
+        case 'To':
+            return new to(object, null, null, options)
+        case 'Tint':
+            return new tint(object, null, null, options)
+        case 'Shake':
+            return new shake(object, null, null, options)
+        case 'Angle':
+            return new angle(object, null, null, null, options)
+        case 'Face':
+            return new face(object[0], object[1], null, options)
+        case 'Target':
+            return new target(object[0], object[1], null, options)
+        case 'Movie':
+            return new movie(object, object[1], null, options)
+    }
+}
+},{"./angle":20,"./face":21,"./movie":24,"./shake":25,"./target":26,"./tint":27,"./to":28,"./wait":29}],24:[function(require,module,exports){
+const wait = require('./wait')
+
+/**
+ * animate a movie of textures
+ */
+module.exports = class movie extends wait
+{
+    /**
+     * @param {object} object to animate
+     * @param {PIXI.Texture[]} textures
+     * @param {number} [duration=0] time to run (use 0 for infinite duration--should only be used with customized easing functions)
+     * @param {object} [options]
+     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
+     * @param {boolean} [options.pause] start the animation paused
+     * @param {(boolean|number)} [options.repeat] true: repeat animation forever n: repeat animation n times
+     * @param {(boolean|number)} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
+     * @param {(boolean|number)} [options.continue] true: continue animation with new starting values n: continue animation n times
+     * @param {Function} [options.load] loads an animation using a .save() object note the * parameters below cannot be loaded and must be re-set
+     * @param {Function} [options.ease] function from easing.js (see http://easings.net for examples)
+     * @emits {done} animation expires
+     * @emits {cancel} animation is cancelled
+     * @emits {wait} each update during a wait
+     * @emits {first} first update when animation starts
+     * @emits {each} each update while animation is running
+     * @emits {loop} when animation is repeated
+     * @emits {reverse} when animation is reversed
+     */
+    constructor(object, textures, duration, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Movie'
+        if (Array.isArray(object))
+        {
+            this.list = object
+            this.object = this.list[0]
+        }
+        this.ease = options.ease || this.noEase
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            this.textures = textures
+            this.duration = duration
+            this.current = 0
+            this.length = textures.length
+            this.interval = duration / this.length
+            this.isReverse = false
+            this.restart()
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.goto = this.goto
+        save.current = this.current
+        save.length = this.length
+        save.interval = this.interval
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.goto = load.goto
+        this.current = load.current
+        this.interval = load.current
+    }
+
+    restart()
+    {
+        this.current = 0
+        this.time = 0
+        this.isReverse = false
+    }
+
+    reverse()
+    {
+        this.isReverse = !this.isReverse
+    }
+
+    calculate()
+    {
+        let index = Math.round(this.ease(this.time, 0, this.length - 1, this.duration))
+        if (this.isReverse)
+        {
+            index = this.length - 1 - index
+        }
+        if (this.list)
+        {
+            for (let i = 0; i < this.list.length; i++)
+            {
+                this.list[i].texture = this.textures[index]
+            }
+        }
+        else
+        {
+            this.object.texture = this.textures[index]
+        }
+    }
+}
+},{"./wait":29}],25:[function(require,module,exports){
+const wait = require('./wait')
+
+/**
+ * shakes an object or list of objects
+ */
+module.exports = class shake extends wait
+{
+    /**
+     * @param {object|array} object or list of objects to shake
+     * @param {number} amount to shake
+     * @param {number} duration (in milliseconds) to shake
+     * @param {object} options (see Animate.wait)
+     */
+    constructor(object, amount, duration, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Shake'
+        if (Array.isArray(object))
+        {
+            this.array = true
+            this.list = object
+        }
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            if (this.list)
+            {
+                this.start = []
+                for (let i = 0; i < object.length; i++)
+                {
+                    const target = object[i]
+                    this.start[i] = {x: target.x, y: target.y}
+                }
+            }
+            else
+            {
+                this.start = {x: object.x, y: object.y}
+            }
+            this.amount = amount
+            this.duration = duration
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.start = this.start
+        save.amount = this.amount
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.start = load.start
+        this.amount = load.amount
+    }
+
+    calculate(/*elapsed*/)
+    {
+        const object = this.object
+        const start = this.start
+        const amount = this.amount
+        if (this.array)
+        {
+            const list = this.list
+            for (let i = 0; i < list.length; i++)
+            {
+                const object = list[i]
+                const actual = start[i]
+                object.x = actual.x + Math.floor(Math.random() * amount * 2) - amount
+                object.y = actual.y + Math.floor(Math.random() * amount * 2) - amount
+            }
+        }
+        object.x = start.x + Math.floor(Math.random() * amount * 2) - amount
+        object.y = start.y + Math.floor(Math.random() * amount * 2) - amount
+    }
+
+    done()
+    {
+        const object = this.object
+        const start = this.start
+        if (this.array)
+        {
+            const list = this.list
+            for (let i = 0; i < list.length; i++)
+            {
+                const object = list[i]
+                const actual = start[i]
+                object.x = actual.x
+                object.y = actual.y
+            }
+        }
+        else
+        {
+            object.x = start.x
+            object.y = start.y
+        }
+    }
+}
+},{"./wait":29}],26:[function(require,module,exports){
+const wait = require('./wait')
+
+/** move an object to a target's location */
+module.exports = class target extends wait
+{
+    /**
+     * move to a target
+     * @param {object} object - object to animate
+     * @param {object} target - object needs to contain {x: x, y: y}
+     * @param {number} speed - number of pixels to move per millisecond
+     * @param {object} [options] @see {@link Wait}
+     * @param {boolean} [options.keepAlive] don't cancel the animation when target is reached
+     */
+    constructor(object, target, speed, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Target'
+        this.target = target
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            this.speed = speed
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.speed = this.speed
+        save.keepAlive = this.options.keepAlive
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.speed = load.speed
+        this.options.keepAlive = load.keepAlive
+    }
+
+    calculate(elapsed)
+    {
+        const deltaX = this.target.x - this.object.x
+        const deltaY = this.target.y - this.object.y
+        if (deltaX === 0 && deltaY === 0)
+        {
+            this.emit('done', this.object)
+            if (!this.options.keepAlive)
+            {
+                return true
+            }
+        }
+        else
+        {
+            const angle = Math.atan2(deltaY, deltaX)
+            this.object.x += Math.cos(angle) * elapsed * this.speed
+            this.object.y += Math.sin(angle) * elapsed * this.speed
+            if ((deltaX >= 0) !== ((this.target.x - this.object.x) >= 0))
+            {
+                this.object.x = this.target.x
+            }
+            if ((deltaY >= 0) !== ((this.target.y - this.object.y) >= 0))
+            {
+                this.object.y = this.target.y
+            }
+        }
+    }
+}
+},{"./wait":29}],27:[function(require,module,exports){
+const Color = require('yy-color')
+const wait = require('./wait')
+
+/** changes the tint of an object */
+module.exports = class tint extends wait
+{
+    /**
+     * @param {PIXI.DisplayObject|PIXI.DisplayObject[]} object
+     * @param {number|number[]} tint
+     * @param {number} [duration] in milliseconds
+     * @param {object} [options] @see {@link Wait}
+     */
+    constructor(object, tint, duration, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'Tint'
+        if (Array.isArray(object))
+        {
+            this.list = object
+            this.object = this.list[0]
+        }
+        this.duration = duration
+        this.ease = this.options.ease || this.noEase
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else if (Array.isArray(tint))
+        {
+            this.tints = [this.object.tint, ...tint]
+        }
+        else
+        {
+            this.start = this.object.tint
+            this.to = tint
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.start = this.start
+        save.to = this.to
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.start = load.start
+        this.to = load.to
+    }
+
+    calculate()
+    {
+        const percent = this.ease(this.time, 0, 1, this.duration)
+        if (this.tints)
+        {
+            const each = 1 / (this.tints.length - 1)
+            let per = each
+            for (let i = 1; i < this.tints.length; i++)
+            {
+                if (percent <= per)
+                {
+                    const color = Color.blend(1 - (per - percent) / each, this.tints[i - 1], this.tints[i])
+                    if (this.list)
+                    {
+                        for (let object of this.list)
+                        {
+                            object.tint = color
+                        }
+                    }
+                    else
+                    {
+                        this.object.tint = color
+                    }
+                    break;
+                }
+                per += each
+            }
+        }
+        else
+        {
+            const color = Color.blend(percent, this.start, this.to)
+            if (this.list)
+            {
+                for (let object of this.list)
+                {
+                    object.tint = color
+                }
+            }
+            else
+            {
+                this.object.tint = color
+            }
+        }
+    }
+
+    reverse()
+    {
+        if (this.tints)
+        {
+            const tints = []
+            for (let i = this.tints.length - 1; i >= 0; i--)
+            {
+                tints.push(this.tints[i])
+            }
+            this.tints = tints
+        }
+        else
+        {
+            const swap = this.to
+            this.to = this.start
+            this.start = swap
+        }
+    }
+}
+},{"./wait":29,"yy-color":227}],28:[function(require,module,exports){
+const wait = require('./wait')
+
+/** animate any numeric parameter of an object or array of objects */
+module.exports = class to extends wait
+{
+    /**
+     * @param {object} object to animate
+     * @param {object} goto - parameters to animate, e.g.: {alpha: 5, scale: {3, 5}, scale: 5, rotation: Math.PI}
+     * @param {number} duration - time to run
+     * @param {object} [options]
+     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
+     * @param {boolean} [options.pause] start the animation paused
+     * @param {boolean|number} [options.repeat] true: repeat animation forever n: repeat animation n times
+     * @param {boolean|number} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
+     * @param {boolean|number} [options.continue] true: continue animation with new starting values n: continue animation n times
+     * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
+     * @param {string|Function} [options.ease] name or function from easing.js (see http://easings.net for examples)
+     * @emits to:done animation expires
+     * @emits to:cancel animation is cancelled
+     * @emits to:wait each update during a wait
+     * @emits to:first first update when animation starts
+     * @emits to:each each update while animation is running
+     * @emits to:loop when animation is repeated
+     * @emits to:reverse when animation is reversed
+     */
+    constructor(object, goto, duration, options)
+    {
+        options = options || {}
+        super(object, options)
+        this.type = 'To'
+        if (Array.isArray(object))
+        {
+            this.list = object
+            this.object = this.list[0]
+        }
+        this.ease = options.ease || this.noEase
+        if (options.load)
+        {
+            this.load(options.load)
+        }
+        else
+        {
+            this.goto = goto
+            this.fixScale()
+            this.duration = duration
+            this.restart()
+        }
+    }
+
+    /**
+     * converts scale from { scale: n } to { scale: { x: n, y: n }}
+     * @private
+     */
+    fixScale()
+    {
+        if (typeof this.goto['scale'] !== 'undefined' && !Number.isNaN(this.goto['scale']))
+        {
+            this.goto['scale'] = {x: this.goto['scale'], y: this.goto['scale']}
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = super.save()
+        save.goto = this.goto
+        save.start = this.start
+        save.delta = this.delta
+        save.keys = this.keys
+        return save
+    }
+
+    load(load)
+    {
+        super.load(load)
+        this.goto = load.goto
+        this.start = load.start
+        this.delta = load.delta
+        this.keys = load.keys
+    }
+
+    restart()
+    {
+        let i = 0
+        const start = this.start = []
+        const delta = this.delta = []
+        const keys = this.keys = []
+        const goto = this.goto
+        const object = this.object
+
+        // loops through all keys in goto object
+        for (let key in goto)
+        {
+
+            // handles keys with one additional level e.g.: goto = {scale: {x: 5, y: 3}}
+            if (isNaN(goto[key]))
+            {
+                keys[i] = {key: key, children: []}
+                start[i] = []
+                delta[i] = []
+                let j = 0
+                for (let key2 in goto[key])
+                {
+                    keys[i].children[j] = key2
+                    start[i][j] = parseFloat(object[key][key2])
+                    start[i][j] = this._correctDOM(key2, start[i][j])
+                    start[i][j] = isNaN(this.start[i][j]) ? 0 : start[i][j]
+                    delta[i][j] = goto[key][key2] - start[i][j]
+                    j++
+                }
+            }
+            else
+            {
+                start[i] = parseFloat(object[key])
+                start[i] = this._correctDOM(key, start[i])
+                start[i] = isNaN(this.start[i]) ? 0 : start[i]
+                delta[i] = goto[key] - start[i]
+                keys[i] = key
+            }
+            i++
+        }
+        this.time = 0
+    }
+
+    reverse()
+    {
+        const object = this.object
+        const keys = this.keys
+        const goto = this.goto
+        const delta = this.delta
+        const start = this.start
+
+        for (let i = 0; i < keys.length; i++)
+        {
+            const key = keys[i]
+            if (isNaN(goto[key]))
+            {
+                for (let j = 0; j < key.children.length; j++)
+                {
+                    delta[i][j] = -delta[i][j]
+                    start[i][j] = parseFloat(object[key.key][key.children[j]])
+                    start[i][j] = isNaN(start[i][j]) ? 0 : start[i][j]
+                }
+            }
+            else
+            {
+                delta[i] = -delta[i]
+                start[i] = parseFloat(object[key])
+                start[i] = isNaN(start[i]) ? 0 : start[i]
+            }
+        }
+    }
+
+    continue()
+    {
+        const object = this.object
+        const keys = this.keys
+        const goto = this.goto
+        const start = this.start
+
+        for (let i = 0; i < keys.length; i++)
+        {
+            const key = keys[i]
+            if (isNaN(goto[key]))
+            {
+                for (let j = 0; j < key.children.length; j++)
+                {
+                    this.start[i][j] = parseFloat(object[key.key][key.children[j]])
+                    this.start[i][j] = isNaN(start[i][j]) ? 0 : start[i][j]
+                }
+            }
+            else
+            {
+                start[i] = parseFloat(object[key])
+                start[i] = isNaN(start[i]) ? 0 : start[i]
+            }
+        }
+    }
+
+    calculate(/*elapsed*/)
+    {
+        const object = this.object
+        const list = this.list
+        const keys = this.keys
+        const goto = this.goto
+        const time = this.time
+        const start = this.start
+        const delta = this.delta
+        const duration = this.duration
+        const ease = this.ease
+        for (let i = 0; i < this.keys.length; i++)
+        {
+            const key = keys[i]
+            if (isNaN(goto[key]))
+            {
+                const key1 = key.key
+                for (let j = 0; j < key.children.length; j++)
+                {
+                    const key2 = key.children[j]
+                    const others = object[key1][key2] = (time >= duration) ? start[i][j] + delta[i][j] : ease(time, start[i][j], delta[i][j], duration)
+                    if (list)
+                    {
+                        for (let k = 1; k < list.length; k++)
+                        {
+                            list[k][key1][key2] = others
+                        }
+                    }
+                }
+            }
+            else
+            {
+                const key = keys[i]
+                const others = object[key] = (time >= duration) ? start[i] + delta[i] : ease(time, start[i], delta[i], duration)
+                if (list)
+                {
+                    for (let j = 1; j < this.list.length; j++)
+                    {
+                        list[j][key] = others
+                    }
+                }
+            }
+        }
+    }
+}
+},{"./wait":29}],29:[function(require,module,exports){
+const Easing = require('penner')
+const EventEmitter = require('eventemitter3')
+
+module.exports = class wait extends EventEmitter
+{
+    /**
+     * @param {object|object[]} object or list of objects to animate
+     * @param {object} [options]
+     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
+     * @param {boolean} [options.pause] start the animation paused
+     * @param {(boolean|number)} [options.repeat] true: repeat animation forever n: repeat animation n times
+     * @param {(boolean|number)} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
+     * @param {(boolean|number)} [options.continue] true: continue animation with new starting values n: continue animation n times
+     * @param {number} [options.id] user-generated id (e.g., I use it to properly load animations when an object has multiple animations running)
+     * @param {boolean} [options.orphan] delete animation if .parent of object (or first object in list) is null
+     * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
+     * @param {Function|string} [options.ease] function (or penner function name) from easing.js (see http://easings.net for examples)*
+     * @emits {done} animation expires
+     * @emits {cancel} animation is cancelled
+     * @emits {wait} each update during a wait
+     * @emits {first} first update when animation starts
+     * @emits {each} each update while animation is running
+     * @emits {loop} when animation is repeated
+     * @emits {reverse} when animation is reversed
+     */
+    constructor(object, options)
+    {
+        super()
+        this.object = object
+        this.options = options || {}
+        this.type = 'Wait'
+        if (this.options.load)
+        {
+            this.load(this.options.load)
+        }
+        else
+        {
+            this.time = 0
+        }
+        if (this.options.ease && typeof this.options.ease !== 'function')
+        {
+            this.options.ease = Easing[this.options.ease]
+        }
+        if (!this.options.ease)
+        {
+            this.options.ease = Easing['linear']
+        }
+    }
+
+    save()
+    {
+        if (this.options.cancel)
+        {
+            return null
+        }
+        const save = {type: this.type, time: this.time, duration: this.duration}
+        const options = this.options
+        if (options.wait)
+        {
+            save.wait = options.wait
+        }
+        if (typeof options.id !== 'undefined')
+        {
+            save.id = options.id
+        }
+        if (options.pause)
+        {
+            save.pause = options.pause
+        }
+        if (options.repeat)
+        {
+            save.repeat = options.repeat
+        }
+        if (options.reverse)
+        {
+            save.reverse = options.reverse
+        }
+        if (options.continue)
+        {
+            save.continue = options.continue
+        }
+        if (options.cancel)
+        {
+            save.cancel = options.cancel
+        }
+        return save
+    }
+
+    load(load)
+    {
+        this.options.wait = load.wait
+        this.options.pause = load.pause
+        this.options.repeat = load.repeat
+        this.options.reverse = load.reverse
+        this.options.continue = load.continue
+        this.options.cancel = load.cancel
+        this.options.id = load.id
+        this.time = load.time
+        this.duration = load.duration
+    }
+
+    /**
+     * @type {boolean} pause this entry
+     */
+    set pause(value)
+    {
+        this.options.pause = value
+    }
+    get pause()
+    {
+        return this.options.pause
+    }
+
+    cancel()
+    {
+        this.options.cancel = true
+    }
+
+    done()
+    {
+    }
+
+    end(leftOver)
+    {
+        if (this.options.reverse)
+        {
+            this.reverse()
+            this.time = leftOver
+            if (!this.options.repeat)
+            {
+                if (this.options.reverse === true)
+                {
+                    this.options.reverse = false
+                }
+                else
+                {
+                    this.options.reverse--
+                }
+            }
+            else
+            {
+                if (this.options.repeat !== true)
+                {
+                    this.options.repeat--
+                }
+            }
+            this.emit('loop', this.list || this.object)
+        }
+        else if (this.options.repeat)
+        {
+            this.time = leftOver
+            if (this.options.repeat !== true)
+            {
+                this.options.repeat--
+            }
+            this.emit('loop', this.list || this.object)
+        }
+        else if (this.options.continue)
+        {
+            this.continue()
+            this.time = leftOver
+            if (this.options.continue !== true)
+            {
+                this.options.continue--
+            }
+            this.emit('loop', this.list || this.object)
+        }
+        else
+        {
+            this.done()
+            this.emit('done', this.list || this.object, leftOver)
+            this.list = this.object = null
+            return true
+        }
+    }
+
+    update(elapsed)
+    {
+        if (!this.options)
+        {
+            return
+        }
+        if (this.options.cancel)
+        {
+            this.emit('cancel', this.list || this.object)
+            return true
+        }
+        if (this.options.orphan)
+        {
+            if (this.list)
+            {
+                if (!this.list[0].parent)
+                {
+                    return true
+                }
+            }
+            else if (!this.object.parent)
+            {
+                return true
+            }
+        }
+        if (this.options.restart)
+        {
+            this.restart()
+            this.options.pause = false
+        }
+        if (this.options.original)
+        {
+            this.time = 0
+            this.options.pause = false
+        }
+        if (this.options.pause)
+        {
+            return
+        }
+        if (this.options.wait)
+        {
+            this.options.wait -= elapsed
+            if (this.options.wait <= 0)
+            {
+                elapsed = -this.options.wait
+                this.options.wait = false
+            }
+            else
+            {
+                this.emit('wait', elapsed, this.list || this.object)
+                return
+            }
+        }
+        if (!this.first)
+        {
+            this.first = true
+            this.emit('first', this.list || this.object)
+        }
+        this.time += elapsed
+        let leftOver = 0
+        if (this.duration !== 0 && this.time > this.duration)
+        {
+            leftOver = this.time - this.duration
+            this.time = this.duration
+        }
+        const allDone = this.calculate(elapsed)
+        this.emit('each', elapsed, this.list || this.object, this)
+        if (this.type === 'Wait' || (this.duration !== 0 && this.time === this.duration))
+        {
+            return this.end(leftOver)
+        }
+        if (allDone)
+        {
+            return true
+        }
+    }
+
+    // correct certain DOM values
+    _correctDOM(key, value)
+    {
+        switch (key)
+        {
+            case 'opacity':
+                return (isNaN(value)) ? 1 : value
+        }
+        return value
+    }
+
+    calculate() {}
+}
+},{"eventemitter3":12,"penner":18}],30:[function(require,module,exports){
 var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
 
 /**
@@ -3879,7 +5142,7 @@ Buffer.prototype.destroy = function(){
 
 module.exports = Buffer;
 
-},{}],20:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 
 var Texture = require('./GLTexture');
 
@@ -4106,7 +5369,7 @@ Framebuffer.createFloat32 = function(gl, width, height, data)
 
 module.exports = Framebuffer;
 
-},{"./GLTexture":22}],21:[function(require,module,exports){
+},{"./GLTexture":33}],32:[function(require,module,exports){
 
 var compileProgram = require('./shader/compileProgram'),
 	extractAttributes = require('./shader/extractAttributes'),
@@ -4199,7 +5462,7 @@ Shader.prototype.destroy = function()
 
 module.exports = Shader;
 
-},{"./shader/compileProgram":27,"./shader/extractAttributes":29,"./shader/extractUniforms":30,"./shader/generateUniformAccessObject":31,"./shader/setPrecision":35}],22:[function(require,module,exports){
+},{"./shader/compileProgram":38,"./shader/extractAttributes":40,"./shader/extractUniforms":41,"./shader/generateUniformAccessObject":42,"./shader/setPrecision":46}],33:[function(require,module,exports){
 
 /**
  * Helper class to create a WebGL Texture
@@ -4534,7 +5797,7 @@ Texture.fromData = function(gl, data, width, height)
 
 module.exports = Texture;
 
-},{}],23:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 
 // state object//
 var setVertexAttribArrays = require( './setVertexAttribArrays' );
@@ -4798,7 +6061,7 @@ VertexArrayObject.prototype.getSize = function()
     return attrib.buffer.data.length / (( attrib.stride/4 ) || attrib.attribute.size);
 };
 
-},{"./setVertexAttribArrays":26}],24:[function(require,module,exports){
+},{"./setVertexAttribArrays":37}],35:[function(require,module,exports){
 
 /**
  * Helper class to create a webGL Context
@@ -4826,7 +6089,7 @@ var createContext = function(canvas, options)
 
 module.exports = createContext;
 
-},{}],25:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 var gl = {
     createContext:          require('./createContext'),
     setVertexAttribArrays:  require('./setVertexAttribArrays'),
@@ -4853,7 +6116,7 @@ if (typeof window !== 'undefined')
     window.PIXI.glCore = gl;
 }
 
-},{"./GLBuffer":19,"./GLFramebuffer":20,"./GLShader":21,"./GLTexture":22,"./VertexArrayObject":23,"./createContext":24,"./setVertexAttribArrays":26,"./shader":32}],26:[function(require,module,exports){
+},{"./GLBuffer":30,"./GLFramebuffer":31,"./GLShader":32,"./GLTexture":33,"./VertexArrayObject":34,"./createContext":35,"./setVertexAttribArrays":37,"./shader":43}],37:[function(require,module,exports){
 // var GL_MAP = {};
 
 /**
@@ -4910,7 +6173,7 @@ var setVertexAttribArrays = function (gl, attribs, state)
 
 module.exports = setVertexAttribArrays;
 
-},{}],27:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 
 /**
  * @class
@@ -4992,7 +6255,7 @@ var compileShader = function (gl, type, src)
 
 module.exports = compileProgram;
 
-},{}],28:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI.glCore.shader
@@ -5072,7 +6335,7 @@ var booleanArray = function(size)
 
 module.exports = defaultValue;
 
-},{}],29:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 
 var mapType = require('./mapType');
 var mapSize = require('./mapSize');
@@ -5115,7 +6378,7 @@ var pointer = function(type, normalized, stride, start){
 
 module.exports = extractAttributes;
 
-},{"./mapSize":33,"./mapType":34}],30:[function(require,module,exports){
+},{"./mapSize":44,"./mapType":45}],41:[function(require,module,exports){
 var mapType = require('./mapType');
 var defaultValue = require('./defaultValue');
 
@@ -5152,7 +6415,7 @@ var extractUniforms = function(gl, program)
 
 module.exports = extractUniforms;
 
-},{"./defaultValue":28,"./mapType":34}],31:[function(require,module,exports){
+},{"./defaultValue":39,"./mapType":45}],42:[function(require,module,exports){
 /**
  * Extracts the attributes
  * @class
@@ -5295,7 +6558,7 @@ var GLSL_TO_ARRAY_SETTERS = {
 
 module.exports = generateUniformAccessObject;
 
-},{}],32:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = {
     compileProgram: require('./compileProgram'),
     defaultValue: require('./defaultValue'),
@@ -5306,7 +6569,7 @@ module.exports = {
     mapSize: require('./mapSize'),
     mapType: require('./mapType')
 };
-},{"./compileProgram":27,"./defaultValue":28,"./extractAttributes":29,"./extractUniforms":30,"./generateUniformAccessObject":31,"./mapSize":33,"./mapType":34,"./setPrecision":35}],33:[function(require,module,exports){
+},{"./compileProgram":38,"./defaultValue":39,"./extractAttributes":40,"./extractUniforms":41,"./generateUniformAccessObject":42,"./mapSize":44,"./mapType":45,"./setPrecision":46}],44:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI.glCore.shader
@@ -5344,7 +6607,7 @@ var GLSL_TO_SIZE = {
 
 module.exports = mapSize;
 
-},{}],34:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 
 
 var mapSize = function(gl, type) 
@@ -5392,7 +6655,7 @@ var GL_TO_GLSL_TYPES = {
 
 module.exports = mapSize;
 
-},{}],35:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /**
  * Sets the float precision on the shader. If the precision is already present this function will do nothing
  * @param {string} src       the shader source
@@ -5412,10 +6675,10 @@ var setPrecision = function(src, precision)
 
 module.exports = setPrecision;
 
-},{}],36:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 !function(e){function t(s){if(n[s])return n[s].exports;var i=n[s]={exports:{},id:s,loaded:!1};return e[s].call(i.exports,i,i.exports,t),i.loaded=!0,i.exports}var n={};return t.m=e,t.c=n,t.p="",t(0)}([function(e,t,n){e.exports=n(5)},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}var r=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var o=n(2),a=s(o),u=function(){function e(t,n){i(this,e),this.key=t,this.manager=n,this.isPressed=!1,this.isDown=!1,this.isReleased=!1,this.crtl=!1,this.shift=!1,this.alt=!1}return r(e,[{key:"update",value:function(){this.isDown=this.manager.isDown(this.key),this.isPressed=this.manager.isPressed(this.key),this.isReleased=this.manager.isReleased(this.key),this.crtl=this.manager.isDown(a["default"].CTRL),this.shift=this.manager.isDown(a["default"].SHIFT),this.alt=this.manager.isDown(a["default"].ALT)}},{key:"remove",value:function(){this.manager.removeHotKey(this.key)}}]),e}();t["default"]=u},function(e,t){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var n={BACKSPACE:8,TAB:9,ENTER:13,SHIFT:16,PAUSE:19,CTRL:17,ALT:18,CAPS_LOCK:20,ESCAPE:27,SPACE:32,PAGE_UP:33,PAGE_DOWN:34,END:35,HOME:36,LEFT:37,UP:38,RIGHT:39,DOWN:40,PRINT_SCREEN:44,INSERT:45,DELETE:46,_0:48,_1:49,_2:50,_3:51,_4:52,_5:53,_6:54,_7:55,_8:56,_9:57,A:65,B:66,C:67,D:68,E:69,F:70,G:71,H:72,I:73,J:74,K:75,L:76,M:77,N:78,O:79,P:80,Q:81,R:82,S:83,T:84,U:85,V:86,W:87,X:88,Y:89,Z:90,CMD:91,CMD_RIGHT:93,NUM_0:96,NUM_1:97,NUM_2:98,NUM_3:99,NUM_4:100,NUM_5:101,NUM_6:102,NUM_7:103,NUM_8:104,NUM_9:105,MULTIPLY:106,ADD:107,SUBTRACT:109,DECIMAL_POINT:110,DIVIDE:111,F1:112,F2:113,F3:114,F4:115,F5:116,F6:117,F7:118,F8:119,F9:120,F10:121,F11:122,F12:123,NUM_LOCK:144,SCROLL_LOCK:145,SEMI_COLON:186,EQUAL:187,COMMA:188,DASH:189,PERIOD:190,FORWARD_SLASH:191,OPEN_BRACKET:219,BACK_SLASH:220,CLOSE_BRACKET:221,SINGLE_QUOTE:222};t["default"]=n},function(e,t){e.exports=PIXI},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function r(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t}function o(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}function a(e){return"[object Array]"===Object.prototype.toString.call(e)}var u=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var l=n(3),f=s(l),d=n(1),h=s(d),y=function(e){function t(){i(this,t);var e=r(this,Object.getPrototypeOf(t).call(this));return e.isEnabled=!1,e._pressedKeys=[],e._releasedKeys=[],e._downKeys=[],e._hotKeys=[],e._preventDefaultKeys=[],e}return o(t,e),u(t,[{key:"enable",value:function(){this.isEnabled||(this.isEnabled=!0,this._enableEvents())}},{key:"_enableEvents",value:function(){window.addEventListener("keydown",this._onKeyDown.bind(this),!0),window.addEventListener("keyup",this._onKeyUp.bind(this),!0)}},{key:"disable",value:function(){this.isEnabled&&(this.isEnabled=!1,this._disableEvents())}},{key:"_disableEvents",value:function(){window.removeEventListener("keydown",this._onKeyDown,!0),window.removeEventListener("keyup",this._onKeyUp,!0)}},{key:"setPreventDefault",value:function(e){var t=arguments.length<=1||void 0===arguments[1]?!0:arguments[1];if(a(e))for(var n=0;n<e.length;n++)this._preventDefaultKeys[e[n]]=t;else this._preventDefaultKeys[e]=t}},{key:"_onKeyDown",value:function(e){var t=e.which||e.keyCode;this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)||(this._downKeys.push(t),this._pressedKeys[t]=!0,this.emit("pressed",t))}},{key:"_onKeyUp",value:function(e){var t=e.which||e.keyCode;if(this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)){this._pressedKeys[t]=!1,this._releasedKeys[t]=!0;var n=this._downKeys.indexOf(t);-1!==n&&this._downKeys.splice(n,1),this.emit("released",t)}}},{key:"isDown",value:function(e){return-1!==this._downKeys.indexOf(e)}},{key:"isPressed",value:function(e){return!!this._pressedKeys[e]}},{key:"isReleased",value:function(e){return!!this._releasedKeys[e]}},{key:"update",value:function(){for(var e in this._hotKeys)this._hotKeys[e].update();for(var t=0;t<this._downKeys.length;t++)this.emit("down",this._downKeys[t]);this._pressedKeys.length=0,this._releasedKeys.length=0}},{key:"getHotKey",value:function(e){var t=this._hotKeys[e]||new h["default"](e,this);return this._hotKeys[e]=t,t}},{key:"removeHotKey",value:function(e){this._hotKeys[e]&&delete this._hotKeys[e]}}]),t}(f["default"].utils.EventEmitter);t["default"]=y},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}Object.defineProperty(t,"__esModule",{value:!0});var i=n(3),r=s(i),o=n(4),a=s(o),u=n(1),l=s(u),f=n(2),d=s(f),h={KeyboardManager:a["default"],Key:d["default"],HotKey:l["default"]};if(!r["default"].keyboard){var y=new a["default"];y.enable(),r["default"].keyboard=h,r["default"].keyboardManager=y}t["default"]=h}]);
 
-},{}],37:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 (function (global){
 /*!
  * pixi-particles - v2.1.8
@@ -5428,1948 +6691,11 @@ module.exports = setPrecision;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],38:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = require('./src/viewport')
-},{"./src/viewport":64}],39:[function(require,module,exports){
-const list = require('./src/list')
-
-module.exports = {
-    list,
-    wait: require('./src/wait'),
-    to: require('./src/to'),
-    shake: require('./src/shake'),
-    tint: require('./src/tint'),
-    face: require('./src/face'),
-    angle: require('./src/angle'),
-    target: require('./src/target'),
-    movie: require('./src/movie'),
-    load: require('./src/load'),
-
-    default: new list()
-}
-},{"./src/angle":40,"./src/face":41,"./src/list":42,"./src/load":43,"./src/movie":44,"./src/shake":45,"./src/target":46,"./src/tint":47,"./src/to":48,"./src/wait":49}],40:[function(require,module,exports){
-const wait = require('./wait')
-
-/** animate object's {x, y} using an angle */
-module.exports = class angle extends wait
-{
-    /**
-     * @param {object} object to animate
-     * @param {number} angle in radians
-     * @param {number} speed in pixels/millisecond
-     * @param {number} [duration=0] in milliseconds; if 0, then continues forever
-     * @param {object} [options] @see {@link Wait}
-     */
-    constructor(object, angle, speed, duration, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Angle'
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            this.angle = angle
-            this.speed = speed
-            this.duration = duration || 0
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.angle = this.angle
-        save.speed = this.speed
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.angle = load.angle
-        this.speed = load.speed
-    }
-
-    get angle()
-    {
-        return this._angle
-    }
-    set angle(value)
-    {
-        this._angle = value
-        this.sin = Math.sin(this._angle)
-        this.cos = Math.cos(this._angle)
-    }
-
-    calculate(elapsed)
-    {
-        this.object.x += this.cos * elapsed * this.speed
-        this.object.y += this.sin * elapsed * this.speed
-    }
-
-    reverse()
-    {
-        this.angle += Math.PI
-    }
-}
-},{"./wait":49}],41:[function(require,module,exports){
-const Angle = require('yy-angle')
-const wait = require('./wait')
-
-/** Rotates an object to face the target */
-module.exports = class face extends wait
-{
-    /**
-     * @param {object} object
-     * @param {Point} target
-     * @param {number} speed in radians/millisecond
-     * @param {object} [options] @see {@link Wait}
-     * @param {boolean} [options.keepAlive] don't stop animation when complete
-     */
-    constructor(object, target, speed, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Face'
-        this.target = target
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            this.speed = speed
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.speed = this.speed
-        save.keepAlive = this.options.keepAlive
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.speed = load.speed
-        this.options.keepAlive = load.keepAlive
-    }
-
-    calculate(elapsed)
-    {
-        var angle = Angle.angleTwoPoints(this.object.position, this.target)
-        var difference = Angle.differenceAngles(angle, this.object.rotation)
-        if (difference === 0)
-        {
-            this.emit('done', this.object)
-            if (!this.options.keepAlive)
-            {
-                return true
-            }
-        }
-        else
-        {
-            var sign = Angle.differenceAnglesSign(angle, this.object.rotation)
-            var change = this.speed * elapsed
-            var delta = (change > difference) ? difference : change
-            this.object.rotation += delta * sign
-        }
-    }
-}
-},{"./wait":49,"yy-angle":230}],42:[function(require,module,exports){
-const Loop = require('yy-loop')
-
-const Angle = require('./angle')
-const Face = require('./face')
-const Load = require('./load')
-const Movie = require('./movie')
-const Shake = require('./shake')
-const Target = require('./target')
-const Tint = require('./tint')
-const To = require('./to')
-const Wait = require('./wait')
-
-/** Helper list for multiple animations */
-module.exports = class List extends Loop
-{
-    /**
-     * @param [options]
-     * @param {number} [options.maxFrameTime=1000 / 60] maximum time in milliseconds for a frame
-     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
-     * @event List#done(List) final animation completed in the list
-     * @event List#each(elapsed, List) each update
-     */
-    constructor(options)
-    {
-        options = options || {}
-        super(options)
-        this.empty = true
-    }
-
-    /**
-     * Add animation(s) to animation list
-     * @param {object|object[]...} any animation class
-     */
-    add()
-    {
-        for (let arg of arguments)
-        {
-            if (Array.isArray(arg))
-            {
-                for (let entry of arg)
-                {
-                    this.list.push(entry)
-                }
-            }
-            else
-            {
-                this.list.push(arg)
-            }
-        }
-        this.empty = false
-        return arguments[0]
-    }
-
-    /**
-     * remove animation(s)
-     * @param {object|array} animate - the animation (or array of animations) to remove; can be null
-     * @inherited from yy-loop
-     */
-    // remove(animate)
-
-    /**
-     * remove all animations from list
-     * @inherited from yy-loop
-     */
-    // removeAll()
-
-    /**
-     * update frame; can be called manually or automatically with start()
-     */
-    update()
-    {
-        super.update()
-        if (this.list.length === 0 && !this.empty)
-        {
-            this.emit('done', this)
-            this.empty = true
-        }
-    }
-
-    /**
-     * @type {number} number of animations
-     * @inherited yy-looop
-     */
-    // get count()
-
-    /**
-     * @type {number} number of active animations
-     * @inherited yy-looop
-     */
-    // get countRunning()
-
-    /**
-     * starts an automatic requestAnimationFrame() loop based on yy-loop
-     * alternatively, you can call update() manually
-     * @inherited yy-loop
-     */
-    // start()
-
-    /**
-     * stops the automatic requestAnimationFrame() loop
-     * @inherited yy-loop
-     */
-    // stop()
-
-    /** helper to add to the list a new Ease.to class; see Ease.to class below for parameters */
-    to() { return this.add(new To(...arguments)) }
-
-    /** helper to add to the list a new Ease.angle class; see Ease.to class below for parameters */
-    angle() { return this.add(new Angle(...arguments)) }
-
-    /** helper to add to the list a new Ease.face class; see Ease.to class below for parameters */
-    face() { return this.add(new Face(...arguments)) }
-
-    /** helper to add to the list a new Ease.load class; see Ease.to class below for parameters */
-    load() { return this.add(new Load(...arguments)) }
-
-    /** helper to add to the list a new Ease.movie class; see Ease.to class below for parameters */
-    movie() { return this.add(new Movie(...arguments)) }
-
-    /** helper to add to the list a new Ease.shake class; see Ease.to class below for parameters */
-    shake() { return this.add(new Shake(...arguments)) }
-
-    /** helper to add to the list a new Ease.target class; see Ease.to class below for parameters */
-    target() { return this.add(new Target(...arguments)) }
-
-    /** helper to add to the list a new Ease.angle tint; see Ease.to class below for parameters */
-    tint() { return this.add(new Tint(...arguments)) }
-
-    /** helper to add to the list a new Ease.wait class; see Ease.to class below for parameters */
-    wait() { return this.add(new Wait(...arguments)) }
-
-    /** Inherited functions from yy-loop */
-
-    /**
-     * adds an interval
-     * @param {function} callback
-     * @param {number} time
-     * @param {number} count
-     * @inherited from yy-loop
-     */
-    // interval(callback, time, count)
-
-    /**
-     * adds a timeout
-     * @param {function} callback
-     * @param {number} time
-     * @inherited from yy-loop
-     */
-    // timeout(callback, time)
-}
-},{"./angle":40,"./face":41,"./load":43,"./movie":44,"./shake":45,"./target":46,"./tint":47,"./to":48,"./wait":49,"yy-loop":51}],43:[function(require,module,exports){
-const wait = require('./wait')
-const to = require('./to')
-const tint = require('./tint')
-const shake = require('./shake')
-const angle = require('./angle')
-const face = require('./face')
-const target = require('./target')
-const movie = require('./movie')
-
-/**
- * restart an animation = requires a saved state
- * @param {object} object(s) to animate
- */
-module.exports = function load(object, load)
-{
-    if (!load)
-    {
-        return null
-    }
-    const options = { load }
-    switch (load.type)
-    {
-        case 'Wait':
-            return new wait(object, options)
-        case 'To':
-            return new to(object, null, null, options)
-        case 'Tint':
-            return new tint(object, null, null, options)
-        case 'Shake':
-            return new shake(object, null, null, options)
-        case 'Angle':
-            return new angle(object, null, null, null, options)
-        case 'Face':
-            return new face(object[0], object[1], null, options)
-        case 'Target':
-            return new target(object[0], object[1], null, options)
-        case 'Movie':
-            return new movie(object, object[1], null, options)
-    }
-}
-},{"./angle":40,"./face":41,"./movie":44,"./shake":45,"./target":46,"./tint":47,"./to":48,"./wait":49}],44:[function(require,module,exports){
-const wait = require('./wait')
-
-/**
- * animate a movie of textures
- */
-module.exports = class movie extends wait
-{
-    /**
-     * @param {object} object to animate
-     * @param {PIXI.Texture[]} textures
-     * @param {number} [duration=0] time to run (use 0 for infinite duration--should only be used with customized easing functions)
-     * @param {object} [options]
-     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
-     * @param {boolean} [options.pause] start the animation paused
-     * @param {(boolean|number)} [options.repeat] true: repeat animation forever n: repeat animation n times
-     * @param {(boolean|number)} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
-     * @param {(boolean|number)} [options.continue] true: continue animation with new starting values n: continue animation n times
-     * @param {Function} [options.load] loads an animation using a .save() object note the * parameters below cannot be loaded and must be re-set
-     * @param {Function} [options.ease] function from easing.js (see http://easings.net for examples)
-     * @emits {done} animation expires
-     * @emits {cancel} animation is cancelled
-     * @emits {wait} each update during a wait
-     * @emits {first} first update when animation starts
-     * @emits {each} each update while animation is running
-     * @emits {loop} when animation is repeated
-     * @emits {reverse} when animation is reversed
-     */
-    constructor(object, textures, duration, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Movie'
-        if (Array.isArray(object))
-        {
-            this.list = object
-            this.object = this.list[0]
-        }
-        this.ease = options.ease || this.noEase
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            this.textures = textures
-            this.duration = duration
-            this.current = 0
-            this.length = textures.length
-            this.interval = duration / this.length
-            this.isReverse = false
-            this.restart()
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.goto = this.goto
-        save.current = this.current
-        save.length = this.length
-        save.interval = this.interval
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.goto = load.goto
-        this.current = load.current
-        this.interval = load.current
-    }
-
-    restart()
-    {
-        this.current = 0
-        this.time = 0
-        this.isReverse = false
-    }
-
-    reverse()
-    {
-        this.isReverse = !this.isReverse
-    }
-
-    calculate()
-    {
-        let index = Math.round(this.ease(this.time, 0, this.length - 1, this.duration))
-        if (this.isReverse)
-        {
-            index = this.length - 1 - index
-        }
-        if (this.list)
-        {
-            for (let i = 0; i < this.list.length; i++)
-            {
-                this.list[i].texture = this.textures[index]
-            }
-        }
-        else
-        {
-            this.object.texture = this.textures[index]
-        }
-    }
-}
-},{"./wait":49}],45:[function(require,module,exports){
-const wait = require('./wait')
-
-/**
- * shakes an object or list of objects
- */
-module.exports = class shake extends wait
-{
-    /**
-     * @param {object|array} object or list of objects to shake
-     * @param {number} amount to shake
-     * @param {number} duration (in milliseconds) to shake
-     * @param {object} options (see Animate.wait)
-     */
-    constructor(object, amount, duration, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Shake'
-        if (Array.isArray(object))
-        {
-            this.array = true
-            this.list = object
-        }
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            if (this.list)
-            {
-                this.start = []
-                for (let i = 0; i < object.length; i++)
-                {
-                    const target = object[i]
-                    this.start[i] = {x: target.x, y: target.y}
-                }
-            }
-            else
-            {
-                this.start = {x: object.x, y: object.y}
-            }
-            this.amount = amount
-            this.duration = duration
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.start = this.start
-        save.amount = this.amount
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.start = load.start
-        this.amount = load.amount
-    }
-
-    calculate(/*elapsed*/)
-    {
-        const object = this.object
-        const start = this.start
-        const amount = this.amount
-        if (this.array)
-        {
-            const list = this.list
-            for (let i = 0; i < list.length; i++)
-            {
-                const object = list[i]
-                const actual = start[i]
-                object.x = actual.x + Math.floor(Math.random() * amount * 2) - amount
-                object.y = actual.y + Math.floor(Math.random() * amount * 2) - amount
-            }
-        }
-        object.x = start.x + Math.floor(Math.random() * amount * 2) - amount
-        object.y = start.y + Math.floor(Math.random() * amount * 2) - amount
-    }
-
-    done()
-    {
-        const object = this.object
-        const start = this.start
-        if (this.array)
-        {
-            const list = this.list
-            for (let i = 0; i < list.length; i++)
-            {
-                const object = list[i]
-                const actual = start[i]
-                object.x = actual.x
-                object.y = actual.y
-            }
-        }
-        else
-        {
-            object.x = start.x
-            object.y = start.y
-        }
-    }
-}
-},{"./wait":49}],46:[function(require,module,exports){
-const wait = require('./wait')
-
-/** move an object to a target's location */
-module.exports = class target extends wait
-{
-    /**
-     * move to a target
-     * @param {object} object - object to animate
-     * @param {object} target - object needs to contain {x: x, y: y}
-     * @param {number} speed - number of pixels to move per millisecond
-     * @param {object} [options] @see {@link Wait}
-     * @param {boolean} [options.keepAlive] don't cancel the animation when target is reached
-     */
-    constructor(object, target, speed, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Target'
-        this.target = target
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            this.speed = speed
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.speed = this.speed
-        save.keepAlive = this.options.keepAlive
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.speed = load.speed
-        this.options.keepAlive = load.keepAlive
-    }
-
-    calculate(elapsed)
-    {
-        const deltaX = this.target.x - this.object.x
-        const deltaY = this.target.y - this.object.y
-        if (deltaX === 0 && deltaY === 0)
-        {
-            this.emit('done', this.object)
-            if (!this.options.keepAlive)
-            {
-                return true
-            }
-        }
-        else
-        {
-            const angle = Math.atan2(deltaY, deltaX)
-            this.object.x += Math.cos(angle) * elapsed * this.speed
-            this.object.y += Math.sin(angle) * elapsed * this.speed
-            if ((deltaX >= 0) !== ((this.target.x - this.object.x) >= 0))
-            {
-                this.object.x = this.target.x
-            }
-            if ((deltaY >= 0) !== ((this.target.y - this.object.y) >= 0))
-            {
-                this.object.y = this.target.y
-            }
-        }
-    }
-}
-},{"./wait":49}],47:[function(require,module,exports){
-const Color = require('yy-color')
-const wait = require('./wait')
-
-/** changes the tint of an object */
-module.exports = class tint extends wait
-{
-    /**
-     * @param {PIXI.DisplayObject|PIXI.DisplayObject[]} object
-     * @param {number|number[]} tint
-     * @param {number} [duration] in milliseconds
-     * @param {object} [options] @see {@link Wait}
-     */
-    constructor(object, tint, duration, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'Tint'
-        if (Array.isArray(object))
-        {
-            this.list = object
-            this.object = this.list[0]
-        }
-        this.duration = duration
-        this.ease = this.options.ease || this.noEase
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else if (Array.isArray(tint))
-        {
-            this.tints = [this.object.tint, ...tint]
-        }
-        else
-        {
-            this.start = this.object.tint
-            this.to = tint
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.start = this.start
-        save.to = this.to
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.start = load.start
-        this.to = load.to
-    }
-
-    calculate()
-    {
-        const percent = this.ease(this.time, 0, 1, this.duration)
-        if (this.tints)
-        {
-            const each = 1 / (this.tints.length - 1)
-            let per = each
-            for (let i = 1; i < this.tints.length; i++)
-            {
-                if (percent <= per)
-                {
-                    const color = Color.blend(1 - (per - percent) / each, this.tints[i - 1], this.tints[i])
-                    if (this.list)
-                    {
-                        for (let object of this.list)
-                        {
-                            object.tint = color
-                        }
-                    }
-                    else
-                    {
-                        this.object.tint = color
-                    }
-                    break;
-                }
-                per += each
-            }
-        }
-        else
-        {
-            const color = Color.blend(percent, this.start, this.to)
-            if (this.list)
-            {
-                for (let object of this.list)
-                {
-                    object.tint = color
-                }
-            }
-            else
-            {
-                this.object.tint = color
-            }
-        }
-    }
-
-    reverse()
-    {
-        if (this.tints)
-        {
-            const tints = []
-            for (let i = this.tints.length - 1; i >= 0; i--)
-            {
-                tints.push(this.tints[i])
-            }
-            this.tints = tints
-        }
-        else
-        {
-            const swap = this.to
-            this.to = this.start
-            this.start = swap
-        }
-    }
-}
-},{"./wait":49,"yy-color":231}],48:[function(require,module,exports){
-const wait = require('./wait')
-
-/** animate any numeric parameter of an object or array of objects */
-module.exports = class to extends wait
-{
-    /**
-     * @param {object} object to animate
-     * @param {object} goto - parameters to animate, e.g.: {alpha: 5, scale: {3, 5}, scale: 5, rotation: Math.PI}
-     * @param {number} duration - time to run
-     * @param {object} [options]
-     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
-     * @param {boolean} [options.pause] start the animation paused
-     * @param {boolean|number} [options.repeat] true: repeat animation forever n: repeat animation n times
-     * @param {boolean|number} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
-     * @param {boolean|number} [options.continue] true: continue animation with new starting values n: continue animation n times
-     * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
-     * @param {string|Function} [options.ease] name or function from easing.js (see http://easings.net for examples)
-     * @emits to:done animation expires
-     * @emits to:cancel animation is cancelled
-     * @emits to:wait each update during a wait
-     * @emits to:first first update when animation starts
-     * @emits to:each each update while animation is running
-     * @emits to:loop when animation is repeated
-     * @emits to:reverse when animation is reversed
-     */
-    constructor(object, goto, duration, options)
-    {
-        options = options || {}
-        super(object, options)
-        this.type = 'To'
-        if (Array.isArray(object))
-        {
-            this.list = object
-            this.object = this.list[0]
-        }
-        this.ease = options.ease || this.noEase
-        if (options.load)
-        {
-            this.load(options.load)
-        }
-        else
-        {
-            this.goto = goto
-            this.fixScale()
-            this.duration = duration
-            this.restart()
-        }
-    }
-
-    /**
-     * converts scale from { scale: n } to { scale: { x: n, y: n }}
-     * @private
-     */
-    fixScale()
-    {
-        if (typeof this.goto['scale'] !== 'undefined' && !Number.isNaN(this.goto['scale']))
-        {
-            this.goto['scale'] = {x: this.goto['scale'], y: this.goto['scale']}
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = super.save()
-        save.goto = this.goto
-        save.start = this.start
-        save.delta = this.delta
-        save.keys = this.keys
-        return save
-    }
-
-    load(load)
-    {
-        super.load(load)
-        this.goto = load.goto
-        this.start = load.start
-        this.delta = load.delta
-        this.keys = load.keys
-    }
-
-    restart()
-    {
-        let i = 0
-        const start = this.start = []
-        const delta = this.delta = []
-        const keys = this.keys = []
-        const goto = this.goto
-        const object = this.object
-
-        // loops through all keys in goto object
-        for (let key in goto)
-        {
-
-            // handles keys with one additional level e.g.: goto = {scale: {x: 5, y: 3}}
-            if (isNaN(goto[key]))
-            {
-                keys[i] = {key: key, children: []}
-                start[i] = []
-                delta[i] = []
-                let j = 0
-                for (let key2 in goto[key])
-                {
-                    keys[i].children[j] = key2
-                    start[i][j] = parseFloat(object[key][key2])
-                    start[i][j] = this._correctDOM(key2, start[i][j])
-                    start[i][j] = isNaN(this.start[i][j]) ? 0 : start[i][j]
-                    delta[i][j] = goto[key][key2] - start[i][j]
-                    j++
-                }
-            }
-            else
-            {
-                start[i] = parseFloat(object[key])
-                start[i] = this._correctDOM(key, start[i])
-                start[i] = isNaN(this.start[i]) ? 0 : start[i]
-                delta[i] = goto[key] - start[i]
-                keys[i] = key
-            }
-            i++
-        }
-        this.time = 0
-    }
-
-    reverse()
-    {
-        const object = this.object
-        const keys = this.keys
-        const goto = this.goto
-        const delta = this.delta
-        const start = this.start
-
-        for (let i = 0; i < keys.length; i++)
-        {
-            const key = keys[i]
-            if (isNaN(goto[key]))
-            {
-                for (let j = 0; j < key.children.length; j++)
-                {
-                    delta[i][j] = -delta[i][j]
-                    start[i][j] = parseFloat(object[key.key][key.children[j]])
-                    start[i][j] = isNaN(start[i][j]) ? 0 : start[i][j]
-                }
-            }
-            else
-            {
-                delta[i] = -delta[i]
-                start[i] = parseFloat(object[key])
-                start[i] = isNaN(start[i]) ? 0 : start[i]
-            }
-        }
-    }
-
-    continue()
-    {
-        const object = this.object
-        const keys = this.keys
-        const goto = this.goto
-        const start = this.start
-
-        for (let i = 0; i < keys.length; i++)
-        {
-            const key = keys[i]
-            if (isNaN(goto[key]))
-            {
-                for (let j = 0; j < key.children.length; j++)
-                {
-                    this.start[i][j] = parseFloat(object[key.key][key.children[j]])
-                    this.start[i][j] = isNaN(start[i][j]) ? 0 : start[i][j]
-                }
-            }
-            else
-            {
-                start[i] = parseFloat(object[key])
-                start[i] = isNaN(start[i]) ? 0 : start[i]
-            }
-        }
-    }
-
-    calculate(/*elapsed*/)
-    {
-        const object = this.object
-        const list = this.list
-        const keys = this.keys
-        const goto = this.goto
-        const time = this.time
-        const start = this.start
-        const delta = this.delta
-        const duration = this.duration
-        const ease = this.ease
-        for (let i = 0; i < this.keys.length; i++)
-        {
-            const key = keys[i]
-            if (isNaN(goto[key]))
-            {
-                const key1 = key.key
-                for (let j = 0; j < key.children.length; j++)
-                {
-                    const key2 = key.children[j]
-                    const others = object[key1][key2] = (time >= duration) ? start[i][j] + delta[i][j] : ease(time, start[i][j], delta[i][j], duration)
-                    if (list)
-                    {
-                        for (let k = 1; k < list.length; k++)
-                        {
-                            list[k][key1][key2] = others
-                        }
-                    }
-                }
-            }
-            else
-            {
-                const key = keys[i]
-                const others = object[key] = (time >= duration) ? start[i] + delta[i] : ease(time, start[i], delta[i], duration)
-                if (list)
-                {
-                    for (let j = 1; j < this.list.length; j++)
-                    {
-                        list[j][key] = others
-                    }
-                }
-            }
-        }
-    }
-}
-},{"./wait":49}],49:[function(require,module,exports){
-const Easing = require('penner')
-const EventEmitter = require('eventemitter3')
-
-module.exports = class wait extends EventEmitter
-{
-    /**
-     * @param {object|object[]} object or list of objects to animate
-     * @param {object} [options]
-     * @param {number} [options.wait=0] n milliseconds before starting animation (can also be used to pause animation for a length of time)
-     * @param {boolean} [options.pause] start the animation paused
-     * @param {(boolean|number)} [options.repeat] true: repeat animation forever n: repeat animation n times
-     * @param {(boolean|number)} [options.reverse] true: reverse animation (if combined with repeat, then pulse) n: reverse animation n times
-     * @param {(boolean|number)} [options.continue] true: continue animation with new starting values n: continue animation n times
-     * @param {number} [options.id] user-generated id (e.g., I use it to properly load animations when an object has multiple animations running)
-     * @param {boolean} [options.orphan] delete animation if .parent of object (or first object in list) is null
-     * @param {Function} [options.load] loads an animation using an .save() object note the * parameters below cannot be loaded and must be re-set
-     * @param {Function|string} [options.ease] function (or penner function name) from easing.js (see http://easings.net for examples)*
-     * @emits {done} animation expires
-     * @emits {cancel} animation is cancelled
-     * @emits {wait} each update during a wait
-     * @emits {first} first update when animation starts
-     * @emits {each} each update while animation is running
-     * @emits {loop} when animation is repeated
-     * @emits {reverse} when animation is reversed
-     */
-    constructor(object, options)
-    {
-        super()
-        this.object = object
-        this.options = options || {}
-        this.type = 'Wait'
-        if (this.options.load)
-        {
-            this.load(this.options.load)
-        }
-        else
-        {
-            this.time = 0
-        }
-        if (this.options.ease && typeof this.options.ease !== 'function')
-        {
-            this.options.ease = Easing[this.options.ease]
-        }
-        if (!this.options.ease)
-        {
-            this.options.ease = Easing['linear']
-        }
-    }
-
-    save()
-    {
-        if (this.options.cancel)
-        {
-            return null
-        }
-        const save = {type: this.type, time: this.time, duration: this.duration}
-        const options = this.options
-        if (options.wait)
-        {
-            save.wait = options.wait
-        }
-        if (typeof options.id !== 'undefined')
-        {
-            save.id = options.id
-        }
-        if (options.pause)
-        {
-            save.pause = options.pause
-        }
-        if (options.repeat)
-        {
-            save.repeat = options.repeat
-        }
-        if (options.reverse)
-        {
-            save.reverse = options.reverse
-        }
-        if (options.continue)
-        {
-            save.continue = options.continue
-        }
-        if (options.cancel)
-        {
-            save.cancel = options.cancel
-        }
-        return save
-    }
-
-    load(load)
-    {
-        this.options.wait = load.wait
-        this.options.pause = load.pause
-        this.options.repeat = load.repeat
-        this.options.reverse = load.reverse
-        this.options.continue = load.continue
-        this.options.cancel = load.cancel
-        this.options.id = load.id
-        this.time = load.time
-        this.duration = load.duration
-    }
-
-    /**
-     * @type {boolean} pause this entry
-     */
-    set pause(value)
-    {
-        this.options.pause = value
-    }
-    get pause()
-    {
-        return this.options.pause
-    }
-
-    cancel()
-    {
-        this.options.cancel = true
-    }
-
-    done()
-    {
-    }
-
-    end(leftOver)
-    {
-        if (this.options.reverse)
-        {
-            this.reverse()
-            this.time = leftOver
-            if (!this.options.repeat)
-            {
-                if (this.options.reverse === true)
-                {
-                    this.options.reverse = false
-                }
-                else
-                {
-                    this.options.reverse--
-                }
-            }
-            else
-            {
-                if (this.options.repeat !== true)
-                {
-                    this.options.repeat--
-                }
-            }
-            this.emit('loop', this.list || this.object)
-        }
-        else if (this.options.repeat)
-        {
-            this.time = leftOver
-            if (this.options.repeat !== true)
-            {
-                this.options.repeat--
-            }
-            this.emit('loop', this.list || this.object)
-        }
-        else if (this.options.continue)
-        {
-            this.continue()
-            this.time = leftOver
-            if (this.options.continue !== true)
-            {
-                this.options.continue--
-            }
-            this.emit('loop', this.list || this.object)
-        }
-        else
-        {
-            this.done()
-            this.emit('done', this.list || this.object, leftOver)
-            this.list = this.object = null
-            return true
-        }
-    }
-
-    update(elapsed)
-    {
-        if (!this.options)
-        {
-            return
-        }
-        if (this.options.cancel)
-        {
-            this.emit('cancel', this.list || this.object)
-            return true
-        }
-        if (this.options.orphan)
-        {
-            if (this.list)
-            {
-                if (!this.list[0].parent)
-                {
-                    return true
-                }
-            }
-            else if (!this.object.parent)
-            {
-                return true
-            }
-        }
-        if (this.options.restart)
-        {
-            this.restart()
-            this.options.pause = false
-        }
-        if (this.options.original)
-        {
-            this.time = 0
-            this.options.pause = false
-        }
-        if (this.options.pause)
-        {
-            return
-        }
-        if (this.options.wait)
-        {
-            this.options.wait -= elapsed
-            if (this.options.wait <= 0)
-            {
-                elapsed = -this.options.wait
-                this.options.wait = false
-            }
-            else
-            {
-                this.emit('wait', elapsed, this.list || this.object)
-                return
-            }
-        }
-        if (!this.first)
-        {
-            this.first = true
-            this.emit('first', this.list || this.object)
-        }
-        this.time += elapsed
-        let leftOver = 0
-        if (this.duration !== 0 && this.time > this.duration)
-        {
-            leftOver = this.time - this.duration
-            this.time = this.duration
-        }
-        const allDone = this.calculate(elapsed)
-        this.emit('each', elapsed, this.list || this.object, this)
-        if (this.type === 'Wait' || (this.duration !== 0 && this.time === this.duration))
-        {
-            return this.end(leftOver)
-        }
-        if (allDone)
-        {
-            return true
-        }
-    }
-
-    // correct certain DOM values
-    _correctDOM(key, value)
-    {
-        switch (key)
-        {
-            case 'opacity':
-                return (isNaN(value)) ? 1 : value
-        }
-        return value
-    }
-
-    calculate() {}
-}
-},{"eventemitter3":12,"penner":18}],50:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
-
-const EventEmitter = require('eventemitter3')
-
-module.exports = class Input extends EventEmitter
-{
-    /**
-     * basic input support for touch, mouse, and keyboard
-     *
-     * @param {object} [options]
-     * @param {HTMLElement} [options.div=document] object to attach listener to
-     * @param {boolean} [options.noPointers] turns off mouse/touch/pen handlers
-     * @param {boolean} [options.keys] turn on key listener
-     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
-     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
-     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
-     *
-     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
-     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
-     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
-     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
-     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
-     *
-     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
-     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
-     */
-    constructor(options)
-    {
-        super()
-        options = options || {}
-        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
-        this.chromeDebug = options.chromeDebug
-        this.preventDefault = options.preventDefault
-
-        this.pointers = []
-        this.keys = {}
-        this.input = []
-
-        this.div = options.div || document
-        this.options = options
-        this.callbacks = [
-            this.mouseDown.bind(this),
-            this.mouseMove.bind(this),
-            this.mouseUp.bind(this), // 2
-            this.touchStart.bind(this),
-            this.touchMove.bind(this),
-            this.touchEnd.bind(this),
-            this.keydown.bind(this), // 6
-            this.keyup.bind(this),
-            this.wheel.bind(this) // 8
-        ]
-        if (!options.noPointers)
-        {
-            this.addPointers()
-        }
-        if (options.keys)
-        {
-            this.addKeyboard()
-        }
-    }
-
-    /**
-     * remove all listeners
-     */
-    destroy()
-    {
-        this.removePointers()
-        this.removeKeyboard()
-    }
-
-    /**
-     * turns on pointer listeners (on by default); can be used after removePointers()
-     */
-    addPointers()
-    {
-        if (!this.listeningPointer)
-        {
-            const div = this.div
-            div.addEventListener('mousedown', this.callbacks[0])
-            div.addEventListener('mousemove', this.callbacks[1])
-            div.addEventListener('mouseup', this.callbacks[2])
-            div.addEventListener('mouseout', this.callbacks[2])
-            div.addEventListener('wheel', this.callbacks[8])
-
-            div.addEventListener('touchstart', this.callbacks[3])
-            div.addEventListener('touchmove', this.callbacks[4])
-            div.addEventListener('touchend', this.callbacks[5])
-            div.addEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = true
-        }
-    }
-
-    /**
-     * remove pointers listener
-     */
-    removePointers()
-    {
-        if (this.listeningPointer)
-        {
-            const div = this.div
-            div.removeEventListener('mousedown', this.callbacks[0])
-            div.removeEventListener('mousemove', this.callbacks[1])
-            div.removeEventListener('mouseup', this.callbacks[2])
-            div.removeEventListener('mouseout', this.callbacks[2])
-            div.removeEventListener('wheel', this.callbacks[8])
-
-            div.removeEventListener('touchstart', this.callbacks[3])
-            div.removeEventListener('touchmove', this.callbacks[4])
-            div.removeEventListener('touchend', this.callbacks[5])
-            div.removeEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = false
-        }
-    }
-
-    /**
-     * turns on keyboard listener (off by default); can be used after removeKeyboard()
-     */
-    addKeyboard()
-    {
-        if (!this.listeningKeyboard)
-        {
-            document.addEventListener('keydown', this.callbacks[6])
-            document.addEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = true
-        }
-    }
-
-    /**
-     * removes keyboard listener
-     */
-    removeKeyboard()
-    {
-        if (this.listeningKeyboard)
-        {
-            document.removeEventListener('keydown', this.callbacks[6])
-            document.removeEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = false
-        }
-    }
-
-    /**
-     * helper function to find touch from list based on id
-     * @private
-     * @param  {number} id for saved touch
-     * @return {object}
-     */
-    findTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                return this.pointers[i]
-            }
-        }
-        return null
-    }
-
-    /**
-     * helper function to remove touch from touch list
-     * @private
-     * @param  {object} touch object
-     */
-    removeTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                this.pointers.splice(i, 1)
-                return
-            }
-        }
-    }
-
-    /**
-     * Handle touch start
-     * @private
-     * @param  {object} e touch event
-     */
-    touchStart(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const touches = e.changedTouches
-        for (let i = 0; i < touches.length; i++)
-        {
-            const touch = touches[i]
-            const entry = {
-                identifier: touch.identifier,
-                x: touch.clientX,
-                y: touch.clientY
-            }
-            this.pointers.push(entry)
-            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch move
-     * @private
-     * @param  {object} e touch event
-     */
-    touchMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch end
-     * @private
-     * @param  {object} e touch event
-     */
-    touchEnd(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            const previous = this.findTouch(touch.identifier)
-            if (previous !== null)
-            {
-                this.removeTouch(touch.identifier)
-                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
-            }
-        }
-    }
-
-    /**
-     * Handle mouse down
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseDown(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        while (this.pointers.length)
-        {
-            this.pointers.pop()
-        }
-        this.pointers.push({id: 'mouse'})
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleDown(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse move
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleMove(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse up
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseUp(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.pointers.pop()
-        this.handleUp(x, y, e, 'mouse')
-    }
-
-    handleDown(x, y, e, id)
-    {
-        this.emit('down', x, y, { event: e, input: this, id })
-        if (!this.threshold || this.pointers > 1)
-        {
-            this.start = null
-        }
-        else
-        {
-            this.start = { x, y }
-        }
-    }
-
-    handleUp(x, y, e, id)
-    {
-        if (this.start)
-        {
-            this.emit('click', x, y, { event: e, input: this, id })
-        }
-        this.emit('up', x, y, { event: e, input: this, id })
-    }
-
-    handleMove(x, y, e, id)
-    {
-        if (this.start)
-        {
-            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
-            {
-                this.start = null
-            }
-        }
-        this.emit('move', x, y, { event: e, input: this, id })
-    }
-
-    wheel(e)
-    {
-        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
-    }
-
-    /**
-     * Sets event listener for keyboard
-     * @private
-     */
-    keysListener()
-    {
-    }
-
-    /**
-     * @private
-     * @param  {object} e
-     */
-    keydown(e)
-    {
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        if (this.chromeDebug)
-        {
-            // allow chrome to open developer console
-            if (this.keys.meta && code === 73)
-            {
-                return
-            }
-
-            // reload page with meta + r
-            if (code === 82 && this.keys.meta)
-            {
-                window.location.reload()
-                return
-            }
-        }
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.emit('keydown', code, this.keys, { event: e, input: this })
-    }
-
-    /**
-     * Handle key up
-     * @private
-     * @param  {object}
-     */
-    keyup(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        this.emit('keyup', code, this.keys, { event: e, input: this })
-    }
-}
-},{"eventemitter3":12}],51:[function(require,module,exports){
-module.exports = require('./src/loop')
-},{"./src/loop":53}],52:[function(require,module,exports){
-const Events = require('eventemitter3')
-
-/** Entry class for Loop */
-class Entry extends Events
-{
-    /**
-     * create an entry in the update loop
-     * used by Loop
-     * @param {function} callback
-     * @param {number} [time=0] in milliseconds to call this update
-     * @param {number} [count] number of times to run this update (undefined=infinite)
-     */
-    constructor(callback, time, count)
-    {
-        super()
-        this.callback = callback
-        this.time = time
-        this.current = 0
-        this.count = count
-    }
-
-    /**
-     * run the callback if available
-     * @private
-     * @param {number} elapsed
-     */
-    _update(elapsed)
-    {
-        let result
-        if (this.callback)
-        {
-            result = this.callback(elapsed, this)
-        }
-        this.emit('each', elapsed, this)
-        if (result || (!isNaN(this.count) && !--this.count))
-        {
-            this.emit('done', this)
-            return true
-        }
-    }
-
-    /**
-     * update checks time and runs the callback
-     * @param {number} elapsed
-     * @return {boolean} whether entry is complete and may be removed from list
-     */
-    update(elapsed)
-    {
-        if (!this._pause)
-        {
-            if (this.time)
-            {
-                this.current += elapsed
-                if (this.current >= this.time)
-                {
-                    this.current -= this.time
-                    return this._update(elapsed)
-                }
-            }
-            else
-            {
-                return this._update(elapsed)
-            }
-        }
-    }
-
-    /**
-     * @type {boolean} pause this entry
-     */
-    set pause(value)
-    {
-        this._pause = value
-    }
-    get pause()
-    {
-        return this._pause
-    }
-}
-
-module.exports = Entry
-},{"eventemitter3":12}],53:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
-
-const Events = require('eventemitter3')
-
-class Loop extends Events
-{
-    /**
-     * basic loop support
-     * @param {object} [options]
-     * @param {number} [options.maxFrameTime=1000/60] maximum time in milliseconds for a frame
-     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
-     *
-     * @event each(elapsed, Loop, elapsedInLoop)
-     * @event start(Loop)
-     * @event stop(Loop)
-     */
-    constructor(options)
-    {
-        super()
-        options = options || {}
-        this.maxFrameTime = options.maxFrameTime || 1000 / 60
-        if (options.pauseOnBlur)
-        {
-            window.addEventListener('blur', this.stopBlur.bind(this))
-            window.addEventListener('focus', this.startBlur.bind(this))
-        }
-        this.list = []
-    }
-
-    /**
-     * start requestAnimationFrame() loop
-     * @return {Loop} this
-     */
-    start()
-    {
-        if (!this.running)
-        {
-            this.running = true
-            if (!this.waiting)
-            {
-                this.loop()
-            }
-            this.emit('start', this)
-        }
-        return this
-    }
-
-    /**
-     * handler for focus event
-     * @private
-     */
-    startBlur()
-    {
-        if (this.blurred)
-        {
-            this.start()
-            this.blurred = false
-        }
-    }
-
-    /**
-     * handler for blur event
-     * @private
-     */
-    stopBlur()
-    {
-        if (this.running)
-        {
-            this.stop()
-            this.blurred = true
-        }
-    }
-
-    /**
-     * stop loop
-     * @return {Loop} this
-     */
-    stop()
-    {
-        this.running = false
-        this.blurred = false
-        this.emit('stop', this)
-        return this
-    }
-
-    /**
-     * loop through updates; can be called manually each frame, or called automatically as part of start()
-     */
-    update()
-    {
-        const now = performance.now()
-        let elapsed = now - this.last ? this.last : 0
-        elapsed = elapsed > this.maxFrameTime ? this.maxFrameTime : elapsed
-        for (let entry of this.list)
-        {
-            if (entry.update(elapsed))
-            {
-                this.remove(entry)
-            }
-        }
-        this.emit('each', elapsed, this, now - performance.now())
-        this.last = now
-    }
-
-    /**
-     * internal loop through animations
-     * @private
-     */
-    loop()
-    {
-        if (this.running)
-        {
-            this.waiting = false
-            this.update()
-            requestAnimationFrame(this.loop.bind(this))
-            this.waiting = true
-        }
-        else
-        {
-            this.waiting = false
-        }
-    }
-
-    /**
-     * adds a callback to the loop
-     * @param {function} callback
-     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
-     * @param {number} [count=0] number of times to run this update (0=infinite)
-     * @return {object} entry - used to remove or change the parameters of the update
-     */
-    interval(callback, time, count)
-    {
-        const entry = new Entry(callback, time, count)
-        this.list.push(entry)
-        return entry
-    }
-
-    /**
-     * adds a one-time callback to the loop
-     * @param {function} callback
-     * @param {number} time in milliseconds to call this update
-     * @return {object} entry - used to remove or change the parameters of the update
-     */
-    timeout(callback, time)
-    {
-        return this.interval(callback, time, 1)
-    }
-
-    /**
-     * remove a callback from the loop
-     * @param {object} entry - returned by add()
-     */
-    remove(entry)
-    {
-        const index = this.list.indexOf(entry)
-        if (index !== -1)
-        {
-            this.list.splice(index, 1)
-        }
-    }
-
-    /**
-     * removes all callbacks from the loop
-     */
-    removeAll()
-    {
-        this.list = []
-    }
-
-    /**
-     * @type {number} count of all animations
-     */
-    get count()
-    {
-        return this.list.length
-    }
-
-    /**
-     * @type {number} count of running animations
-     */
-    get countRunning()
-    {
-        let count = 0
-        for (let entry of this.list)
-        {
-            if (!entry.pause)
-            {
-                count++
-            }
-        }
-        return count
-    }
-}
-
-const Entry = require('./entry')
-
-Loop.entry = Entry
-module.exports = Loop
-},{"./entry":52,"eventemitter3":12}],54:[function(require,module,exports){
+},{"./src/viewport":60}],50:[function(require,module,exports){
 const Ease = require('pixi-ease')
+const exists = require('exists')
 
 const Plugin = require('./plugin')
 
@@ -7381,6 +6707,7 @@ module.exports = class Bounce extends Plugin
      * @param {number} [options.friction=0.5] friction to apply to decelerate if active
      * @param {number} [options.time=150] time in ms to finish bounce
      * @param {string|function} [ease='easeInOutSine'] ease function or name (see http://easings.net/ for supported names)
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
      *
      * @event bounce-start-x(Viewport) emitted when a bounce on the x-axis starts
      * @event bounce.end-x(Viewport) emitted when a bounce on the x-axis ends
@@ -7394,6 +6721,22 @@ module.exports = class Bounce extends Plugin
         this.time = options.time || 150
         this.ease = options.ease || 'easeInOutSine'
         this.friction = options.friction || 0.5
+        this.parseUnderflow(options.underflow || 'center')
+    }
+
+    parseUnderflow(clamp)
+    {
+        clamp = clamp.toLowerCase()
+        if (clamp === 'center')
+        {
+            this.underflowX = 0
+            this.underflowY = 0
+        }
+        else
+        {
+            this.underflowX = (clamp.indexOf('left') !== -1) ? -1 : (clamp.indexOf('right') !== -1) ? 1 : 0
+            this.underflowY = (clamp.indexOf('top') !== -1) ? -1 : (clamp.indexOf('bottom') !== -1) ? 1 : 0
+        }
     }
 
     down()
@@ -7464,28 +6807,70 @@ module.exports = class Bounce extends Plugin
             const point = oob.cornerPoint
             if (!this.toX && !decelerate.x)
             {
-                if (oob.left)
+                let x
+                if (this.parent.screenWorldWidth < this.parent.screenWidth)
                 {
-                    this.toX = new Ease.to(this.parent.container, { x: 0 }, this.time, { ease: this.ease })
-                    this.parent.emit('bounce-start-x', this.parent)
+                    switch (this.underflowX)
+                    {
+                        case -1:
+                            x = 0
+                            break
+                        case 1:
+                            x = (this.parent.screenWidth - this.parent.screenWorldWidth)
+                            break
+                        default:
+                            x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2
+                    }
                 }
-                else if (oob.right)
+                else
                 {
-                    this.toX = new Ease.to(this.parent.container, { x: -point.x }, this.time, { ease: this.ease })
+                    if (oob.left)
+                    {
+                        x = 0
+                    }
+                    else if (oob.right)
+                    {
+                        x = -point.x
+                    }
+                }
+                if (exists(x) && this.parent.container.x !== x)
+                {
+                    this.toX = new Ease.to(this.parent.container, { x }, this.time, { ease: this.ease })
                     this.parent.emit('bounce-start-x', this.parent)
                 }
             }
             if (!this.toY && !decelerate.y)
             {
-                if (oob.top)
+                let y
+                if (this.parent.screenWorldHeight < this.parent.screenHeight)
                 {
-                    this.toY = new Ease.to(this.parent.container, { y: 0 }, this.time, { ease: this.ease })
-                    this.parent.emit('bounce-start-y', this.parent)
+                    switch (this.underflowY)
+                    {
+                        case -1:
+                            y = 0
+                            break
+                        case 1:
+                            y = (this.parent.screenHeight - this.parent.screenWorldHeight)
+                            break
+                        default:
+                            y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2
+                    }
                 }
-                else if (oob.bottom)
+                else
                 {
-                    this.toY = new Ease.to(this.parent.container, { y: -point.y }, this.time, { ease: this.ease })
-                    this.parent.emit('bounce-start-x', this.parent)
+                    if (oob.top)
+                    {
+                        y = 0
+                    }
+                    else if (oob.bottom)
+                    {
+                        y = -point.y
+                    }
+                }
+                if (exists(y) && this.parent.container.y !== y)
+                {
+                    this.toY = new Ease.to(this.parent.container, { y }, this.time, { ease: this.ease })
+                    this.parent.emit('bounce-start-y', this.parent)
                 }
             }
         }
@@ -7496,7 +6881,7 @@ module.exports = class Bounce extends Plugin
         this.toX = this.toY = null
     }
 }
-},{"./plugin":62,"pixi-ease":39}],55:[function(require,module,exports){
+},{"./plugin":58,"exists":13,"pixi-ease":19}],51:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class ClampZoom extends Plugin
@@ -7556,18 +6941,21 @@ module.exports = class ClampZoom extends Plugin
     }
 }
 
-},{"./plugin":62}],56:[function(require,module,exports){
+},{"./plugin":58}],52:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class clamp extends Plugin
 {
     /**
-     * @param {string} [direction=all] (all, x, or y)
+     * @param {object} options
+     * @param {string} [options.direction=all] (all, x, or y)
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
      */
-    constructor(parent, direction)
+    constructor(parent, options)
     {
+        options = options || {}
         super(parent)
-        switch (direction)
+        switch (options.direction)
         {
             case 'x':
                 this.x = true
@@ -7579,7 +6967,23 @@ module.exports = class clamp extends Plugin
                 this.x = this.y = true
                 break
         }
+        this.parseUnderflow(options.underflow || 'center')
         this.move()
+    }
+
+    parseUnderflow(clamp)
+    {
+        clamp = clamp.toLowerCase()
+        if (clamp === 'center')
+        {
+            this.underflowX = 0
+            this.underflowY = 0
+        }
+        else
+        {
+            this.underflowX = (clamp.indexOf('left') !== -1) ? -1 : (clamp.indexOf('right') !== -1) ? 1 : 0
+            this.underflowY = (clamp.indexOf('top') !== -1) ? -1 : (clamp.indexOf('bottom') !== -1) ? 1 : 0
+        }
     }
 
     move()
@@ -7599,33 +7003,67 @@ module.exports = class clamp extends Plugin
         const decelerate = this.parent.plugin('decelerate') || {}
         if (this.x)
         {
-            if (oob.left)
+            if (this.parent.screenWorldWidth < this.parent.screenWidth)
             {
-                this.parent.container.x = 0
-                decelerate.x = 0
+                switch (this.underflowX)
+                {
+                    case -1:
+                        this.parent.container.x = 0
+                        break
+                    case 1:
+                        this.parent.container.x = (this.parent.screenWidth - this.parent.screenWorldWidth)
+                        break
+                    default:
+                        this.parent.container.x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2
+                }
             }
-            else if (oob.right)
+            else
             {
-                this.parent.container.x = -point.x
-                decelerate.x = 0
+                if (oob.left)
+                {
+                    this.parent.container.x = 0
+                    decelerate.x = 0
+                }
+                else if (oob.right)
+                {
+                    this.parent.container.x = -point.x
+                    decelerate.x = 0
+                }
             }
         }
         if (this.y)
         {
-            if (oob.top)
+            if (this.parent.screenWorldHeight < this.parent.screenHeight)
             {
-                this.parent.container.y = 0
-                decelerate.y = 0
+                switch (this.underflowY)
+                {
+                    case -1:
+                        this.parent.container.y = 0
+                        break
+                    case 1:
+                        this.parent.container.y = (this.parent.screenHeight - this.parent.screenWorldHeight)
+                        break
+                    default:
+                        this.parent.container.y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2
+                }
             }
-            else if (oob.bottom)
+            else
             {
-                this.parent.container.y = -point.y
-                decelerate.y = 0
+                if (oob.top)
+                {
+                    this.parent.container.y = 0
+                    decelerate.y = 0
+                }
+                else if (oob.bottom)
+                {
+                    this.parent.container.y = -point.y
+                    decelerate.y = 0
+                }
             }
         }
     }
 }
-},{"./plugin":62}],57:[function(require,module,exports){
+},{"./plugin":58}],53:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Decelerate extends Plugin
@@ -7723,7 +7161,7 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = null
     }
 }
-},{"./plugin":62}],58:[function(require,module,exports){
+},{"./plugin":58}],54:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Drag extends Plugin
@@ -7769,7 +7207,7 @@ module.exports = class Drag extends Plugin
                     this.last = { x, y }
                     if (!this.moved)
                     {
-                        this.parent.emit('drag-start', this.parent)
+                        this.parent.emit('drag-start', {screen: this.last, world: this.parent.toWorld(this.last), viewport: this.parent})
                     }
                     this.moved = true
                 }
@@ -7783,12 +7221,12 @@ module.exports = class Drag extends Plugin
 
     up()
     {
-        if (this.last)
+        if (this.last && this.moved)
         {
-            this.parent.emit('drag-end', this.parent)
-            this.last = null
+            this.parent.emit('drag-end', {screen: this.last, world: this.parent.toWorld(this.last), viewport: this.parent})
             this.moved = false
         }
+        this.last = null
     }
 
     resume()
@@ -7797,7 +7235,8 @@ module.exports = class Drag extends Plugin
         this.paused = false
     }
 }
-},{"./plugin":62}],59:[function(require,module,exports){
+
+},{"./plugin":58}],55:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Follow extends Plugin
@@ -7856,7 +7295,7 @@ module.exports = class Follow extends Plugin
         }
     }
 }
-},{"./plugin":62}],60:[function(require,module,exports){
+},{"./plugin":58}],56:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class HitArea extends Plugin
@@ -7877,7 +7316,7 @@ module.exports = class HitArea extends Plugin
         this.parent.container.hitArea = this.rect || this.parent.container.getBounds()
     }
 }
-},{"./plugin":62}],61:[function(require,module,exports){
+},{"./plugin":58}],57:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Pinch extends Plugin
@@ -7991,7 +7430,7 @@ module.exports = class Pinch extends Plugin
         }
     }
 }
-},{"./plugin":62}],62:[function(require,module,exports){
+},{"./plugin":58}],58:[function(require,module,exports){
 module.exports = class Plugin
 {
     constructor(parent)
@@ -8017,13 +7456,12 @@ module.exports = class Plugin
         this.paused = false
     }
 }
-},{}],63:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
 
-module.exports = class Snap extends Plugin
-{
+module.exports = class Snap extends Plugin {
     /**
      * @param {Viewport} parent
      * @param {number} x
@@ -8039,8 +7477,7 @@ module.exports = class Snap extends Plugin
      * @event snap-start(Viewport) emitted each time a snap animation starts
      * @event snap-end(Viewport) emitted each time snap reaches its target
      */
-    constructor(parent, x, y, options)
-    {
+    constructor(parent, x, y, options) {
         super(parent)
         options = options || {}
         this.friction = options.friction || 0.8
@@ -8052,8 +7489,7 @@ module.exports = class Snap extends Plugin
         this.stopOnResize = options.stopOnResize
         this.interrupt = exists(options.interrupt) ? options.interrupt : true
         this.removeOnComplete = options.removeOnComplete
-        if (this.center)
-        {
+        if (this.center) {
             this.originalX = x
             this.originalY = y
             this.x = (this.parent.worldScreenWidth / 2 - x) * this.parent.container.scale.x
@@ -8061,71 +7497,72 @@ module.exports = class Snap extends Plugin
         }
     }
 
-    reset()
-    {
+    reset() {
         this.snapping = null
     }
 
-    resize()
-    {
-        if (this.center)
-        {
+    resize() {
+        if (this.center) {
             this.x = (this.parent.worldScreenWidth / 2 - this.originalX) * this.parent.container.scale.x
             this.y = (this.parent.worldScreenHeight / 2 - this.originalY) * this.parent.container.scale.y
             this.snapping = null
         }
     }
 
-    down()
-    {
+    down() {
         this.snapping = null
     }
 
-    up()
-    {
-        if (this.parent.input.pointers.length === 0)
-        {
+    up() {
+        if (this.parent.input.pointers.length === 0) {
             const decelerate = this.parent.plugins['decelerate']
-            if (decelerate && (decelerate.x || decelerate.y))
-            {
+            if (decelerate && (decelerate.x || decelerate.y)) {
                 decelerate.percentChangeX = decelerate.percentChangeY = this.friction
             }
         }
     }
 
-    update(elapsed)
-    {
-        if (this.paused)
-        {
+    update(elapsed) {
+        if (this.paused) {
             return
         }
-        if (this.interrupt && this.parent.input.pointers.length !== 0)
-        {
+        if (this.interrupt && this.parent.input.pointers.length !== 0) {
             return
         }
-        if (!this.snapping && (this.parent.container.x !== this.x || this.parent.container.y !== this.y))
-        {
-            this.snapping = new Ease.to(this.parent.container, { x: this.x, y: this.y }, this.time, { ease: this.ease })
+        if (!this.snapping && (this.parent.container.x !== this.x || this.parent.container.y !== this.y)) {
+            this.snapping = new Ease.to(this.parent.container, {
+                x: this.x,
+                y: this.y
+            }, this.time, {
+                ease: this.ease
+            })
             this.parent.emit('snap-start', this.parent)
-        }
-        else if (this.snapping && this.snapping.update(elapsed))
-        {
-            if (this.removeOnComplete)
-            {
+        } else if (this.snapping && this.snapping.update(elapsed)) {
+            if (this.removeOnComplete) {
                 this.parent.removePlugin('snap')
             }
-            this.parent.emit('snap-end', this.parent)
+            this.parent.emit('snap-end', {
+                screen: this.parent.toScreen({
+                    x: this.x,
+                    y: this.y
+                }),
+                world: {
+                    x: this.x,
+                    y: this.y
+                },
+                viewport: this.parent
+            })
             this.snapping = null
         }
     }
 
-    resume()
-    {
+    resume() {
         this.snapping = null
         super.resume()
     }
 }
-},{"./plugin":62,"exists":13,"pixi-ease":39}],64:[function(require,module,exports){
+
+},{"./plugin":58,"exists":13,"pixi-ease":19}],60:[function(require,module,exports){
 const Loop = require('yy-loop')
 const Input = require('yy-input')
 const exists = require('exists')
@@ -8159,18 +7596,20 @@ module.exports = class Viewport extends Loop
      * @param {boolean} [options.noListeners] manually call touch/mouse callback down/move/up
      * @param {number} [options.preventDefault] call preventDefault after listeners
      *
-     * @event click({screen: {x, y}, world: {x, y}}, this) emitted when viewport is clicked
-     * @event drag-start(Viewport) emitted when a drag starts
-     * @event drag-end(Viewport) emitted when a drag ends
+     * @event click({screen: {x, y}, world: {x, y}, viewport}) emitted when viewport is clicked
+     * @event drag-start({screen: {x, y}, world: {x, y}, viewport}) emitted when a drag starts
+     * @event drag-end({screen: {x, y}, world: {x, y}, viewport}) emitted when a drag ends
      * @event pinch-start(Viewport) emitted when a pinch starts
      * @event pinch-end(Viewport) emitted when a pinch ends
      * @event snap-start(Viewport) emitted each time a snap animation starts
+     * @event snap-end({screen: {x, y}, world: {x, y}, viewport}) emitted each time snap reaches its target
      * @event bounce-start-x(Viewport) emitted when a bounce on the x-axis starts
      * @event bounce.end-x(Viewport) emitted when a bounce on the x-axis ends
      * @event bounce-start-y(Viewport) emitted when a bounce on the y-axis starts
      * @event bounce-end-y(Viewport) emitted when a bounce on the y-axis ends
      * @event snap-start(Viewport) emitted each time a snap animation starts
-     * @event snap-end(Viewport) emitted each time snap reaches its target
+     * @event wheel-pre({wheel: {dx, dy, dz}, viewport}) emitted when the mouse wheel is spun, emits before the viewport zooms
+     * @event wheel-post({wheel: {dx, dy, dz}, viewport}) emitted when the mouse wheel is spun, emits after the viewport zooms
      */
     constructor(container, options)
     {
@@ -8409,7 +7848,7 @@ module.exports = class Viewport extends Loop
     click(x, y)
     {
         const point = { x, y }
-        this.emit('click', { screen: point, world: this.toWorld(point) })
+        this.emit('click', { screen: point, world: this.toWorld(point), viewport: this})
     }
 
     /**
@@ -8467,6 +7906,22 @@ module.exports = class Viewport extends Loop
     get worldScreenHeight()
     {
         return this._screenHeight / this.container.scale.y
+    }
+
+    /**
+     * @type {number} world width in screen coordinates
+     */
+    get screenWorldWidth()
+    {
+        return this._worldWidth * this.container.scale.x
+    }
+
+    /**
+     * @type {number} world height in screen coordinates
+     */
+    get screenWorldHeight()
+    {
+        return this._worldHeight * this.container.scale.y
     }
 
     /**
@@ -8749,7 +8204,9 @@ module.exports = class Viewport extends Loop
     /**
      * enable clamp to boundaries of world
      * NOTE: screenWidth, screenHeight, worldWidth, and worldHeight needs to be set for this to work properly
-     * @param {string} [direction=all] (all, x, or y)
+     * @param {object} options
+     * @param {string} [options.direction=all] (all, x, or y)
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
      * @return {Viewport} this
      */
     clamp(direction)
@@ -8779,6 +8236,7 @@ module.exports = class Viewport extends Loop
      * @param {number} [options.friction=0.5] friction to apply to decelerate if active
      * @param {number} [options.time=150] time in ms to finish bounce
      * @param {string|function} [ease='easeInOutSine'] ease function or name (see http://easings.net/ for supported names)
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen     *
      * @return {Viewport} this
      */
     bounce(options)
@@ -8883,7 +8341,7 @@ module.exports = class Viewport extends Loop
     }
 }
 
-},{"./bounce":54,"./clamp":56,"./clamp-zoom":55,"./decelerate":57,"./drag":58,"./follow":59,"./hit-area":60,"./pinch":61,"./snap":63,"./wheel":65,"exists":13,"yy-input":50,"yy-loop":51}],65:[function(require,module,exports){
+},{"./bounce":50,"./clamp":52,"./clamp-zoom":51,"./decelerate":53,"./drag":54,"./follow":55,"./hit-area":56,"./pinch":57,"./snap":59,"./wheel":61,"exists":13,"yy-input":228,"yy-loop":229}],61:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Wheel extends Plugin
@@ -8918,6 +8376,9 @@ module.exports = class Wheel extends Plugin
         {
             return
         }
+
+        this.parent.emit('wheel-pre', { wheel: {dx: dx, dy: dy, dz: dz}, viewport: this.parent})
+
         let change
         if (this.reverse)
         {
@@ -8952,9 +8413,10 @@ module.exports = class Wheel extends Plugin
             this.parent.container.y += point.y - newPoint.y
         }
         data.event.preventDefault()
+        this.parent.emit('wheel-post', { wheel: {dx: dx, dy: dy, dz: dz}, viewport: this.parent})
     }
 }
-},{"./plugin":62}],66:[function(require,module,exports){
+},{"./plugin":58}],62:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9448,7 +8910,7 @@ exports.default = AccessibilityManager;
 core.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
 core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
 
-},{"../core":91,"./accessibleTarget":67,"ismobilejs":14}],67:[function(require,module,exports){
+},{"../core":87,"./accessibleTarget":63,"ismobilejs":14}],63:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -9506,7 +8968,7 @@ exports.default = {
   _accessibleDiv: false
 };
 
-},{}],68:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9531,7 +8993,7 @@ Object.defineProperty(exports, 'AccessibilityManager', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./AccessibilityManager":66,"./accessibleTarget":67}],69:[function(require,module,exports){
+},{"./AccessibilityManager":62,"./accessibleTarget":63}],65:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9754,7 +9216,7 @@ var Application = function () {
 
 exports.default = Application;
 
-},{"./autoDetectRenderer":71,"./const":72,"./display/Container":74,"./settings":127,"./ticker":146}],70:[function(require,module,exports){
+},{"./autoDetectRenderer":67,"./const":68,"./display/Container":70,"./settings":123,"./ticker":142}],66:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9818,7 +9280,7 @@ var Shader = function (_GLShader) {
 
 exports.default = Shader;
 
-},{"./settings":127,"pixi-gl-core":25}],71:[function(require,module,exports){
+},{"./settings":123,"pixi-gl-core":36}],67:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9887,7 +9349,7 @@ function autoDetectRenderer(options, arg1, arg2, arg3) {
     return new _CanvasRenderer2.default(options, arg1, arg2);
 }
 
-},{"./renderers/canvas/CanvasRenderer":103,"./renderers/webgl/WebGLRenderer":110,"./utils":150}],72:[function(require,module,exports){
+},{"./renderers/canvas/CanvasRenderer":99,"./renderers/webgl/WebGLRenderer":106,"./utils":146}],68:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10230,7 +9692,7 @@ var UPDATE_PRIORITY = exports.UPDATE_PRIORITY = {
   UTILITY: -50
 };
 
-},{}],73:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10573,7 +10035,7 @@ var Bounds = function () {
 
 exports.default = Bounds;
 
-},{"../math":96}],74:[function(require,module,exports){
+},{"../math":92}],70:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11191,7 +10653,7 @@ var Container = function (_DisplayObject) {
 exports.default = Container;
 Container.prototype.containerUpdateTransform = Container.prototype.updateTransform;
 
-},{"../utils":150,"./DisplayObject":75}],75:[function(require,module,exports){
+},{"../utils":146,"./DisplayObject":71}],71:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11883,7 +11345,7 @@ var DisplayObject = function (_EventEmitter) {
 exports.default = DisplayObject;
 DisplayObject.prototype.displayObjectUpdateTransform = DisplayObject.prototype.updateTransform;
 
-},{"../const":72,"../math":96,"../settings":127,"./Bounds":73,"./Transform":76,"./TransformStatic":78,"eventemitter3":12}],76:[function(require,module,exports){
+},{"../const":68,"../math":92,"../settings":123,"./Bounds":69,"./Transform":72,"./TransformStatic":74,"eventemitter3":12}],72:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12064,7 +11526,7 @@ var Transform = function (_TransformBase) {
 
 exports.default = Transform;
 
-},{"../math":96,"./TransformBase":77}],77:[function(require,module,exports){
+},{"../math":92,"./TransformBase":73}],73:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12151,7 +11613,7 @@ TransformBase.prototype.updateWorldTransform = TransformBase.prototype.updateTra
 
 TransformBase.IDENTITY = new TransformBase();
 
-},{"../math":96}],78:[function(require,module,exports){
+},{"../math":92}],74:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12361,7 +11823,7 @@ var TransformStatic = function (_TransformBase) {
 
 exports.default = TransformStatic;
 
-},{"../math":96,"./TransformBase":77}],79:[function(require,module,exports){
+},{"../math":92,"./TransformBase":73}],75:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13533,7 +12995,7 @@ exports.default = Graphics;
 
 Graphics._SPRITE_TEXTURE = null;
 
-},{"../const":72,"../display/Bounds":73,"../display/Container":74,"../math":96,"../renderers/canvas/CanvasRenderer":103,"../sprites/Sprite":128,"../textures/RenderTexture":139,"../textures/Texture":141,"../utils":150,"./GraphicsData":80,"./utils/bezierCurveTo":82}],80:[function(require,module,exports){
+},{"../const":68,"../display/Bounds":69,"../display/Container":70,"../math":92,"../renderers/canvas/CanvasRenderer":99,"../sprites/Sprite":124,"../textures/RenderTexture":135,"../textures/Texture":137,"../utils":146,"./GraphicsData":76,"./utils/bezierCurveTo":78}],76:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13655,7 +13117,7 @@ var GraphicsData = function () {
 
 exports.default = GraphicsData;
 
-},{}],81:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13924,7 +13386,7 @@ exports.default = CanvasGraphicsRenderer;
 
 _CanvasRenderer2.default.registerPlugin('graphics', CanvasGraphicsRenderer);
 
-},{"../../const":72,"../../renderers/canvas/CanvasRenderer":103}],82:[function(require,module,exports){
+},{"../../const":68,"../../renderers/canvas/CanvasRenderer":99}],78:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13974,7 +13436,7 @@ function bezierCurveTo(fromX, fromY, cpX, cpY, cpX2, cpY2, toX, toY) {
     return path;
 }
 
-},{}],83:[function(require,module,exports){
+},{}],79:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14239,7 +13701,7 @@ exports.default = GraphicsRenderer;
 
 _WebGLRenderer2.default.registerPlugin('graphics', GraphicsRenderer);
 
-},{"../../const":72,"../../renderers/webgl/WebGLRenderer":110,"../../renderers/webgl/utils/ObjectRenderer":120,"../../utils":150,"./WebGLGraphicsData":84,"./shaders/PrimitiveShader":85,"./utils/buildCircle":86,"./utils/buildPoly":88,"./utils/buildRectangle":89,"./utils/buildRoundedRectangle":90}],84:[function(require,module,exports){
+},{"../../const":68,"../../renderers/webgl/WebGLRenderer":106,"../../renderers/webgl/utils/ObjectRenderer":116,"../../utils":146,"./WebGLGraphicsData":80,"./shaders/PrimitiveShader":81,"./utils/buildCircle":82,"./utils/buildPoly":84,"./utils/buildRectangle":85,"./utils/buildRoundedRectangle":86}],80:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14382,7 +13844,7 @@ var WebGLGraphicsData = function () {
 
 exports.default = WebGLGraphicsData;
 
-},{"pixi-gl-core":25}],85:[function(require,module,exports){
+},{"pixi-gl-core":36}],81:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14427,7 +13889,7 @@ var PrimitiveShader = function (_Shader) {
 
 exports.default = PrimitiveShader;
 
-},{"../../../Shader":70}],86:[function(require,module,exports){
+},{"../../../Shader":66}],82:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14520,7 +13982,7 @@ function buildCircle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../const":72,"../../../utils":150,"./buildLine":87}],87:[function(require,module,exports){
+},{"../../../const":68,"../../../utils":146,"./buildLine":83}],83:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14790,7 +14252,7 @@ function buildNativeLine(graphicsData, webGLData) {
     }
 }
 
-},{"../../../math":96,"../../../utils":150}],88:[function(require,module,exports){
+},{"../../../math":92,"../../../utils":146}],84:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14876,7 +14338,7 @@ function buildPoly(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":150,"./buildLine":87,"earcut":11}],89:[function(require,module,exports){
+},{"../../../utils":146,"./buildLine":83,"earcut":11}],85:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14952,7 +14414,7 @@ function buildRectangle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":150,"./buildLine":87}],90:[function(require,module,exports){
+},{"../../../utils":146,"./buildLine":83}],86:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15108,7 +14570,7 @@ function quadraticBezierCurve(fromX, fromY, cpX, cpY, toX, toY) {
     return points;
 }
 
-},{"../../../utils":150,"./buildLine":87,"earcut":11}],91:[function(require,module,exports){
+},{"../../../utils":146,"./buildLine":83,"earcut":11}],87:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15485,7 +14947,7 @@ exports.WebGLRenderer = _WebGLRenderer2.default; /**
                                                   * @namespace PIXI
                                                   */
 
-},{"./Application":69,"./Shader":70,"./autoDetectRenderer":71,"./const":72,"./display/Bounds":73,"./display/Container":74,"./display/DisplayObject":75,"./display/Transform":76,"./display/TransformBase":77,"./display/TransformStatic":78,"./graphics/Graphics":79,"./graphics/GraphicsData":80,"./graphics/canvas/CanvasGraphicsRenderer":81,"./graphics/webgl/GraphicsRenderer":83,"./math":96,"./renderers/canvas/CanvasRenderer":103,"./renderers/canvas/utils/CanvasRenderTarget":105,"./renderers/webgl/WebGLRenderer":110,"./renderers/webgl/filters/Filter":112,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":115,"./renderers/webgl/managers/WebGLManager":119,"./renderers/webgl/utils/ObjectRenderer":120,"./renderers/webgl/utils/Quad":121,"./renderers/webgl/utils/RenderTarget":122,"./settings":127,"./sprites/Sprite":128,"./sprites/canvas/CanvasSpriteRenderer":129,"./sprites/canvas/CanvasTinter":130,"./sprites/webgl/SpriteRenderer":132,"./text/Text":134,"./text/TextMetrics":135,"./text/TextStyle":136,"./textures/BaseRenderTexture":137,"./textures/BaseTexture":138,"./textures/RenderTexture":139,"./textures/Spritesheet":140,"./textures/Texture":141,"./textures/TextureUvs":142,"./textures/VideoBaseTexture":143,"./ticker":146,"./utils":150,"pixi-gl-core":25}],92:[function(require,module,exports){
+},{"./Application":65,"./Shader":66,"./autoDetectRenderer":67,"./const":68,"./display/Bounds":69,"./display/Container":70,"./display/DisplayObject":71,"./display/Transform":72,"./display/TransformBase":73,"./display/TransformStatic":74,"./graphics/Graphics":75,"./graphics/GraphicsData":76,"./graphics/canvas/CanvasGraphicsRenderer":77,"./graphics/webgl/GraphicsRenderer":79,"./math":92,"./renderers/canvas/CanvasRenderer":99,"./renderers/canvas/utils/CanvasRenderTarget":101,"./renderers/webgl/WebGLRenderer":106,"./renderers/webgl/filters/Filter":108,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":111,"./renderers/webgl/managers/WebGLManager":115,"./renderers/webgl/utils/ObjectRenderer":116,"./renderers/webgl/utils/Quad":117,"./renderers/webgl/utils/RenderTarget":118,"./settings":123,"./sprites/Sprite":124,"./sprites/canvas/CanvasSpriteRenderer":125,"./sprites/canvas/CanvasTinter":126,"./sprites/webgl/SpriteRenderer":128,"./text/Text":130,"./text/TextMetrics":131,"./text/TextStyle":132,"./textures/BaseRenderTexture":133,"./textures/BaseTexture":134,"./textures/RenderTexture":135,"./textures/Spritesheet":136,"./textures/Texture":137,"./textures/TextureUvs":138,"./textures/VideoBaseTexture":139,"./ticker":142,"./utils":146,"pixi-gl-core":36}],88:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15677,7 +15139,7 @@ var GroupD8 = {
 
 exports.default = GroupD8;
 
-},{"./Matrix":93}],93:[function(require,module,exports){
+},{"./Matrix":89}],89:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16208,7 +15670,7 @@ var Matrix = function () {
 
 exports.default = Matrix;
 
-},{"./Point":95}],94:[function(require,module,exports){
+},{"./Point":91}],90:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16325,7 +15787,7 @@ var ObservablePoint = function () {
 
 exports.default = ObservablePoint;
 
-},{}],95:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16416,7 +15878,7 @@ var Point = function () {
 
 exports.default = Point;
 
-},{}],96:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16504,7 +15966,7 @@ Object.defineProperty(exports, 'RoundedRectangle', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./GroupD8":92,"./Matrix":93,"./ObservablePoint":94,"./Point":95,"./shapes/Circle":97,"./shapes/Ellipse":98,"./shapes/Polygon":99,"./shapes/Rectangle":100,"./shapes/RoundedRectangle":101}],97:[function(require,module,exports){
+},{"./GroupD8":88,"./Matrix":89,"./ObservablePoint":90,"./Point":91,"./shapes/Circle":93,"./shapes/Ellipse":94,"./shapes/Polygon":95,"./shapes/Rectangle":96,"./shapes/RoundedRectangle":97}],93:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16618,7 +16080,7 @@ var Circle = function () {
 
 exports.default = Circle;
 
-},{"../../const":72,"./Rectangle":100}],98:[function(require,module,exports){
+},{"../../const":68,"./Rectangle":96}],94:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16740,7 +16202,7 @@ var Ellipse = function () {
 
 exports.default = Ellipse;
 
-},{"../../const":72,"./Rectangle":100}],99:[function(require,module,exports){
+},{"../../const":68,"./Rectangle":96}],95:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16871,7 +16333,7 @@ var Polygon = function () {
 
 exports.default = Polygon;
 
-},{"../../const":72,"../Point":95}],100:[function(require,module,exports){
+},{"../../const":68,"../Point":91}],96:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17134,7 +16596,7 @@ var Rectangle = function () {
 
 exports.default = Rectangle;
 
-},{"../../const":72}],101:[function(require,module,exports){
+},{"../../const":68}],97:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17267,7 +16729,7 @@ var RoundedRectangle = function () {
 
 exports.default = RoundedRectangle;
 
-},{"../../const":72}],102:[function(require,module,exports){
+},{"../../const":68}],98:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17630,7 +17092,7 @@ var SystemRenderer = function (_EventEmitter) {
 
 exports.default = SystemRenderer;
 
-},{"../const":72,"../display/Container":74,"../math":96,"../settings":127,"../textures/RenderTexture":139,"../utils":150,"eventemitter3":12}],103:[function(require,module,exports){
+},{"../const":68,"../display/Container":70,"../math":92,"../settings":123,"../textures/RenderTexture":135,"../utils":146,"eventemitter3":12}],99:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17992,7 +17454,7 @@ var CanvasRenderer = function (_SystemRenderer) {
 exports.default = CanvasRenderer;
 _utils.pluginTarget.mixin(CanvasRenderer);
 
-},{"../../const":72,"../../settings":127,"../../utils":150,"../SystemRenderer":102,"./utils/CanvasMaskManager":104,"./utils/CanvasRenderTarget":105,"./utils/mapCanvasBlendModesToPixi":107}],104:[function(require,module,exports){
+},{"../../const":68,"../../settings":123,"../../utils":146,"../SystemRenderer":98,"./utils/CanvasMaskManager":100,"./utils/CanvasRenderTarget":101,"./utils/mapCanvasBlendModesToPixi":103}],100:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18161,7 +17623,7 @@ var CanvasMaskManager = function () {
 
 exports.default = CanvasMaskManager;
 
-},{"../../../const":72}],105:[function(require,module,exports){
+},{"../../../const":68}],101:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18285,7 +17747,7 @@ var CanvasRenderTarget = function () {
 
 exports.default = CanvasRenderTarget;
 
-},{"../../../settings":127}],106:[function(require,module,exports){
+},{"../../../settings":123}],102:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18346,7 +17808,7 @@ function canUseNewCanvasBlendModes() {
     return data[0] === 255 && data[1] === 0 && data[2] === 0;
 }
 
-},{}],107:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18418,7 +17880,7 @@ function mapCanvasBlendModesToPixi() {
     return array;
 }
 
-},{"../../../const":72,"./canUseNewCanvasBlendModes":106}],108:[function(require,module,exports){
+},{"../../../const":68,"./canUseNewCanvasBlendModes":102}],104:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18538,7 +18000,7 @@ var TextureGarbageCollector = function () {
 
 exports.default = TextureGarbageCollector;
 
-},{"../../const":72,"../../settings":127}],109:[function(require,module,exports){
+},{"../../const":68,"../../settings":123}],105:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18794,7 +18256,7 @@ var TextureManager = function () {
 
 exports.default = TextureManager;
 
-},{"../../const":72,"../../utils":150,"./utils/RenderTarget":122,"pixi-gl-core":25}],110:[function(require,module,exports){
+},{"../../const":68,"../../utils":146,"./utils/RenderTarget":118,"pixi-gl-core":36}],106:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19606,7 +19068,7 @@ var WebGLRenderer = function (_SystemRenderer) {
 exports.default = WebGLRenderer;
 _utils.pluginTarget.mixin(WebGLRenderer);
 
-},{"../../const":72,"../../textures/BaseTexture":138,"../../utils":150,"../SystemRenderer":102,"./TextureGarbageCollector":108,"./TextureManager":109,"./WebGLState":111,"./managers/FilterManager":116,"./managers/MaskManager":117,"./managers/StencilManager":118,"./utils/ObjectRenderer":120,"./utils/RenderTarget":122,"./utils/mapWebGLDrawModesToPixi":125,"./utils/validateContext":126,"pixi-gl-core":25}],111:[function(require,module,exports){
+},{"../../const":68,"../../textures/BaseTexture":134,"../../utils":146,"../SystemRenderer":98,"./TextureGarbageCollector":104,"./TextureManager":105,"./WebGLState":107,"./managers/FilterManager":112,"./managers/MaskManager":113,"./managers/StencilManager":114,"./utils/ObjectRenderer":116,"./utils/RenderTarget":118,"./utils/mapWebGLDrawModesToPixi":121,"./utils/validateContext":122,"pixi-gl-core":36}],107:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19886,7 +19348,7 @@ var WebGLState = function () {
 
 exports.default = WebGLState;
 
-},{"./utils/mapWebGLBlendModesToPixi":124}],112:[function(require,module,exports){
+},{"./utils/mapWebGLBlendModesToPixi":120}],108:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20082,7 +19544,7 @@ var Filter = function () {
 
 exports.default = Filter;
 
-},{"../../../const":72,"../../../settings":127,"../../../utils":150,"./extractUniformsFromSrc":113}],113:[function(require,module,exports){
+},{"../../../const":68,"../../../settings":123,"../../../utils":146,"./extractUniformsFromSrc":109}],109:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20144,7 +19606,7 @@ function extractUniformsFromString(string) {
     return uniforms;
 }
 
-},{"pixi-gl-core":25}],114:[function(require,module,exports){
+},{"pixi-gl-core":36}],110:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20203,7 +19665,7 @@ function calculateSpriteMatrix(outputMatrix, filterArea, textureSize, sprite) {
     return mappedMatrix;
 }
 
-},{"../../../math":96}],115:[function(require,module,exports){
+},{"../../../math":92}],111:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20275,7 +19737,7 @@ var SpriteMaskFilter = function (_Filter) {
 
 exports.default = SpriteMaskFilter;
 
-},{"../../../../math":96,"../Filter":112,"path":2}],116:[function(require,module,exports){
+},{"../../../../math":92,"../Filter":108,"path":2}],112:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20869,7 +20331,7 @@ var FilterManager = function (_WebGLManager) {
 
 exports.default = FilterManager;
 
-},{"../../../Shader":70,"../../../math":96,"../filters/filterTransforms":114,"../utils/Quad":121,"../utils/RenderTarget":122,"./WebGLManager":119,"bit-twiddle":10}],117:[function(require,module,exports){
+},{"../../../Shader":66,"../../../math":92,"../filters/filterTransforms":110,"../utils/Quad":117,"../utils/RenderTarget":118,"./WebGLManager":115,"bit-twiddle":10}],113:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21079,7 +20541,7 @@ var MaskManager = function (_WebGLManager) {
 
 exports.default = MaskManager;
 
-},{"../filters/spriteMask/SpriteMaskFilter":115,"./WebGLManager":119}],118:[function(require,module,exports){
+},{"../filters/spriteMask/SpriteMaskFilter":111,"./WebGLManager":115}],114:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21232,7 +20694,7 @@ var StencilManager = function (_WebGLManager) {
 
 exports.default = StencilManager;
 
-},{"./WebGLManager":119}],119:[function(require,module,exports){
+},{"./WebGLManager":115}],115:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21287,7 +20749,7 @@ var WebGLManager = function () {
 
 exports.default = WebGLManager;
 
-},{}],120:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21365,7 +20827,7 @@ var ObjectRenderer = function (_WebGLManager) {
 
 exports.default = ObjectRenderer;
 
-},{"../managers/WebGLManager":119}],121:[function(require,module,exports){
+},{"../managers/WebGLManager":115}],117:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21546,7 +21008,7 @@ var Quad = function () {
 
 exports.default = Quad;
 
-},{"../../../utils/createIndicesForQuads":148,"pixi-gl-core":25}],122:[function(require,module,exports){
+},{"../../../utils/createIndicesForQuads":144,"pixi-gl-core":36}],118:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21873,7 +21335,7 @@ var RenderTarget = function () {
 
 exports.default = RenderTarget;
 
-},{"../../../const":72,"../../../math":96,"../../../settings":127,"pixi-gl-core":25}],123:[function(require,module,exports){
+},{"../../../const":68,"../../../math":92,"../../../settings":123,"pixi-gl-core":36}],119:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21948,7 +21410,7 @@ function generateIfTestSrc(maxIfs) {
     return src;
 }
 
-},{"pixi-gl-core":25}],124:[function(require,module,exports){
+},{"pixi-gl-core":36}],120:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21997,7 +21459,7 @@ function mapWebGLBlendModesToPixi(gl) {
     return array;
 }
 
-},{"../../../const":72}],125:[function(require,module,exports){
+},{"../../../const":68}],121:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22029,7 +21491,7 @@ function mapWebGLDrawModesToPixi(gl) {
   return object;
 }
 
-},{"../../../const":72}],126:[function(require,module,exports){
+},{"../../../const":68}],122:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22045,7 +21507,7 @@ function validateContext(gl) {
     }
 }
 
-},{}],127:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22280,7 +21742,7 @@ exports.default = {
 
 };
 
-},{"./utils/canUploadSameBuffer":147,"./utils/maxRecommendedTextures":152}],128:[function(require,module,exports){
+},{"./utils/canUploadSameBuffer":143,"./utils/maxRecommendedTextures":148}],124:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22903,7 +22365,7 @@ var Sprite = function (_Container) {
 
 exports.default = Sprite;
 
-},{"../const":72,"../display/Container":74,"../math":96,"../textures/Texture":141,"../utils":150}],129:[function(require,module,exports){
+},{"../const":68,"../display/Container":70,"../math":92,"../textures/Texture":137,"../utils":146}],125:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23056,7 +22518,7 @@ exports.default = CanvasSpriteRenderer;
 
 _CanvasRenderer2.default.registerPlugin('sprite', CanvasSpriteRenderer);
 
-},{"../../const":72,"../../math":96,"../../renderers/canvas/CanvasRenderer":103,"./CanvasTinter":130}],130:[function(require,module,exports){
+},{"../../const":68,"../../math":92,"../../renderers/canvas/CanvasRenderer":99,"./CanvasTinter":126}],126:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23307,7 +22769,7 @@ CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMul
 
 exports.default = CanvasTinter;
 
-},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":106,"../../utils":150}],131:[function(require,module,exports){
+},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":102,"../../utils":146}],127:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -23360,7 +22822,7 @@ var Buffer = function () {
 
 exports.default = Buffer;
 
-},{}],132:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23902,7 +23364,7 @@ exports.default = SpriteRenderer;
 
 _WebGLRenderer2.default.registerPlugin('sprite', SpriteRenderer);
 
-},{"../../renderers/webgl/WebGLRenderer":110,"../../renderers/webgl/utils/ObjectRenderer":120,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":123,"../../settings":127,"../../utils":150,"../../utils/createIndicesForQuads":148,"./BatchBuffer":131,"./generateMultiTextureShader":133,"bit-twiddle":10,"pixi-gl-core":25}],133:[function(require,module,exports){
+},{"../../renderers/webgl/WebGLRenderer":106,"../../renderers/webgl/utils/ObjectRenderer":116,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":119,"../../settings":123,"../../utils":146,"../../utils/createIndicesForQuads":144,"./BatchBuffer":127,"./generateMultiTextureShader":129,"bit-twiddle":10,"pixi-gl-core":36}],129:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23965,7 +23427,7 @@ function generateSampleSrc(maxTextures) {
     return src;
 }
 
-},{"../../Shader":70,"path":2}],134:[function(require,module,exports){
+},{"../../Shader":66,"path":2}],130:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24620,7 +24082,7 @@ var Text = function (_Sprite) {
 
 exports.default = Text;
 
-},{"../const":72,"../math":96,"../settings":127,"../sprites/Sprite":128,"../textures/Texture":141,"../utils":150,"../utils/trimCanvas":155,"./TextMetrics":135,"./TextStyle":136}],135:[function(require,module,exports){
+},{"../const":68,"../math":92,"../settings":123,"../sprites/Sprite":124,"../textures/Texture":137,"../utils":146,"../utils/trimCanvas":151,"./TextMetrics":131,"./TextStyle":132}],131:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24922,7 +24384,7 @@ TextMetrics._context = canvas.getContext('2d');
  */
 TextMetrics._fonts = {};
 
-},{}],136:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25706,7 +25168,7 @@ function areArraysEqual(array1, array2) {
     return true;
 }
 
-},{"../const":72,"../utils":150}],137:[function(require,module,exports){
+},{"../const":68,"../utils":146}],133:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25865,7 +25327,7 @@ var BaseRenderTexture = function (_BaseTexture) {
 
 exports.default = BaseRenderTexture;
 
-},{"../settings":127,"./BaseTexture":138}],138:[function(require,module,exports){
+},{"../settings":123,"./BaseTexture":134}],134:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26709,7 +26171,7 @@ var BaseTexture = function (_EventEmitter) {
 
 exports.default = BaseTexture;
 
-},{"../settings":127,"../utils":150,"../utils/determineCrossOrigin":149,"bit-twiddle":10,"eventemitter3":12}],139:[function(require,module,exports){
+},{"../settings":123,"../utils":146,"../utils/determineCrossOrigin":145,"bit-twiddle":10,"eventemitter3":12}],135:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26860,7 +26322,7 @@ var RenderTexture = function (_Texture) {
 
 exports.default = RenderTexture;
 
-},{"./BaseRenderTexture":137,"./Texture":141}],140:[function(require,module,exports){
+},{"./BaseRenderTexture":133,"./Texture":137}],136:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27122,7 +26584,7 @@ var Spritesheet = function () {
 
 exports.default = Spritesheet;
 
-},{"../":91,"../utils":150}],141:[function(require,module,exports){
+},{"../":87,"../utils":146}],137:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27812,7 +27274,7 @@ Texture.WHITE = createWhiteTexture();
 removeAllHandlers(Texture.WHITE);
 removeAllHandlers(Texture.WHITE.baseTexture);
 
-},{"../math":96,"../settings":127,"../utils":150,"./BaseTexture":138,"./TextureUvs":142,"./VideoBaseTexture":143,"eventemitter3":12}],142:[function(require,module,exports){
+},{"../math":92,"../settings":123,"../utils":146,"./BaseTexture":134,"./TextureUvs":138,"./VideoBaseTexture":139,"eventemitter3":12}],138:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27917,7 +27379,7 @@ var TextureUvs = function () {
 
 exports.default = TextureUvs;
 
-},{"../math/GroupD8":92}],143:[function(require,module,exports){
+},{"../math/GroupD8":88}],139:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28242,7 +27704,7 @@ function createSource(path, type) {
     return source;
 }
 
-},{"../const":72,"../ticker":146,"../utils":150,"./BaseTexture":138}],144:[function(require,module,exports){
+},{"../const":68,"../ticker":142,"../utils":146,"./BaseTexture":134}],140:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28715,7 +28177,7 @@ var Ticker = function () {
 
 exports.default = Ticker;
 
-},{"../const":72,"../settings":127,"./TickerListener":145}],145:[function(require,module,exports){
+},{"../const":68,"../settings":123,"./TickerListener":141}],141:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -28889,7 +28351,7 @@ var TickerListener = function () {
 
 exports.default = TickerListener;
 
-},{}],146:[function(require,module,exports){
+},{}],142:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28969,7 +28431,7 @@ shared.destroy = function () {
 exports.shared = shared;
 exports.Ticker = _Ticker2.default;
 
-},{"./Ticker":144}],147:[function(require,module,exports){
+},{"./Ticker":140}],143:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -28983,7 +28445,7 @@ function canUploadSameBuffer() {
 	return !ios;
 }
 
-},{}],148:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29017,7 +28479,7 @@ function createIndicesForQuads(size) {
     return indices;
 }
 
-},{}],149:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29073,7 +28535,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":8}],150:[function(require,module,exports){
+},{"url":8}],146:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29547,7 +29009,7 @@ function premultiplyTintToRgba(tint, alpha, out, premultiply) {
     return out;
 }
 
-},{"../const":72,"../settings":127,"./mapPremultipliedBlendModes":151,"./mixin":153,"./pluginTarget":154,"eventemitter3":12,"ismobilejs":14,"remove-array-items":215}],151:[function(require,module,exports){
+},{"../const":68,"../settings":123,"./mapPremultipliedBlendModes":147,"./mixin":149,"./pluginTarget":150,"eventemitter3":12,"ismobilejs":14,"remove-array-items":211}],147:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29590,7 +29052,7 @@ function mapPremultipliedBlendModes() {
     return array;
 }
 
-},{"../const":72}],152:[function(require,module,exports){
+},{"../const":68}],148:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29612,7 +29074,7 @@ function maxRecommendedTextures(max) {
     return max;
 }
 
-},{"ismobilejs":14}],153:[function(require,module,exports){
+},{"ismobilejs":14}],149:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29674,7 +29136,7 @@ function performMixins() {
     mixins.length = 0;
 }
 
-},{}],154:[function(require,module,exports){
+},{}],150:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29740,7 +29202,7 @@ exports.default = {
     }
 };
 
-},{}],155:[function(require,module,exports){
+},{}],151:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29816,7 +29278,7 @@ function trimCanvas(canvas) {
     };
 }
 
-},{}],156:[function(require,module,exports){
+},{}],152:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30912,7 +30374,7 @@ function deprecation(core) {
     }
 }
 
-},{}],157:[function(require,module,exports){
+},{}],153:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31092,7 +30554,7 @@ exports.default = CanvasExtract;
 
 core.CanvasRenderer.registerPlugin('extract', CanvasExtract);
 
-},{"../../core":91}],158:[function(require,module,exports){
+},{"../../core":87}],154:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31117,7 +30579,7 @@ Object.defineProperty(exports, 'canvas', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./canvas/CanvasExtract":157,"./webgl/WebGLExtract":159}],159:[function(require,module,exports){
+},{"./canvas/CanvasExtract":153,"./webgl/WebGLExtract":155}],155:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31340,7 +30802,7 @@ exports.default = WebGLExtract;
 
 core.WebGLRenderer.registerPlugin('extract', WebGLExtract);
 
-},{"../../core":91}],160:[function(require,module,exports){
+},{"../../core":87}],156:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31749,7 +31211,7 @@ var AnimatedSprite = function (_core$Sprite) {
 
 exports.default = AnimatedSprite;
 
-},{"../core":91}],161:[function(require,module,exports){
+},{"../core":87}],157:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32337,7 +31799,7 @@ exports.default = BitmapText;
 
 BitmapText.fonts = {};
 
-},{"../core":91,"../core/math/ObservablePoint":94,"../core/settings":127}],162:[function(require,module,exports){
+},{"../core":87,"../core/math/ObservablePoint":90,"../core/settings":123}],158:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32496,7 +31958,7 @@ var TextureTransform = function () {
 
 exports.default = TextureTransform;
 
-},{"../core/math/Matrix":93}],163:[function(require,module,exports){
+},{"../core/math/Matrix":89}],159:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32946,7 +32408,7 @@ var TilingSprite = function (_core$Sprite) {
 
 exports.default = TilingSprite;
 
-},{"../core":91,"../core/sprites/canvas/CanvasTinter":130,"./TextureTransform":162}],164:[function(require,module,exports){
+},{"../core":87,"../core/sprites/canvas/CanvasTinter":126,"./TextureTransform":158}],160:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33350,7 +32812,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy(o
     this.destroy(options);
 };
 
-},{"../core":91,"../core/textures/BaseTexture":138,"../core/textures/Texture":141,"../core/utils":150}],165:[function(require,module,exports){
+},{"../core":87,"../core/textures/BaseTexture":134,"../core/textures/Texture":137,"../core/utils":146}],161:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33384,7 +32846,7 @@ core.Container.prototype.getChildByName = function getChildByName(name) {
     return null;
 };
 
-},{"../core":91}],166:[function(require,module,exports){
+},{"../core":87}],162:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33417,7 +32879,7 @@ core.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition() {
     return point;
 };
 
-},{"../core":91}],167:[function(require,module,exports){
+},{"../core":87}],163:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33478,7 +32940,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // imported for side effect of extending the prototype only, contains no exports
 
-},{"./AnimatedSprite":160,"./BitmapText":161,"./TextureTransform":162,"./TilingSprite":163,"./cacheAsBitmap":164,"./getChildByName":165,"./getGlobalPosition":166,"./webgl/TilingSpriteRenderer":168}],168:[function(require,module,exports){
+},{"./AnimatedSprite":156,"./BitmapText":157,"./TextureTransform":158,"./TilingSprite":159,"./cacheAsBitmap":160,"./getChildByName":161,"./getGlobalPosition":162,"./webgl/TilingSpriteRenderer":164}],164:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33640,7 +33102,7 @@ exports.default = TilingSpriteRenderer;
 
 core.WebGLRenderer.registerPlugin('tilingSprite', TilingSpriteRenderer);
 
-},{"../../core":91,"../../core/const":72,"path":2}],169:[function(require,module,exports){
+},{"../../core":87,"../../core/const":68,"path":2}],165:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33814,7 +33276,7 @@ var BlurFilter = function (_core$Filter) {
 
 exports.default = BlurFilter;
 
-},{"../../core":91,"./BlurXFilter":170,"./BlurYFilter":171}],170:[function(require,module,exports){
+},{"../../core":87,"./BlurXFilter":166,"./BlurYFilter":167}],166:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33980,7 +33442,7 @@ var BlurXFilter = function (_core$Filter) {
 
 exports.default = BlurXFilter;
 
-},{"../../core":91,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],171:[function(require,module,exports){
+},{"../../core":87,"./generateBlurFragSource":168,"./generateBlurVertSource":169,"./getMaxBlurKernelSize":170}],167:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34145,7 +33607,7 @@ var BlurYFilter = function (_core$Filter) {
 
 exports.default = BlurYFilter;
 
-},{"../../core":91,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],172:[function(require,module,exports){
+},{"../../core":87,"./generateBlurFragSource":168,"./generateBlurVertSource":169,"./getMaxBlurKernelSize":170}],168:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34192,7 +33654,7 @@ function generateFragBlurSource(kernelSize) {
     return fragSource;
 }
 
-},{}],173:[function(require,module,exports){
+},{}],169:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34236,7 +33698,7 @@ function generateVertBlurSource(kernelSize, x) {
     return vertSource;
 }
 
-},{}],174:[function(require,module,exports){
+},{}],170:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -34252,7 +33714,7 @@ function getMaxKernelSize(gl) {
     return kernelSize;
 }
 
-},{}],175:[function(require,module,exports){
+},{}],171:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34803,7 +34265,7 @@ var ColorMatrixFilter = function (_core$Filter) {
 exports.default = ColorMatrixFilter;
 ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 
-},{"../../core":91,"path":2}],176:[function(require,module,exports){
+},{"../../core":87,"path":2}],172:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34913,7 +34375,7 @@ var DisplacementFilter = function (_core$Filter) {
 
 exports.default = DisplacementFilter;
 
-},{"../../core":91,"path":2}],177:[function(require,module,exports){
+},{"../../core":87,"path":2}],173:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34967,7 +34429,7 @@ var FXAAFilter = function (_core$Filter) {
 
 exports.default = FXAAFilter;
 
-},{"../../core":91,"path":2}],178:[function(require,module,exports){
+},{"../../core":87,"path":2}],174:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35046,7 +34508,7 @@ Object.defineProperty(exports, 'VoidFilter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./blur/BlurFilter":169,"./blur/BlurXFilter":170,"./blur/BlurYFilter":171,"./colormatrix/ColorMatrixFilter":175,"./displacement/DisplacementFilter":176,"./fxaa/FXAAFilter":177,"./noise/NoiseFilter":179,"./void/VoidFilter":180}],179:[function(require,module,exports){
+},{"./blur/BlurFilter":165,"./blur/BlurXFilter":166,"./blur/BlurYFilter":167,"./colormatrix/ColorMatrixFilter":171,"./displacement/DisplacementFilter":172,"./fxaa/FXAAFilter":173,"./noise/NoiseFilter":175,"./void/VoidFilter":176}],175:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35143,7 +34605,7 @@ var NoiseFilter = function (_core$Filter) {
 
 exports.default = NoiseFilter;
 
-},{"../../core":91,"path":2}],180:[function(require,module,exports){
+},{"../../core":87,"path":2}],176:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35193,7 +34655,7 @@ var VoidFilter = function (_core$Filter) {
 
 exports.default = VoidFilter;
 
-},{"../../core":91,"path":2}],181:[function(require,module,exports){
+},{"../../core":87,"path":2}],177:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -35307,7 +34769,7 @@ if (typeof _deprecation2.default === 'function') {
 global.PIXI = exports; // eslint-disable-line
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./accessibility":68,"./core":91,"./deprecation":156,"./extract":158,"./extras":167,"./filters":178,"./interaction":186,"./loaders":189,"./mesh":198,"./particles":201,"./polyfill":207,"./prepare":211}],182:[function(require,module,exports){
+},{"./accessibility":64,"./core":87,"./deprecation":152,"./extract":154,"./extras":163,"./filters":174,"./interaction":182,"./loaders":185,"./mesh":194,"./particles":197,"./polyfill":203,"./prepare":207}],178:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35531,7 +34993,7 @@ var InteractionData = function () {
 
 exports.default = InteractionData;
 
-},{"../core":91}],183:[function(require,module,exports){
+},{"../core":87}],179:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -35616,7 +35078,7 @@ var InteractionEvent = function () {
 
 exports.default = InteractionEvent;
 
-},{}],184:[function(require,module,exports){
+},{}],180:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37376,7 +36838,7 @@ exports.default = InteractionManager;
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":91,"./InteractionData":182,"./InteractionEvent":183,"./InteractionTrackingData":185,"./interactiveTarget":187,"eventemitter3":12}],185:[function(require,module,exports){
+},{"../core":87,"./InteractionData":178,"./InteractionEvent":179,"./InteractionTrackingData":181,"./interactiveTarget":183,"eventemitter3":12}],181:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -37552,7 +37014,7 @@ InteractionTrackingData.FLAGS = Object.freeze({
     RIGHT_DOWN: 1 << 2
 });
 
-},{}],186:[function(require,module,exports){
+},{}],182:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37604,7 +37066,7 @@ Object.defineProperty(exports, 'InteractionEvent', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./InteractionData":182,"./InteractionEvent":183,"./InteractionManager":184,"./InteractionTrackingData":185,"./interactiveTarget":187}],187:[function(require,module,exports){
+},{"./InteractionData":178,"./InteractionEvent":179,"./InteractionManager":180,"./InteractionTrackingData":181,"./interactiveTarget":183}],183:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37721,7 +37183,7 @@ exports.default = {
   _trackedPointers: undefined
 };
 
-},{}],188:[function(require,module,exports){
+},{}],184:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37813,7 +37275,7 @@ function parse(resource, texture) {
     resource.bitmapFont = _extras.BitmapText.registerFont(resource.data, texture);
 }
 
-},{"../core":91,"../extras":167,"path":2,"resource-loader":220}],189:[function(require,module,exports){
+},{"../core":87,"../extras":163,"path":2,"resource-loader":216}],185:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37941,7 +37403,7 @@ AppPrototype.destroy = function destroy(removeView) {
     this._parentDestroy(removeView);
 };
 
-},{"../core/Application":69,"./bitmapFontParser":188,"./loader":190,"./spritesheetParser":191,"./textureParser":192,"resource-loader":220}],190:[function(require,module,exports){
+},{"../core/Application":65,"./bitmapFontParser":184,"./loader":186,"./spritesheetParser":187,"./textureParser":188,"resource-loader":216}],186:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38112,7 +37574,7 @@ var Resource = _resourceLoader2.default.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":188,"./spritesheetParser":191,"./textureParser":192,"eventemitter3":12,"resource-loader":220,"resource-loader/lib/middlewares/parsing/blob":221}],191:[function(require,module,exports){
+},{"./bitmapFontParser":184,"./spritesheetParser":187,"./textureParser":188,"eventemitter3":12,"resource-loader":216,"resource-loader/lib/middlewares/parsing/blob":217}],187:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38171,7 +37633,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":91,"resource-loader":220,"url":8}],192:[function(require,module,exports){
+},{"../core":87,"resource-loader":216,"url":8}],188:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38194,7 +37656,7 @@ var _Texture2 = _interopRequireDefault(_Texture);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"../core/textures/Texture":141,"resource-loader":220}],193:[function(require,module,exports){
+},{"../core/textures/Texture":137,"resource-loader":216}],189:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38562,7 +38024,7 @@ Mesh.DRAW_MODES = {
   TRIANGLES: 1
 };
 
-},{"../core":91,"../extras/TextureTransform":162}],194:[function(require,module,exports){
+},{"../core":87,"../extras/TextureTransform":158}],190:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38948,7 +38410,7 @@ var NineSlicePlane = function (_Plane) {
 
 exports.default = NineSlicePlane;
 
-},{"./Plane":195}],195:[function(require,module,exports){
+},{"./Plane":191}],191:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39087,7 +38549,7 @@ var Plane = function (_Mesh) {
 
 exports.default = Plane;
 
-},{"./Mesh":193}],196:[function(require,module,exports){
+},{"./Mesh":189}],192:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39323,7 +38785,7 @@ var Rope = function (_Mesh) {
 
 exports.default = Rope;
 
-},{"./Mesh":193}],197:[function(require,module,exports){
+},{"./Mesh":189}],193:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39606,7 +39068,7 @@ exports.default = MeshSpriteRenderer;
 
 core.CanvasRenderer.registerPlugin('mesh', MeshSpriteRenderer);
 
-},{"../../core":91,"../Mesh":193}],198:[function(require,module,exports){
+},{"../../core":87,"../Mesh":189}],194:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39667,7 +39129,7 @@ Object.defineProperty(exports, 'Rope', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./Mesh":193,"./NineSlicePlane":194,"./Plane":195,"./Rope":196,"./canvas/CanvasMeshRenderer":197,"./webgl/MeshRenderer":199}],199:[function(require,module,exports){
+},{"./Mesh":189,"./NineSlicePlane":190,"./Plane":191,"./Rope":192,"./canvas/CanvasMeshRenderer":193,"./webgl/MeshRenderer":195}],195:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39818,7 +39280,7 @@ exports.default = MeshRenderer;
 
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
-},{"../../core":91,"../Mesh":193,"path":2,"pixi-gl-core":25}],200:[function(require,module,exports){
+},{"../../core":87,"../Mesh":189,"path":2,"pixi-gl-core":36}],196:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40196,7 +39658,7 @@ var ParticleContainer = function (_core$Container) {
 
 exports.default = ParticleContainer;
 
-},{"../core":91,"../core/utils":150}],201:[function(require,module,exports){
+},{"../core":87,"../core/utils":146}],197:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40221,7 +39683,7 @@ Object.defineProperty(exports, 'ParticleRenderer', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./ParticleContainer":200,"./webgl/ParticleRenderer":203}],202:[function(require,module,exports){
+},{"./ParticleContainer":196,"./webgl/ParticleRenderer":199}],198:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40464,7 +39926,7 @@ var ParticleBuffer = function () {
 
 exports.default = ParticleBuffer;
 
-},{"../../core/utils/createIndicesForQuads":148,"pixi-gl-core":25}],203:[function(require,module,exports){
+},{"../../core/utils/createIndicesForQuads":144,"pixi-gl-core":36}],199:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40940,7 +40402,7 @@ exports.default = ParticleRenderer;
 
 core.WebGLRenderer.registerPlugin('particle', ParticleRenderer);
 
-},{"../../core":91,"../../core/utils":150,"./ParticleBuffer":202,"./ParticleShader":204}],204:[function(require,module,exports){
+},{"../../core":87,"../../core/utils":146,"./ParticleBuffer":198,"./ParticleShader":200}],200:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40983,7 +40445,7 @@ var ParticleShader = function (_Shader) {
 
 exports.default = ParticleShader;
 
-},{"../../core/Shader":70}],205:[function(require,module,exports){
+},{"../../core/Shader":66}],201:[function(require,module,exports){
 "use strict";
 
 // References:
@@ -41001,7 +40463,7 @@ if (!Math.sign) {
     };
 }
 
-},{}],206:[function(require,module,exports){
+},{}],202:[function(require,module,exports){
 'use strict';
 
 var _objectAssign = require('object-assign');
@@ -41016,7 +40478,7 @@ if (!Object.assign) {
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
 
-},{"object-assign":16}],207:[function(require,module,exports){
+},{"object-assign":16}],203:[function(require,module,exports){
 'use strict';
 
 require('./Object.assign');
@@ -41041,7 +40503,7 @@ if (!window.Uint16Array) {
     window.Uint16Array = Array;
 }
 
-},{"./Math.sign":205,"./Object.assign":206,"./requestAnimationFrame":208}],208:[function(require,module,exports){
+},{"./Math.sign":201,"./Object.assign":202,"./requestAnimationFrame":204}],204:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -41118,7 +40580,7 @@ if (!global.cancelAnimationFrame) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],209:[function(require,module,exports){
+},{}],205:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41606,7 +41068,7 @@ function findTextStyle(item, queue) {
     return false;
 }
 
-},{"../core":91,"./limiters/CountLimiter":212}],210:[function(require,module,exports){
+},{"../core":87,"./limiters/CountLimiter":208}],206:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41726,7 +41188,7 @@ function uploadBaseTextures(prepare, item) {
 
 core.CanvasRenderer.registerPlugin('prepare', CanvasPrepare);
 
-},{"../../core":91,"../BasePrepare":209}],211:[function(require,module,exports){
+},{"../../core":87,"../BasePrepare":205}],207:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41778,7 +41240,7 @@ Object.defineProperty(exports, 'TimeLimiter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./BasePrepare":209,"./canvas/CanvasPrepare":210,"./limiters/CountLimiter":212,"./limiters/TimeLimiter":213,"./webgl/WebGLPrepare":214}],212:[function(require,module,exports){
+},{"./BasePrepare":205,"./canvas/CanvasPrepare":206,"./limiters/CountLimiter":208,"./limiters/TimeLimiter":209,"./webgl/WebGLPrepare":210}],208:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41836,7 +41298,7 @@ var CountLimiter = function () {
 
 exports.default = CountLimiter;
 
-},{}],213:[function(require,module,exports){
+},{}],209:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41894,7 +41356,7 @@ var TimeLimiter = function () {
 
 exports.default = TimeLimiter;
 
-},{}],214:[function(require,module,exports){
+},{}],210:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42016,7 +41478,7 @@ function findGraphics(item, queue) {
 
 core.WebGLRenderer.registerPlugin('prepare', WebGLPrepare);
 
-},{"../../core":91,"../BasePrepare":209}],215:[function(require,module,exports){
+},{"../../core":87,"../BasePrepare":205}],211:[function(require,module,exports){
 'use strict'
 
 /**
@@ -42046,7 +41508,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
   arr.length = len
 }
 
-},{}],216:[function(require,module,exports){
+},{}],212:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42664,7 +42126,7 @@ var Loader = function () {
 
 exports.default = Loader;
 
-},{"./Resource":217,"./async":218,"mini-signals":15,"parse-uri":17}],217:[function(require,module,exports){
+},{"./Resource":213,"./async":214,"mini-signals":15,"parse-uri":17}],213:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43820,7 +43282,7 @@ function reqType(xhr) {
     return xhr.toString().replace('object ', '');
 }
 
-},{"mini-signals":15,"parse-uri":17}],218:[function(require,module,exports){
+},{"mini-signals":15,"parse-uri":17}],214:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44029,7 +43491,7 @@ function queue(worker, concurrency) {
     return q;
 }
 
-},{}],219:[function(require,module,exports){
+},{}],215:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44097,7 +43559,7 @@ function encodeBinary(input) {
     return output;
 }
 
-},{}],220:[function(require,module,exports){
+},{}],216:[function(require,module,exports){
 'use strict';
 
 // import Loader from './Loader';
@@ -44121,7 +43583,7 @@ module.exports = Loader;
 // export default Loader;
 module.exports.default = Loader;
 
-},{"./Loader":216,"./Resource":217,"./async":218,"./b64":219}],221:[function(require,module,exports){
+},{"./Loader":212,"./Resource":213,"./async":214,"./b64":215}],217:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44209,7 +43671,7 @@ function blobMiddlewareFactory() {
     };
 }
 
-},{"../../Resource":217,"../../b64":219}],222:[function(require,module,exports){
+},{"../../Resource":213,"../../b64":215}],218:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -44271,7 +43733,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":223,"./lib/tychei":224,"./lib/xor128":225,"./lib/xor4096":226,"./lib/xorshift7":227,"./lib/xorwow":228,"./seedrandom":229}],223:[function(require,module,exports){
+},{"./lib/alea":219,"./lib/tychei":220,"./lib/xor128":221,"./lib/xor4096":222,"./lib/xorshift7":223,"./lib/xorwow":224,"./seedrandom":225}],219:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -44387,7 +43849,7 @@ if (module && module.exports) {
 
 
 
-},{}],224:[function(require,module,exports){
+},{}],220:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -44492,7 +43954,7 @@ if (module && module.exports) {
 
 
 
-},{}],225:[function(require,module,exports){
+},{}],221:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44575,7 +44037,7 @@ if (module && module.exports) {
 
 
 
-},{}],226:[function(require,module,exports){
+},{}],222:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -44723,7 +44185,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],227:[function(require,module,exports){
+},{}],223:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -44822,7 +44284,7 @@ if (module && module.exports) {
 );
 
 
-},{}],228:[function(require,module,exports){
+},{}],224:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44910,7 +44372,7 @@ if (module && module.exports) {
 
 
 
-},{}],229:[function(require,module,exports){
+},{}],225:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -45159,7 +44621,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":1}],230:[function(require,module,exports){
+},{"crypto":1}],226:[function(require,module,exports){
 // angle.js <https://github.com/davidfig/anglejs>
 // Released under MIT license <https://github.com/davidfig/angle/blob/master/LICENSE>
 // Author: David Figatner
@@ -45435,7 +44897,7 @@ module.exports = {
     equals,
     explain
 }
-},{}],231:[function(require,module,exports){
+},{}],227:[function(require,module,exports){
 /**
  * @file color.js
  * @author David Figatner
@@ -45744,7 +45206,682 @@ class Color
 };
 
 module.exports = new Color();
-},{"yy-random":232}],232:[function(require,module,exports){
+},{"yy-random":232}],228:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const EventEmitter = require('eventemitter3')
+
+module.exports = class Input extends EventEmitter
+{
+    /**
+     * basic input support for touch, mouse, and keyboard
+     *
+     * @param {object} [options]
+     * @param {HTMLElement} [options.div=document] object to attach listener to
+     * @param {boolean} [options.noPointers] turns off mouse/touch/pen handlers
+     * @param {boolean} [options.keys] turn on key listener
+     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
+     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
+     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
+     *
+     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
+     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
+     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
+     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
+     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
+     *
+     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
+     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
+        this.chromeDebug = options.chromeDebug
+        this.preventDefault = options.preventDefault
+
+        this.pointers = []
+        this.keys = {}
+        this.input = []
+
+        this.div = options.div || document
+        this.options = options
+        this.callbacks = [
+            this.mouseDown.bind(this),
+            this.mouseMove.bind(this),
+            this.mouseUp.bind(this), // 2
+            this.touchStart.bind(this),
+            this.touchMove.bind(this),
+            this.touchEnd.bind(this),
+            this.keydown.bind(this), // 6
+            this.keyup.bind(this),
+            this.wheel.bind(this) // 8
+        ]
+        if (!options.noPointers)
+        {
+            this.addPointers()
+        }
+        if (options.keys)
+        {
+            this.addKeyboard()
+        }
+    }
+
+    /**
+     * remove all listeners
+     */
+    destroy()
+    {
+        this.removePointers()
+        this.removeKeyboard()
+    }
+
+    /**
+     * turns on pointer listeners (on by default); can be used after removePointers()
+     */
+    addPointers()
+    {
+        if (!this.listeningPointer)
+        {
+            const div = this.div
+            div.addEventListener('mousedown', this.callbacks[0])
+            div.addEventListener('mousemove', this.callbacks[1])
+            div.addEventListener('mouseup', this.callbacks[2])
+            div.addEventListener('mouseout', this.callbacks[2])
+            div.addEventListener('wheel', this.callbacks[8])
+
+            div.addEventListener('touchstart', this.callbacks[3])
+            div.addEventListener('touchmove', this.callbacks[4])
+            div.addEventListener('touchend', this.callbacks[5])
+            div.addEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = true
+        }
+    }
+
+    /**
+     * remove pointers listener
+     */
+    removePointers()
+    {
+        if (this.listeningPointer)
+        {
+            const div = this.div
+            div.removeEventListener('mousedown', this.callbacks[0])
+            div.removeEventListener('mousemove', this.callbacks[1])
+            div.removeEventListener('mouseup', this.callbacks[2])
+            div.removeEventListener('mouseout', this.callbacks[2])
+            div.removeEventListener('wheel', this.callbacks[8])
+
+            div.removeEventListener('touchstart', this.callbacks[3])
+            div.removeEventListener('touchmove', this.callbacks[4])
+            div.removeEventListener('touchend', this.callbacks[5])
+            div.removeEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = false
+        }
+    }
+
+    /**
+     * turns on keyboard listener (off by default); can be used after removeKeyboard()
+     */
+    addKeyboard()
+    {
+        if (!this.listeningKeyboard)
+        {
+            document.addEventListener('keydown', this.callbacks[6])
+            document.addEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = true
+        }
+    }
+
+    /**
+     * removes keyboard listener
+     */
+    removeKeyboard()
+    {
+        if (this.listeningKeyboard)
+        {
+            document.removeEventListener('keydown', this.callbacks[6])
+            document.removeEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = false
+        }
+    }
+
+    /**
+     * helper function to find touch from list based on id
+     * @private
+     * @param  {number} id for saved touch
+     * @return {object}
+     */
+    findTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                return this.pointers[i]
+            }
+        }
+        return null
+    }
+
+    /**
+     * helper function to remove touch from touch list
+     * @private
+     * @param  {object} touch object
+     */
+    removeTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                this.pointers.splice(i, 1)
+                return
+            }
+        }
+    }
+
+    /**
+     * Handle touch start
+     * @private
+     * @param  {object} e touch event
+     */
+    touchStart(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const touches = e.changedTouches
+        for (let i = 0; i < touches.length; i++)
+        {
+            const touch = touches[i]
+            const entry = {
+                identifier: touch.identifier,
+                x: touch.clientX,
+                y: touch.clientY
+            }
+            this.pointers.push(entry)
+            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch move
+     * @private
+     * @param  {object} e touch event
+     */
+    touchMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch end
+     * @private
+     * @param  {object} e touch event
+     */
+    touchEnd(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            const previous = this.findTouch(touch.identifier)
+            if (previous !== null)
+            {
+                this.removeTouch(touch.identifier)
+                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
+            }
+        }
+    }
+
+    /**
+     * Handle mouse down
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseDown(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        while (this.pointers.length)
+        {
+            this.pointers.pop()
+        }
+        this.pointers.push({id: 'mouse'})
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleDown(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse move
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleMove(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse up
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseUp(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.pointers.pop()
+        this.handleUp(x, y, e, 'mouse')
+    }
+
+    handleDown(x, y, e, id)
+    {
+        this.emit('down', x, y, { event: e, input: this, id })
+        if (!this.threshold || this.pointers > 1)
+        {
+            this.start = null
+        }
+        else
+        {
+            this.start = { x, y }
+        }
+    }
+
+    handleUp(x, y, e, id)
+    {
+        if (this.start)
+        {
+            this.emit('click', x, y, { event: e, input: this, id })
+        }
+        this.emit('up', x, y, { event: e, input: this, id })
+    }
+
+    handleMove(x, y, e, id)
+    {
+        if (this.start)
+        {
+            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
+            {
+                this.start = null
+            }
+        }
+        this.emit('move', x, y, { event: e, input: this, id })
+    }
+
+    wheel(e)
+    {
+        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
+    }
+
+    /**
+     * Sets event listener for keyboard
+     * @private
+     */
+    keysListener()
+    {
+    }
+
+    /**
+     * @private
+     * @param  {object} e
+     */
+    keydown(e)
+    {
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        if (this.chromeDebug)
+        {
+            // allow chrome to open developer console
+            if (this.keys.meta && code === 73)
+            {
+                return
+            }
+
+            // reload page with meta + r
+            if (code === 82 && this.keys.meta)
+            {
+                window.location.reload()
+                return
+            }
+        }
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('keydown', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * Handle key up
+     * @private
+     * @param  {object}
+     */
+    keyup(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        this.emit('keyup', code, this.keys, { event: e, input: this })
+    }
+}
+},{"eventemitter3":12}],229:[function(require,module,exports){
+module.exports = require('./src/loop')
+},{"./src/loop":231}],230:[function(require,module,exports){
+const Events = require('eventemitter3')
+
+/** Entry class for Loop */
+class Entry extends Events
+{
+    /**
+     * create an entry in the update loop
+     * used by Loop
+     * @param {function} callback
+     * @param {number} [time=0] in milliseconds to call this update
+     * @param {number} [count] number of times to run this update (undefined=infinite)
+     */
+    constructor(callback, time, count)
+    {
+        super()
+        this.callback = callback
+        this.time = time
+        this.current = 0
+        this.count = count
+    }
+
+    /**
+     * run the callback if available
+     * @private
+     * @param {number} elapsed
+     */
+    _update(elapsed)
+    {
+        let result
+        if (this.callback)
+        {
+            result = this.callback(elapsed, this)
+        }
+        this.emit('each', elapsed, this)
+        if (result || (!isNaN(this.count) && !--this.count))
+        {
+            this.emit('done', this)
+            return true
+        }
+    }
+
+    /**
+     * update checks time and runs the callback
+     * @param {number} elapsed
+     * @return {boolean} whether entry is complete and may be removed from list
+     */
+    update(elapsed)
+    {
+        if (!this._pause)
+        {
+            if (this.time)
+            {
+                this.current += elapsed
+                if (this.current >= this.time)
+                {
+                    this.current -= this.time
+                    return this._update(elapsed)
+                }
+            }
+            else
+            {
+                return this._update(elapsed)
+            }
+        }
+    }
+
+    /**
+     * @type {boolean} pause this entry
+     */
+    set pause(value)
+    {
+        this._pause = value
+    }
+    get pause()
+    {
+        return this._pause
+    }
+}
+
+module.exports = Entry
+},{"eventemitter3":12}],231:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const Events = require('eventemitter3')
+
+class Loop extends Events
+{
+    /**
+     * basic loop support
+     * @param {object} [options]
+     * @param {number} [options.maxFrameTime=1000/60] maximum time in milliseconds for a frame
+     * @param {object} [options.pauseOnBlur] pause loop when app loses focus, start it when app regains focus
+     *
+     * @event each(elapsed, Loop, elapsedInLoop)
+     * @event start(Loop)
+     * @event stop(Loop)
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.maxFrameTime = options.maxFrameTime || 1000 / 60
+        if (options.pauseOnBlur)
+        {
+            window.addEventListener('blur', this.stopBlur.bind(this))
+            window.addEventListener('focus', this.startBlur.bind(this))
+        }
+        this.list = []
+    }
+
+    /**
+     * start requestAnimationFrame() loop
+     * @return {Loop} this
+     */
+    start()
+    {
+        if (!this.running)
+        {
+            this.running = true
+            if (!this.waiting)
+            {
+                this.loop()
+            }
+            this.emit('start', this)
+        }
+        return this
+    }
+
+    /**
+     * handler for focus event
+     * @private
+     */
+    startBlur()
+    {
+        if (this.blurred)
+        {
+            this.start()
+            this.blurred = false
+        }
+    }
+
+    /**
+     * handler for blur event
+     * @private
+     */
+    stopBlur()
+    {
+        if (this.running)
+        {
+            this.stop()
+            this.blurred = true
+        }
+    }
+
+    /**
+     * stop loop
+     * @return {Loop} this
+     */
+    stop()
+    {
+        this.running = false
+        this.blurred = false
+        this.emit('stop', this)
+        return this
+    }
+
+    /**
+     * loop through updates; can be called manually each frame, or called automatically as part of start()
+     */
+    update()
+    {
+        const now = performance.now()
+        let elapsed = now - this.last ? this.last : 0
+        elapsed = elapsed > this.maxFrameTime ? this.maxFrameTime : elapsed
+        for (let entry of this.list)
+        {
+            if (entry.update(elapsed))
+            {
+                this.remove(entry)
+            }
+        }
+        this.emit('each', elapsed, this, now - performance.now())
+        this.last = now
+    }
+
+    /**
+     * internal loop through animations
+     * @private
+     */
+    loop()
+    {
+        if (this.running)
+        {
+            this.waiting = false
+            this.update()
+            requestAnimationFrame(this.loop.bind(this))
+            this.waiting = true
+        }
+        else
+        {
+            this.waiting = false
+        }
+    }
+
+    /**
+     * adds a callback to the loop
+     * @param {function} callback
+     * @param {number} [time=0] in milliseconds to call this update (0=every frame)
+     * @param {number} [count=0] number of times to run this update (0=infinite)
+     * @return {object} entry - used to remove or change the parameters of the update
+     */
+    interval(callback, time, count)
+    {
+        const entry = new Entry(callback, time, count)
+        this.list.push(entry)
+        return entry
+    }
+
+    /**
+     * adds a one-time callback to the loop
+     * @param {function} callback
+     * @param {number} time in milliseconds to call this update
+     * @return {object} entry - used to remove or change the parameters of the update
+     */
+    timeout(callback, time)
+    {
+        return this.interval(callback, time, 1)
+    }
+
+    /**
+     * remove a callback from the loop
+     * @param {object} entry - returned by add()
+     */
+    remove(entry)
+    {
+        const index = this.list.indexOf(entry)
+        if (index !== -1)
+        {
+            this.list.splice(index, 1)
+        }
+    }
+
+    /**
+     * removes all callbacks from the loop
+     */
+    removeAll()
+    {
+        this.list = []
+    }
+
+    /**
+     * @type {number} count of all animations
+     */
+    get count()
+    {
+        return this.list.length
+    }
+
+    /**
+     * @type {number} count of running animations
+     */
+    get countRunning()
+    {
+        let count = 0
+        for (let entry of this.list)
+        {
+            if (!entry.pause)
+            {
+                count++
+            }
+        }
+        return count
+    }
+}
+
+const Entry = require('./entry')
+
+Loop.entry = Entry
+module.exports = Loop
+},{"./entry":230,"eventemitter3":12}],232:[function(require,module,exports){
 // yy-random
 // by David Figatner
 // MIT license
@@ -46170,7 +46307,7 @@ class Random
 }
 
 module.exports = new Random()
-},{"seedrandom":222}],233:[function(require,module,exports){
+},{"seedrandom":218}],233:[function(require,module,exports){
 require('pixi.js');
 const Viewport = require('pixi-viewport');
 // Prevents error from pixi-keyboard and pivi-particles
@@ -46187,26 +46324,12 @@ function updateKeyboard() {
     }*/
 
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
-        viewport.on('snap-start', function () {
-            if (viewport.plugin('drag')) {
-                viewport.plugin('drag').pause();
-            }
-            if (viewport.plugin('pinch')) {
-                viewport.plugin('pinch').pause();
-            }
-        })
-        viewport.on('snap-end', function () {
-            if (viewport.plugin('drag')) {
-                viewport.plugin('drag').resume();
-            }
-            if (viewport.plugin('pinch')) {
-                viewport.plugin('pinch').resume();
-            }
-        })
+
         //_viewport.on('snap-end', () => addCounter('snap-end'))
         viewport.snap(0, 0, {
             time: 1000,
-            removeOnComplete: true
+            removeOnComplete: true,
+            center: true
         });
     }
 
@@ -46275,6 +46398,52 @@ viewport
     .decelerate()
     .start();
 
+function stopSnap() {
+    if (viewport.plugin('snap')) {
+        viewport.removePlugin('snap');
+    }
+}
+
+viewport.on('drag-start', function (e) {
+    stopSnap();
+
+    var planet = getPlanet(e.world.x, e.world.y);
+    if (planet) {
+        viewport.follow(planet);
+    } else {
+        viewport.removePlugin('follow');
+    }
+});
+viewport.on('pinch-start', stopSnap);
+viewport.on('wheel-pre', stopSnap);
+viewport.on('click', function (e) {
+    stopSnap();
+
+    var planet = getPlanet(e.world.x, e.world.y);
+    if (planet) {
+        viewport.follow(planet);
+    } else {
+        viewport.removePlugin('follow');
+    }
+});
+
+var planets;
+
+// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
+const clickThreshold = 20;
+
+function getPlanet(x, y) {
+    for (var i in planets) {
+        var distSqr = ((x - planets[i].x) * (x - planets[i].x)) + ((y - planets[i].y) * (y - planets[i].y));
+        if (distSqr < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
+            console.log('dank af yo')
+            return planets[i];
+        }
+    }
+
+    return null;
+}
+
 PIXI.loader
     .add('sunTexture', 'game/sun.png')
     .add('planet1', 'game/planet1.png')
@@ -46294,33 +46463,43 @@ function onLoad(loader, resources) {
     sun.emit = true;
 
     var planet1 = new PIXI.Sprite(resources.planet1.texture);
-    planet1.pivot.set(0.5 * planet1.width, 0.5 * planet1.height);
+    planet1.radius = 0.5 * planet1.width;
+    planet1.pivot.set(planet1.radius, planet1.radius);
     planet1.scale.set(0.1);
+    planet1.radius = planet1.radius * planet1.scale.x;
     planet1.age = 0;
     planet1.position.x = orbit1.radius;
     game.stage.addChild(planet1);
 
     var planet2 = new PIXI.Sprite(resources.planet2.texture);
-    planet2.pivot.set(0.5 * planet2.width, 0.5 * planet2.height);
+    planet2.radius = 0.5 * planet2.width;
+    planet2.pivot.set(planet2.radius, planet2.radius);
     planet2.scale.set(0.1);
+    planet2.radius = planet2.radius * planet2.scale.x;
     planet2.age = 0;
     planet2.position.x = orbit2.radius;
     game.stage.addChild(planet2);
 
     var planet3 = new PIXI.Sprite(resources.planet1.texture);
-    planet3.pivot.set(0.5 * planet3.width, 0.5 * planet3.height);
+    planet3.radius = 0.5 * planet3.width;
+    planet3.pivot.set(planet3.radius, planet3.radius);
     planet3.scale.set(0.1);
+    planet3.radius = planet3.radius * planet3.scale.x;
     planet3.age = 0;
     planet3.position.x = orbit3.radius;
     game.stage.addChild(planet3);
 
     var planet4 = new PIXI.Sprite(resources.planet2.texture);
-    planet4.pivot.set(0.5 * planet4.width, 0.5 * planet4.height);
+    planet4.radius = 0.5 * planet4.width;
+    planet4.pivot.set(planet4.radius, planet4.radius);
     planet4.scale.set(0.1);
+    planet4.radius = planet4.radius * planet4.scale.x;
     planet4.age = 0;
     planet4.position.x = orbit4.radius;
     game.stage.addChild(planet4);
 
+
+    planets = [planet1, planet2, planet3, planet4];
 
     this.lastElapsed = Date.now();
     game.ticker.add(function () {
@@ -46382,6 +46561,8 @@ function resize() {
     if (oldCenter) {
         viewport.moveCenter(oldCenter);
     }
+
+    //stopSnap();
 }
 
 const minDashes = 2;
@@ -46418,4 +46599,4 @@ function dottedCircle(x, y, radius, dashLength) {
     return pixiCircle;
 }
 
-},{"pixi-keyboard":36,"pixi-particles":37,"pixi-viewport":38,"pixi.js":181}]},{},[233]);
+},{"pixi-keyboard":47,"pixi-particles":48,"pixi-viewport":49,"pixi.js":177}]},{},[233]);

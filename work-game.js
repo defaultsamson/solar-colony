@@ -14,26 +14,12 @@ function updateKeyboard() {
     }*/
 
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
-        viewport.on('snap-start', function () {
-            if (viewport.plugin('drag')) {
-                viewport.plugin('drag').pause();
-            }
-            if (viewport.plugin('pinch')) {
-                viewport.plugin('pinch').pause();
-            }
-        })
-        viewport.on('snap-end', function () {
-            if (viewport.plugin('drag')) {
-                viewport.plugin('drag').resume();
-            }
-            if (viewport.plugin('pinch')) {
-                viewport.plugin('pinch').resume();
-            }
-        })
+
         //_viewport.on('snap-end', () => addCounter('snap-end'))
         viewport.snap(0, 0, {
             time: 1000,
-            removeOnComplete: true
+            removeOnComplete: true,
+            center: true
         });
     }
 
@@ -102,6 +88,50 @@ viewport
     .decelerate()
     .start();
 
+function stopSnap() {
+    if (viewport.plugin('snap')) {
+        viewport.removePlugin('snap');
+    }
+}
+
+viewport.on('drag-start', function (e) {
+    stopSnap();
+
+    var planet = getPlanet(e.world.x, e.world.y);
+    if (!planet) {
+        viewport.removePlugin('follow');
+    }
+});
+viewport.on('pinch-start', stopSnap);
+viewport.on('wheel-pre', stopSnap);
+viewport.on('click', function (e) {
+    stopSnap();
+
+    var planet = getPlanet(e.world.x, e.world.y);
+    if (planet) {
+        viewport.follow(planet);
+    } else {
+        viewport.removePlugin('follow');
+    }
+});
+
+var planets;
+
+// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
+const clickThreshold = 20;
+
+function getPlanet(x, y) {
+    for (var i in planets) {
+        var distSqr = ((x - planets[i].x) * (x - planets[i].x)) + ((y - planets[i].y) * (y - planets[i].y));
+        if (distSqr < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
+            console.log('dank af yo')
+            return planets[i];
+        }
+    }
+
+    return null;
+}
+
 PIXI.loader
     .add('sunTexture', 'game/sun.png')
     .add('planet1', 'game/planet1.png')
@@ -121,33 +151,43 @@ function onLoad(loader, resources) {
     sun.emit = true;
 
     var planet1 = new PIXI.Sprite(resources.planet1.texture);
-    planet1.pivot.set(0.5 * planet1.width, 0.5 * planet1.height);
+    planet1.radius = 0.5 * planet1.width;
+    planet1.pivot.set(planet1.radius, planet1.radius);
     planet1.scale.set(0.1);
+    planet1.radius = planet1.radius * planet1.scale.x;
     planet1.age = 0;
     planet1.position.x = orbit1.radius;
     game.stage.addChild(planet1);
 
     var planet2 = new PIXI.Sprite(resources.planet2.texture);
-    planet2.pivot.set(0.5 * planet2.width, 0.5 * planet2.height);
+    planet2.radius = 0.5 * planet2.width;
+    planet2.pivot.set(planet2.radius, planet2.radius);
     planet2.scale.set(0.1);
+    planet2.radius = planet2.radius * planet2.scale.x;
     planet2.age = 0;
     planet2.position.x = orbit2.radius;
     game.stage.addChild(planet2);
 
     var planet3 = new PIXI.Sprite(resources.planet1.texture);
-    planet3.pivot.set(0.5 * planet3.width, 0.5 * planet3.height);
+    planet3.radius = 0.5 * planet3.width;
+    planet3.pivot.set(planet3.radius, planet3.radius);
     planet3.scale.set(0.1);
+    planet3.radius = planet3.radius * planet3.scale.x;
     planet3.age = 0;
     planet3.position.x = orbit3.radius;
     game.stage.addChild(planet3);
 
     var planet4 = new PIXI.Sprite(resources.planet2.texture);
-    planet4.pivot.set(0.5 * planet4.width, 0.5 * planet4.height);
+    planet4.radius = 0.5 * planet4.width;
+    planet4.pivot.set(planet4.radius, planet4.radius);
     planet4.scale.set(0.1);
+    planet4.radius = planet4.radius * planet4.scale.x;
     planet4.age = 0;
     planet4.position.x = orbit4.radius;
     game.stage.addChild(planet4);
 
+
+    planets = [planet1, planet2, planet3, planet4];
 
     this.lastElapsed = Date.now();
     game.ticker.add(function () {
@@ -209,6 +249,8 @@ function resize() {
     if (oldCenter) {
         viewport.moveCenter(oldCenter);
     }
+
+    //stopSnap();
 }
 
 const minDashes = 2;
