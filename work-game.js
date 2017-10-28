@@ -62,6 +62,7 @@ game.ticker.add(updateKeyboard);
 // Viewport options. Not very important because it can vary (see resize() )
 // These are mostly just used for initialization so that no errors occur
 var options = {
+    pauseOnBlur: true,
     screenWidth: w,
     screenHeight: h,
     worldWidth: w,
@@ -79,7 +80,6 @@ var clampOptions = {
 
 viewport
     .drag()
-    .hitArea()
     .wheel()
     .pinch({
         percent: 4.5
@@ -89,7 +89,7 @@ viewport
     .start();
 
 function stopSnap() {
-    if (viewport.plugin('snap')) {
+    if (viewport.plugins['snap']) {
         viewport.removePlugin('snap');
     }
 }
@@ -109,7 +109,9 @@ viewport.on('click', function (e) {
 
     var planet = getPlanet(e.world.x, e.world.y);
     if (planet) {
-        viewport.follow(planet);
+        viewport.follow(planet, {
+            speed: 20
+        });
     } else {
         viewport.removePlugin('follow');
     }
@@ -118,7 +120,7 @@ viewport.on('click', function (e) {
 var planets;
 
 // The extra pixels to add to the radius of a planet to determine whether to select it when clicked
-const clickThreshold = 20;
+const clickThreshold = 40;
 
 function getPlanet(x, y) {
     for (var i in planets) {
