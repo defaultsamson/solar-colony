@@ -46563,9 +46563,9 @@ PIXI.loader
 function onLoad(loader, resources) {
 
     var orbit1 = game.stage.addChild(dottedCircle(0, 0, 150, 25));
-    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 200, 25));
+    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 220, 25));
     var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25));
-    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 300, 25));
+    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 350, 25));
 
     resize();
 
@@ -46611,11 +46611,20 @@ function onLoad(loader, resources) {
 
     planets = [planet1, planet2, planet3, planet4];
 
-    //const G = 6.67 * 0.00000000001;
-    //const ppm = 0.0001;
-    //const starMass = 2188000000000000000000000000000; // kg
-    //planet1.mass = 5972000000000000000000000;
-    //planet1.speed = Math.sqrt((G * planet1.mass) / (planet1.radius / ppm)) * ppm;
+    const G = 6.67 * 0.00000000001;
+    const ppm = 0.0004;
+    const starMass = 2188000000000000000000000000000; // kg
+    planet1.mass = 4867000000000000000000000;
+    planet1.speed = Math.sqrt((G * planet1.mass) / (planet1.radius / ppm)) * ppm;
+    
+    planet2.mass = 5972000000000000000000000;
+    planet2.speed = Math.sqrt((G * planet2.mass) / (planet2.radius / ppm)) * ppm;
+    
+    planet3.mass = 3639000000000000000000000;
+    planet3.speed = Math.sqrt((G * planet3.mass) / (planet3.radius / ppm)) * ppm;
+    
+    planet4.mass = 7568300000000000000000000;
+    planet4.speed = Math.sqrt((G * planet4.mass) / (planet4.radius / ppm)) * ppm;
     // var v = sqrt(G * m_planet / radius)
 
     this.lastElapsed = Date.now();
@@ -46632,24 +46641,24 @@ function onLoad(loader, resources) {
         orbit4.rotation += (elasped * 0.001) / 200;
 
         planet1.age += (elasped * 0.001);
-        planet1.rotation -= (elasped * 0.001) / 4;
-        planet1.position.x = Math.cos(planet1.age / 3) * orbit1.radius;
-        planet1.position.y = Math.sin(planet1.age / 3) * orbit1.radius;
+        planet1.rotation = -planet1.age / 4;
+        planet1.position.x = Math.cos((planet1.age * planet1.speed) / orbit1.radius) * orbit1.radius;
+        planet1.position.y = Math.sin((planet1.age * planet1.speed) / orbit1.radius) * orbit1.radius;
 
         planet2.age += (elasped * 0.001);
-        planet2.rotation -= (elasped * 0.001) / 6;
-        planet2.position.x = Math.cos(planet2.age / 5) * orbit2.radius;
-        planet2.position.y = Math.sin(planet2.age / 5) * orbit2.radius;
+        planet2.rotation = -planet2.age / 6;
+        planet2.position.x = Math.cos((planet2.age * planet2.speed) / orbit2.radius) * orbit2.radius;
+        planet2.position.y = Math.sin((planet2.age * planet2.speed) / orbit2.radius) * orbit2.radius;
 
         planet3.age += (elasped * 0.001);
-        planet3.rotation += (elasped * 0.001) / 3;
-        planet3.position.x = Math.cos(planet3.age / 9) * orbit3.radius;
-        planet3.position.y = Math.sin(planet3.age / 9) * orbit3.radius;
+        planet3.rotation = planet3.age / 3;
+        planet3.position.x = Math.cos((planet3.age * planet3.speed) / orbit3.radius) * orbit3.radius;
+        planet3.position.y = Math.sin((planet3.age * planet3.speed) / orbit3.radius) * orbit3.radius;
 
         planet4.age += (elasped * 0.001);
-        planet4.rotation -= (elasped * 0.001) / 2;
-        planet4.position.x = Math.cos(planet4.age / 17) * orbit4.radius;
-        planet4.position.y = Math.sin(planet4.age / 17) * orbit4.radius;
+        planet4.rotation = -planet4.age / 2;
+        planet4.position.x = Math.cos((planet4.age * planet4.speed) / orbit4.radius) * orbit4.radius;
+        planet4.position.y = Math.sin((planet4.age * planet4.speed) / orbit4.radius) * orbit4.radius;
     });
 
     viewport.moveCenter(0, 0);
@@ -46679,7 +46688,7 @@ function resize() {
         viewport.moveCenter(oldCenter);
     }
 
-    //stopSnap();
+    stopSnap();
 }
 
 const minDashes = 2;
