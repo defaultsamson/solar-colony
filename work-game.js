@@ -31,13 +31,15 @@ function updateKeyboard() {
     if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
 
         //_viewport.on('snap-end', () => addCounter('snap-end'))
-        viewport.fit({
-            time: 500,
+        viewport.snapZoom(0, 200, {
+            time: 5000,
             removeOnComplete: true,
-            center: true,
             ease: 'easeOutExpo',
-            direction: 'y'
-        }, 150);
+            center: {
+                x: 0,
+                y: 0
+            }
+        });
     }
 
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
@@ -103,11 +105,11 @@ viewport
     })
     .clampZoom(clampOptions)
     .decelerate()
-    .start();
+//.start();
 
 function stopSnap() {
     viewport.removePlugin('snap');
-    viewport.removePlugin('fit');
+    viewport.removePlugin('snap-zoom');
 }
 
 viewport.on('drag-start', function (e) {
@@ -142,10 +144,9 @@ viewport.on('click', function (e) {
 
             if (this.doTheZoom) {
                 this.doTheZoom = false;
-                viewport.fit({
+                viewport.snapZoom({
                     time: (animTime * 2),
                     removeOnComplete: true,
-                    center: true,
                     ease: 'easeOutCirc',
                     direction: 'y'
                 }, 150);
@@ -251,6 +252,9 @@ function onLoad(loader, resources) {
 
     this.lastElapsed = Date.now();
     game.ticker.add(function () {
+
+        viewport.update();
+
         var now = Date.now();
         var elasped = now - lastElapsed;
         lastElapsed = now;

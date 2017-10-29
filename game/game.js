@@ -6881,7 +6881,7 @@ module.exports = class Bounce extends Plugin
         this.toX = this.toY = null
     }
 }
-},{"./plugin":58,"exists":13,"pixi-ease":19}],51:[function(require,module,exports){
+},{"./plugin":57,"exists":13,"pixi-ease":19}],51:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class ClampZoom extends Plugin
@@ -6941,7 +6941,7 @@ module.exports = class ClampZoom extends Plugin
     }
 }
 
-},{"./plugin":58}],52:[function(require,module,exports){
+},{"./plugin":57}],52:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class clamp extends Plugin
@@ -7063,7 +7063,7 @@ module.exports = class clamp extends Plugin
         }
     }
 }
-},{"./plugin":58}],53:[function(require,module,exports){
+},{"./plugin":57}],53:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Decelerate extends Plugin
@@ -7161,7 +7161,7 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = null
     }
 }
-},{"./plugin":58}],54:[function(require,module,exports){
+},{"./plugin":57}],54:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Drag extends Plugin
@@ -7235,119 +7235,7 @@ module.exports = class Drag extends Plugin
     }
 }
 
-},{"./plugin":58}],55:[function(require,module,exports){
-const Plugin = require('./plugin')
-const Ease = require('pixi-ease')
-const exists = require('exists')
-
-module.exports = class Fit extends Plugin
-{
-    /**
-     * @param {Viewport} parent
-     * @param {number} value (a height or width -- only required if direction!=all)
-     * @param {object} options
-     * @param {string} [options.direction=all] (all, x, or y)
-     * @param {boolean} [options.center] maintain the same center
-     * @param {number} [options.time=1000]
-     * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
-     * @param {boolean} [options.removeOnComplete=true] removes this plugin after fitting is complete
-     *
-     * @event fit-start(Viewport) emitted each time a fit animation starts
-     * @event fit-end(Viewport) emitted each time fit reaches its target
-     */
-    constructor(parent, value, options)
-    {
-        super(parent)
-        options = options || {}
-        switch (options.direction)
-        {
-            case 'x':
-                this.value = parent._screenWidth / value
-                break
-            case 'y':
-                this.value = parent._screenHeight / value
-                break
-            default:
-                this.x = this.parent._screenWidth / this.parent._worldWidth
-                this.y = this.parent._screenHeight / this.parent._worldHeight
-                break
-        }
-        this.time = exists(options.time) ? options.time : 1000
-        this.ease = options.ease || 'easeInOutSine'
-        if (options.center)
-        {
-            this.center = parent.center
-        }
-        this.stopOnResize = options.stopOnResize
-        this.removeOnComplete = exists(options.removeOnComplete) ? options.removeOnComplete : true
-        
-        if (this.time == 0)
-        {
-            parent.container.scale.x = this.x || this.value
-            parent.container.scale.y = this.y || this.value
-            
-            if (this.removeOnComplete)
-            {
-                this.parent.removePlugin('fit')
-            }
-        }
-    }
-
-    reset()
-    {
-        this.fitting = null
-    }
-
-    down()
-    {
-        this.fitting = null
-    }
-
-    update(elapsed)
-    {
-        if (this.paused)
-        {
-            return
-        }
-        if (this.center)
-        {
-            this.center = this.parent.center
-        }
-        if (!this.fitting)
-        {
-            if (this.x && this.parent.container.scale.x !== this.x)
-            {
-                this.fitting = new Ease.to(this.parent.container.scale, { x: this.x, y: this.y }, this.time, { ease: this.ease })
-            }
-            else if (this.parent.container.scale.x !== this.value)
-            {
-                this.fitting = new Ease.to(this.parent.container.scale, { x: this.value, y: this.value }, this.time, { ease: this.ease })
-            }
-            
-            this.parent.emit('fit-start', this.parent)
-        }
-        else if (this.fitting && this.fitting.update(elapsed))
-        {
-            if (this.removeOnComplete)
-            {
-                this.parent.removePlugin('fit')
-            }
-            this.parent.emit('fit-end', this.parent)
-            this.fitting = null
-        }
-        if (this.center)
-        {
-            this.parent.moveCenter(this.center)
-        }
-    }
-
-    resume()
-    {
-        this.fitting = null
-        super.resume()
-    }
-}
-},{"./plugin":58,"exists":13,"pixi-ease":19}],56:[function(require,module,exports){
+},{"./plugin":57}],55:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Follow extends Plugin
@@ -7406,7 +7294,7 @@ module.exports = class Follow extends Plugin
         }
     }
 }
-},{"./plugin":58}],57:[function(require,module,exports){
+},{"./plugin":57}],56:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Pinch extends Plugin
@@ -7520,7 +7408,7 @@ module.exports = class Pinch extends Plugin
         }
     }
 }
-},{"./plugin":58}],58:[function(require,module,exports){
+},{"./plugin":57}],57:[function(require,module,exports){
 module.exports = class Plugin
 {
     constructor(parent)
@@ -7546,7 +7434,148 @@ module.exports = class Plugin
         this.paused = false
     }
 }
-},{}],59:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
+const Plugin = require('./plugin')
+const Ease = require('pixi-ease')
+const exists = require('exists')
+
+module.exports = class SnapZoom extends Plugin
+{
+    /**
+     * @param {Viewport} parent
+     * @param {number} width  the desired width to snap the zoom to (put 0 to ignore width)
+     * @param {number} height  the desired height to snap the zoom to (put 0 to ignore height)
+     * @param {object} options
+     * @param {number} [options.time=1000]
+     * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
+     * @param {boolean} [options.removeOnComplete=true] removes this plugin after fitting is complete
+     * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of the viewport
+     * @param {boolean} [options.interrupt=true] pause snapping with any user input on the viewport
+     *
+     * @event snap-zoom-start(Viewport) emitted each time a fit animation starts
+     * @event snap-zoom-end(Viewport) emitted each time fit reaches its target
+     */
+    constructor(parent, width, height, options)
+    {
+        super(parent)
+        options = options || {}
+        
+        this.width = width
+        this.height = height
+        if (this.width > 0)
+        {
+            this.x_scale = parent._screenWidth / this.width
+        }
+        if (this.height > 0)
+        {
+            this.y_scale = parent._screenHeight / this.height
+        }
+        this.xIndependent = exists(this.x_scale)
+        this.yIndependent = exists(this.y_scale)
+        this.x_scale = this.xIndependent ? this.x_scale : this.y_scale
+        this.y_scale = this.yIndependent ? this.y_scale : this.x_scale
+        
+        this.time = exists(options.time) ? options.time : 1000
+        this.ease = options.ease || 'easeInOutSine'
+        this.center = options.center
+        this.stopOnResize = options.stopOnResize
+        this.removeOnComplete = exists(options.removeOnComplete) ? options.removeOnComplete : true
+        this.interrupt = exists(options.interrupt) ? options.interrupt : true
+        
+        if (this.time == 0)
+        {
+            parent.container.scale.x = this.x_scale
+            parent.container.scale.y = this.y_scale
+            
+            if (this.removeOnComplete)
+            {
+                this.parent.removePlugin('fit')
+            }
+        }
+    }
+    
+    resize()
+    {
+        this.snapping = null
+        
+        if (this.width > 0)
+        {
+            this.x_scale = parent._screenWidth / this.width
+        }
+        if (this.height > 0)
+        {
+            this.y_scale = parent._screenHeight / this.height
+        }
+        this.x_scale = this.xIndependent ? this.x_scale : this.y_scale
+        this.y_scale = this.yIndependent ? this.y_scale : this.x_scale
+    }
+    
+    reset()
+    {
+        this.snapping = null
+    }
+
+    down()
+    {
+        this.snapping = null
+    }
+
+    update(elapsed)
+    {
+        if (this.paused)
+        {
+            return
+        }
+        if (this.interrupt && this.parent.input.pointers.length !== 0)
+        {
+            return
+        }
+        
+        let oldCenter
+        if (!this.center)
+        {
+            oldCenter = this.parent.center
+        }
+        if (!this.snapping)
+        {
+            if (this.parent.container.scale.x !== this.x_scale || this.parent.container.scale.y !== this.y_scale)
+            {
+                this.snapping = new Ease.to(this.parent.container.scale, { x: this.x_scale, y: this.y_scale }, this.time, { ease: this.ease })
+            }
+            
+            this.parent.emit('snap-zoom-start', this.parent)
+        }
+        else if (this.snapping && this.snapping.update(elapsed))
+        {
+            if (this.removeOnComplete)
+            {
+                this.parent.removePlugin('snap-zoom')
+            }
+            this.parent.emit('snap-zoom-end', this.parent)
+            this.snapping = null
+        }
+        const clamp = this.parent.plugins['clamp-zoom']
+        if (clamp)
+        {
+            clamp.clamp()
+        }
+        if (!this.center)
+        {
+            this.parent.moveCenter(oldCenter)
+        }
+        else 
+        {
+            this.parent.moveCenter(this.center)
+        }
+    }
+
+    resume()
+    {
+        this.snapping = null
+        super.resume()
+    }
+}
+},{"./plugin":57,"exists":13,"pixi-ease":19}],59:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -7654,7 +7683,7 @@ module.exports = class Snap extends Plugin
         super.resume()
     }
 }
-},{"./plugin":58,"exists":13,"pixi-ease":19}],60:[function(require,module,exports){
+},{"./plugin":57,"exists":13,"pixi-ease":19}],60:[function(require,module,exports){
 const Loop = require('yy-loop')
 const Input = require('yy-input')
 const exists = require('exists')
@@ -7666,11 +7695,11 @@ const ClampZoom = require('./clamp-zoom')
 const Decelerate = require('./decelerate')
 const Bounce = require('./bounce')
 const Snap = require('./snap')
-const Fit = require('./fit')
+const SnapZoom = require('./snap-zoom')
 const Follow = require('./follow')
 const Wheel = require('./wheel')
 
-const PLUGIN_ORDER = ['drag', 'pinch', 'wheel', 'follow', 'decelerate', 'bounce', 'snap', 'fit', 'clamp-zoom', 'clamp']
+const PLUGIN_ORDER = ['drag', 'pinch', 'wheel', 'follow', 'decelerate', 'bounce', 'snap', 'snap-zoom', 'clamp-zoom', 'clamp']
 
 module.exports = class Viewport extends Loop
 {
@@ -7695,6 +7724,8 @@ module.exports = class Viewport extends Loop
      * @event pinch-end(viewport) emitted when a pinch ends
      * @event snap-start(viewport) emitted each time a snap animation starts
      * @event snap-end(viewport) emitted each time snap reaches its target
+     * @event snap-zoom-start(viewport) emitted each time a snap-zoom animation starts
+     * @event snap-zoom-end(viewport) emitted each time snap-zoom reaches its target
      * @event bounce-start-x(viewport) emitted when a bounce on the x-axis starts
      * @event bounce.end-x(viewport) emitted when a bounce on the x-axis ends
      * @event bounce-start-y(viewport) emitted when a bounce on the y-axis starts
@@ -8151,25 +8182,47 @@ module.exports = class Viewport extends Loop
     }
 
     /**
+     * change zoom so it fits the entire world in the viewport
+     * @param {boolean} [center] maintain the same center of the screen after zoom
+     * @return {Viewport} this
+     */
+    fit(center)
+    {
+        let save
+        if (center)
+        {
+            save = this.center
+        }
+        this.container.scale.x = this._screenWidth / this._worldWidth
+        this.container.scale.y = this._screenHeight / this._worldHeight
+        if (this.container.scale.x < this.container.scale.y)
+        {
+            this.container.scale.y = this.container.scale.x
+        }
+        else
+        {
+            this.container.scale.x = this.container.scale.y
+        }
+        if (center)
+        {
+            this.moveCenter(save)
+        }
+        return this
+    }
+    
+    /**
+     * @param {number} width  the desired width to snap the zoom to (put 0 to ignore width)
+     * @param {number} height  the desired height to snap the zoom to (put 0 to ignore height)
      * @param {object} options
-     * @param {string} [options.direction=all] (all, x, or y)
-     * @param {boolean} [options.center] maintain the same center
      * @param {number} [options.time=1000]
      * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
      * @param {boolean} [options.removeOnComplete=true] removes this plugin after fitting is complete
-     * @param {number} value (a height or width -- only required if direction!=all)
-     *
-     * @event fit-start(Viewport) emitted each time a fit animation starts
-     * @event fit-end(Viewport) emitted each time fit reaches its target
+     * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of the viewport
+     * @param {boolean} [options.interrupt=true] pause snapping with any user input on the viewport
      */
-    fit(options, value)
+    snapZoom(width, height, options)
     {
-        if (!value)
-        {
-            value = 0
-            options.direction = 'all'
-        }
-        this.plugins['fit'] = new Fit(this, value, options)
+        this.plugins['snap-zoom'] = new SnapZoom(this, width, height, options)
         return this
     }
 
@@ -8435,7 +8488,7 @@ module.exports = class Viewport extends Loop
     }
 }
 
-},{"./bounce":50,"./clamp":52,"./clamp-zoom":51,"./decelerate":53,"./drag":54,"./fit":55,"./follow":56,"./pinch":57,"./snap":59,"./wheel":61,"exists":13,"yy-input":228,"yy-loop":229}],61:[function(require,module,exports){
+},{"./bounce":50,"./clamp":52,"./clamp-zoom":51,"./decelerate":53,"./drag":54,"./follow":55,"./pinch":56,"./snap":59,"./snap-zoom":58,"./wheel":61,"exists":13,"yy-input":228,"yy-loop":229}],61:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Wheel extends Plugin
@@ -8510,7 +8563,7 @@ module.exports = class Wheel extends Plugin
         this.parent.emit('wheel', { wheel: {dx, dy, dz}, viewport: this.parent})
     }
 }
-},{"./plugin":58}],62:[function(require,module,exports){
+},{"./plugin":57}],62:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -46435,13 +46488,15 @@ function updateKeyboard() {
     if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
 
         //_viewport.on('snap-end', () => addCounter('snap-end'))
-        viewport.fit({
-            time: 500,
+        viewport.snapZoom(0, 200, {
+            time: 5000,
             removeOnComplete: true,
-            center: true,
             ease: 'easeOutExpo',
-            direction: 'y'
-        }, 150);
+            center: {
+                x: 0,
+                y: 0
+            }
+        });
     }
 
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
@@ -46507,11 +46562,11 @@ viewport
     })
     .clampZoom(clampOptions)
     .decelerate()
-    .start();
+//.start();
 
 function stopSnap() {
     viewport.removePlugin('snap');
-    viewport.removePlugin('fit');
+    viewport.removePlugin('snap-zoom');
 }
 
 viewport.on('drag-start', function (e) {
@@ -46546,10 +46601,9 @@ viewport.on('click', function (e) {
 
             if (this.doTheZoom) {
                 this.doTheZoom = false;
-                viewport.fit({
+                viewport.snapZoom({
                     time: (animTime * 2),
                     removeOnComplete: true,
-                    center: true,
                     ease: 'easeOutCirc',
                     direction: 'y'
                 }, 150);
@@ -46655,6 +46709,9 @@ function onLoad(loader, resources) {
 
     this.lastElapsed = Date.now();
     game.ticker.add(function () {
+
+        viewport.update();
+
         var now = Date.now();
         var elasped = now - lastElapsed;
         lastElapsed = now;
