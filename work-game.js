@@ -16,11 +16,26 @@ function updateKeyboard() {
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
 
         //_viewport.on('snap-end', () => addCounter('snap-end'))
+        viewport.plugins['decelerate'].reset();
         viewport.snap(0, 0, {
             time: 1000,
             removeOnComplete: true,
-            center: true
+            center: true,
+            ease: 'easeOutQuart'
         });
+        viewport.removePlugin('follow');
+    }
+    
+    if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
+
+        //_viewport.on('snap-end', () => addCounter('snap-end'))
+        viewport.fit({
+            time: 500,
+            removeOnComplete: true,
+            center: true,
+            ease: 'easeOutExpo',
+            direction: 'y'
+        }, 150);
     }
 
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
@@ -39,9 +54,9 @@ window.addEventListener('resize', resize);
 window.onorientationchange = resize;
 
 // h is the constant height of the viewport.
-var h = 600;
+const h = 600;
 // w is less important because the width can change. Mostly just used for initializing other objects
-var w = 600;
+const w = 600;
 
 // Creates the PIXI application
 var game = new PIXI.Application(w, h, {
@@ -89,29 +104,30 @@ viewport
     .start();
 
 function stopSnap() {
-    if (viewport.plugins['snap']) {
-        viewport.removePlugin('snap');
-    }
+    viewport.removePlugin('snap');
+    viewport.removePlugin('fit');
 }
 
 viewport.on('drag-start', function (e) {
     stopSnap();
 
-    var planet = getPlanet(e.world.x, e.world.y);
-    if (!planet) {
-        viewport.removePlugin('follow');
-    }
+    viewport.removePlugin('follow');
 });
 viewport.on('pinch-start', stopSnap);
-viewport.on('wheel-pre', stopSnap);
+viewport.on('wheel', stopSnap);
 viewport.on('click', function (e) {
     stopSnap();
 
     var planet = getPlanet(e.world.x, e.world.y);
     if (planet) {
-        viewport.follow(planet, {
-            speed: 20
-        });
+        viewport.follow(planet);
+        viewport.fit({
+            time: 2000,
+            removeOnComplete: true,
+            center: true,
+            ease: 'easeInOutQuart',
+            direction: 'y'
+        }, 150);
     } else {
         viewport.removePlugin('follow');
     }
@@ -190,6 +206,13 @@ function onLoad(loader, resources) {
 
 
     planets = [planet1, planet2, planet3, planet4];
+
+    //const G = 6.67 * 0.00000000001;
+    //const ppm = 0.0001;
+    //const starMass = 2188000000000000000000000000000; // kg
+    //planet1.mass = 5972000000000000000000000;
+    //planet1.speed = Math.sqrt((G * planet1.mass) / (planet1.radius / ppm)) * ppm;
+    // var v = sqrt(G * m_planet / radius)
 
     this.lastElapsed = Date.now();
     game.ticker.add(function () {
