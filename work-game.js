@@ -13,6 +13,8 @@ function updateKeyboard() {
         console.log('Down key is pressed');
     }*/
 
+    shift = PIXI.keyboardManager.isDown(Key.SHIFT);
+
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
 
         //_viewport.on('snap-end', () => addCounter('snap-end'))
@@ -25,7 +27,7 @@ function updateKeyboard() {
         });
         viewport.removePlugin('follow');
     }
-    
+
     if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
 
         //_viewport.on('snap-end', () => addCounter('snap-end'))
@@ -120,14 +122,35 @@ viewport.on('click', function (e) {
 
     var planet = getPlanet(e.world.x, e.world.y);
     if (planet) {
-        viewport.follow(planet);
-        viewport.fit({
-            time: 2000,
+        const animTime = 200;
+
+        this.doTheZoom = shift;
+
+        // The calculated future positions of the planet
+        var x = Math.cos(((planet.age + (animTime / 1000)) * planet.speed) / planet.orbit.radius) * planet.orbit.radius;
+        var y = Math.sin(((planet.age + (animTime / 1000)) * planet.speed) / planet.orbit.radius) * planet.orbit.radius;
+
+        viewport.snap(x, y, {
+            time: animTime,
             removeOnComplete: true,
             center: true,
-            ease: 'easeInOutQuart',
-            direction: 'y'
-        }, 150);
+            ease: 'easeOutCirc'
+        });
+
+        viewport.on('snap-end', function () {
+            viewport.follow(planet);
+
+            if (this.doTheZoom) {
+                this.doTheZoom = false;
+                viewport.fit({
+                    time: (animTime * 2),
+                    removeOnComplete: true,
+                    center: true,
+                    ease: 'easeOutCirc',
+                    direction: 'y'
+                }, 150);
+            }
+        })
     } else {
         viewport.removePlugin('follow');
     }
@@ -142,7 +165,6 @@ function getPlanet(x, y) {
     for (var i in planets) {
         var distSqr = ((x - planets[i].x) * (x - planets[i].x)) + ((y - planets[i].y) * (y - planets[i].y));
         if (distSqr < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
-            console.log('dank af yo')
             return planets[i];
         }
     }
@@ -170,6 +192,7 @@ function onLoad(loader, resources) {
 
     var planet1 = new PIXI.Sprite(resources.planet1.texture);
     planet1.radius = 0.5 * planet1.width;
+    planet1.orbit = orbit1;
     planet1.pivot.set(planet1.radius, planet1.radius);
     planet1.scale.set(0.1);
     planet1.radius = planet1.radius * planet1.scale.x;
@@ -179,6 +202,7 @@ function onLoad(loader, resources) {
 
     var planet2 = new PIXI.Sprite(resources.planet2.texture);
     planet2.radius = 0.5 * planet2.width;
+    planet2.orbit = orbit2;
     planet2.pivot.set(planet2.radius, planet2.radius);
     planet2.scale.set(0.1);
     planet2.radius = planet2.radius * planet2.scale.x;
@@ -188,6 +212,7 @@ function onLoad(loader, resources) {
 
     var planet3 = new PIXI.Sprite(resources.planet1.texture);
     planet3.radius = 0.5 * planet3.width;
+    planet3.orbit = orbit3;
     planet3.pivot.set(planet3.radius, planet3.radius);
     planet3.scale.set(0.1);
     planet3.radius = planet3.radius * planet3.scale.x;
@@ -197,6 +222,7 @@ function onLoad(loader, resources) {
 
     var planet4 = new PIXI.Sprite(resources.planet2.texture);
     planet4.radius = 0.5 * planet4.width;
+    planet4.orbit = orbit4;
     planet4.pivot.set(planet4.radius, planet4.radius);
     planet4.scale.set(0.1);
     planet4.radius = planet4.radius * planet4.scale.x;
@@ -212,13 +238,13 @@ function onLoad(loader, resources) {
     const starMass = 2188000000000000000000000000000; // kg
     planet1.mass = 4867000000000000000000000;
     planet1.speed = Math.sqrt((G * planet1.mass) / (planet1.radius / ppm)) * ppm;
-    
+
     planet2.mass = 5972000000000000000000000;
     planet2.speed = Math.sqrt((G * planet2.mass) / (planet2.radius / ppm)) * ppm;
-    
+
     planet3.mass = 3639000000000000000000000;
     planet3.speed = Math.sqrt((G * planet3.mass) / (planet3.radius / ppm)) * ppm;
-    
+
     planet4.mass = 7568300000000000000000000;
     planet4.speed = Math.sqrt((G * planet4.mass) / (planet4.radius / ppm)) * ppm;
     // var v = sqrt(G * m_planet / radius)
