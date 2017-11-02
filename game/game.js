@@ -7443,9 +7443,9 @@ module.exports = class SnapZoom extends Plugin
 {
     /**
      * @param {Viewport} parent
-     * @param {number} width  the desired width to snap the zoom to (put 0 to ignore width)
-     * @param {number} height  the desired height to snap the zoom to (put 0 to ignore height)
-     * @param {object} options
+     * @param {object} [options]
+     * @param {number} [options.width] the desired width to snap (to maintain aspect ratio, choose only width or height)
+     * @param {number} [options.height] the desired height to snap (to maintain aspect ratio, choose only width or height)
      * @param {number} [options.time=1000]
      * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
      * @param {boolean} [options.removeOnComplete=true] removes this plugin after fitting is complete
@@ -7455,13 +7455,12 @@ module.exports = class SnapZoom extends Plugin
      * @event snap-zoom-start(Viewport) emitted each time a fit animation starts
      * @event snap-zoom-end(Viewport) emitted each time fit reaches its target
      */
-    constructor(parent, width, height, options)
+    constructor(parent, options)
     {
         super(parent)
         options = options || {}
-        
-        this.width = width
-        this.height = height
+        this.width = options.width
+        this.height = options.height
         if (this.width > 0)
         {
             this.x_scale = parent._screenWidth / this.width
@@ -7474,42 +7473,41 @@ module.exports = class SnapZoom extends Plugin
         this.yIndependent = exists(this.y_scale)
         this.x_scale = this.xIndependent ? this.x_scale : this.y_scale
         this.y_scale = this.yIndependent ? this.y_scale : this.x_scale
-        
+
         this.time = exists(options.time) ? options.time : 1000
         this.ease = options.ease || 'easeInOutSine'
         this.center = options.center
         this.stopOnResize = options.stopOnResize
         this.removeOnComplete = exists(options.removeOnComplete) ? options.removeOnComplete : true
         this.interrupt = exists(options.interrupt) ? options.interrupt : true
-        
+
         if (this.time == 0)
         {
             parent.container.scale.x = this.x_scale
             parent.container.scale.y = this.y_scale
-            
             if (this.removeOnComplete)
             {
-                this.parent.removePlugin('fit')
+                this.parent.removePlugin('snap-zoom')
             }
         }
     }
-    
+
     resize()
     {
         this.snapping = null
-        
+
         if (this.width > 0)
         {
-            this.x_scale = parent._screenWidth / this.width
+            this.x_scale = this.parent._screenWidth / this.width
         }
         if (this.height > 0)
         {
-            this.y_scale = parent._screenHeight / this.height
+            this.y_scale = this.parent._screenHeight / this.height
         }
         this.x_scale = this.xIndependent ? this.x_scale : this.y_scale
         this.y_scale = this.yIndependent ? this.y_scale : this.x_scale
     }
-    
+
     reset()
     {
         this.snapping = null
@@ -7530,7 +7528,7 @@ module.exports = class SnapZoom extends Plugin
         {
             return
         }
-        
+
         let oldCenter
         if (!this.center)
         {
@@ -7541,31 +7539,33 @@ module.exports = class SnapZoom extends Plugin
             if (this.parent.container.scale.x !== this.x_scale || this.parent.container.scale.y !== this.y_scale)
             {
                 this.snapping = new Ease.to(this.parent.container.scale, { x: this.x_scale, y: this.y_scale }, this.time, { ease: this.ease })
+                this.parent.emit('snap-zoom-start', this.parent)
             }
-            
-            this.parent.emit('snap-zoom-start', this.parent)
         }
-        else if (this.snapping && this.snapping.update(elapsed))
+        else if (this.snapping)
         {
-            if (this.removeOnComplete)
+            if (this.snapping.update(elapsed))
             {
-                this.parent.removePlugin('snap-zoom')
+                if (this.removeOnComplete)
+                {
+                    this.parent.removePlugin('snap-zoom')
+                }
+                this.parent.emit('snap-zoom-end', this.parent)
+                this.snapping = null
             }
-            this.parent.emit('snap-zoom-end', this.parent)
-            this.snapping = null
-        }
-        const clamp = this.parent.plugins['clamp-zoom']
-        if (clamp)
-        {
-            clamp.clamp()
-        }
-        if (!this.center)
-        {
-            this.parent.moveCenter(oldCenter)
-        }
-        else 
-        {
-            this.parent.moveCenter(this.center)
+            const clamp = this.parent.plugins['clamp-zoom']
+            if (clamp)
+            {
+                clamp.clamp()
+            }
+            if (!this.center)
+            {
+                this.parent.moveCenter(oldCenter)
+            }
+            else
+            {
+                this.parent.moveCenter(this.center)
+            }
         }
     }
 
@@ -7604,19 +7604,20 @@ module.exports = class Snap extends Plugin
         this.friction = options.friction || 0.8
         this.time = options.time || 1000
         this.ease = options.ease || 'easeInOutSine'
-        this.x = x
-        this.y = y
+        this.targetX = x
+        this.targetY = y
         this.center = options.center
-        this.stopOnResize = options.stopOnResize
+        if (!this.center)
+        {
+            // Always target the center, and calculate the new top-left corner to target upon resizing
+            this.originalTargetX = this.targetX
+            this.originalTargetY = this.targetY
+            
+            this.resize()
+        }
+        this.originalCenter = this.parent.center
         this.interrupt = exists(options.interrupt) ? options.interrupt : true
         this.removeOnComplete = exists(options.removeOnComplete) ? options.removeOnComplete: true
-        if (this.center)
-        {
-            this.originalX = x
-            this.originalY = y
-            this.x = (this.parent.worldScreenWidth / 2 - x) * this.parent.container.scale.x
-            this.y = (this.parent.worldScreenHeight / 2 - y) * this.parent.container.scale.y
-        }
     }
 
     reset()
@@ -7626,14 +7627,19 @@ module.exports = class Snap extends Plugin
 
     resize()
     {
-        if (this.center)
+        if (!this.center)
         {
-            this.x = (this.parent.worldScreenWidth / 2 - this.originalX) * this.parent.container.scale.x
-            this.y = (this.parent.worldScreenHeight / 2 - this.originalY) * this.parent.container.scale.y
-            this.snapping = null
+            /* Finds target center based on the given originalTarget point (the top left corner)
+             * DOES NOT WORK WHEN the snap-zoom plugin is working simultaneously because this.parent.container.scale.x and y are
+             * constantly changing, therefore worldScreenWidth and worldScreenHeight are constantly changing, and the pixi-ease
+             * library does not support constantly changing values
+             */
+            this.originalCenter = this.parent.center
+            this.targetX = this.parent.worldScreenWidth / 2 + this.originalTargetX
+            this.targetY = this.parent.worldScreenHeight / 2 + this.originalTargetY
         }
     }
-
+    
     down()
     {
         this.snapping = null
@@ -7661,19 +7667,27 @@ module.exports = class Snap extends Plugin
         {
             return
         }
-        if (!this.snapping && (this.parent.container.x !== this.x || this.parent.container.y !== this.y))
+        let center = this.parent.center
+        if (!this.snapping && (center.x !== this.targetX || center.y !== this.targetY))
         {
-            this.snapping = new Ease.to(this.parent.container, { x: this.x, y: this.y }, this.time, { ease: this.ease })
+            this.snapping = new Ease.to(this.originalCenter, { x: this.targetX, y: this.targetY }, this.time, { ease: this.ease })
             this.parent.emit('snap-start', this.parent)
         }
-        else if (this.snapping && this.snapping.update(elapsed))
+        else if (this.snapping)
         {
-            if (this.removeOnComplete)
+            var finished = this.snapping.update(elapsed)
+            
+            this.parent.moveCenter(this.originalCenter)
+            
+            if (finished)
             {
-                this.parent.removePlugin('snap')
+                if (this.removeOnComplete)
+                {
+                    this.parent.removePlugin('snap')
+                }
+                this.parent.emit('snap-end', this.parent )
+                this.snapping = null
             }
-            this.parent.emit('snap-end', this.parent )
-            this.snapping = null
         }
     }
 
@@ -7699,7 +7713,7 @@ const SnapZoom = require('./snap-zoom')
 const Follow = require('./follow')
 const Wheel = require('./wheel')
 
-const PLUGIN_ORDER = ['drag', 'pinch', 'wheel', 'follow', 'decelerate', 'bounce', 'snap', 'snap-zoom', 'clamp-zoom', 'clamp']
+const PLUGIN_ORDER = ['drag', 'pinch', 'wheel', 'follow', 'decelerate', 'bounce', 'snap-zoom', 'clamp-zoom', 'snap', 'clamp']
 
 module.exports = class Viewport extends Loop
 {
@@ -8209,20 +8223,20 @@ module.exports = class Viewport extends Loop
         }
         return this
     }
-    
+
     /**
-     * @param {number} width  the desired width to snap the zoom to (put 0 to ignore width)
-     * @param {number} height  the desired height to snap the zoom to (put 0 to ignore height)
-     * @param {object} options
+     * @param {object} [options]
+     * @param {number} [options.width] the desired width to snap (to maintain aspect ratio, choose only width or height)
+     * @param {number} [options.height] the desired height to snap (to maintain aspect ratio, choose only width or height)
      * @param {number} [options.time=1000]
      * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
      * @param {boolean} [options.removeOnComplete=true] removes this plugin after fitting is complete
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of the viewport
      * @param {boolean} [options.interrupt=true] pause snapping with any user input on the viewport
      */
-    snapZoom(width, height, options)
+    snapZoom(options)
     {
-        this.plugins['snap-zoom'] = new SnapZoom(this, width, height, options)
+        this.plugins['snap-zoom'] = new SnapZoom(this, options)
         return this
     }
 
@@ -46473,22 +46487,21 @@ function updateKeyboard() {
     shift = PIXI.keyboardManager.isDown(Key.SHIFT)
 
     if (PIXI.keyboardManager.isPressed(Key.UP)) {
-
-        //_viewport.on('snap-end', () => addCounter('snap-end'))
-        viewport.plugins['decelerate'].reset()
+        stopSnap()
+        //viewport.plugins['decelerate'].reset()
+        stopFollow()
         viewport.snap(0, 0, {
             time: 1000,
             removeOnComplete: true,
             center: true,
             ease: 'easeOutQuart'
         })
-        viewport.removePlugin('follow')
     }
 
     if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
 
-        //_viewport.on('snap-end', () => addCounter('snap-end'))
-        viewport.snapZoom(0, 200, {
+        viewport.snapZoom({
+            height: 200,
             time: 5000,
             removeOnComplete: true,
             ease: 'easeOutExpo',
@@ -46538,7 +46551,7 @@ game.ticker.add(updateKeyboard)
 // Viewport options. Not very important because it can vary (see resize() )
 // These are mostly just used for initialization so that no errors occur
 var options = {
-    pauseOnBlur: true,
+    pauseOnBlur: false,
     screenWidth: w,
     screenHeight: h,
     worldWidth: w,
@@ -46562,10 +46575,18 @@ viewport
     })
     .clampZoom(clampOptions)
     .decelerate()
+    .start()
+
+var snappingToPlanet = false
 
 function stopSnap() {
     viewport.removePlugin('snap')
     viewport.removePlugin('snap-zoom')
+    this.snappingToPlanet = false
+}
+
+function stopFollow() {
+    viewport.removePlugin('follow')
 }
 
 viewport.on('drag-start', function (e) {
@@ -46580,48 +46601,86 @@ viewport.on('click', function (e) {
 
     var planet = getPlanet(e.world.x, e.world.y)
     if (planet) {
-        const animTime = 200
 
-        this.doTheZoom = shift
+        // If the viewport is already following the planet that was clicked on, then don't do anything
+        var follow = viewport.plugins['follow']
+        if (follow && (follow.target == planet)) {
+            return
+        }
+
+        this.snappingToPlanet = planet
 
         // The calculated future positions of the planet
-        var x = Math.cos(((planet.age + (animTime / 1000)) * planet.speed) / planet.orbit.radius) * planet.orbit.radius
-        var y = Math.sin(((planet.age + (animTime / 1000)) * planet.speed) / planet.orbit.radius) * planet.orbit.radius
+        var pos = calcPlanetPosition(planet, (animTime / 1000))
 
-        viewport.snap(x, y, {
+        // Snap to that position
+        viewport.snap(pos.x, pos.y, {
             time: animTime,
             removeOnComplete: true,
             center: true,
-            ease: 'easeOutCirc'
+            ease: 'easeOutQuart'
         })
 
-        viewport.on('snap-end', function () {
-            viewport.follow(planet)
+        // Do the zoom if not holding shift
+        if (!shift) {
+            viewport.snapZoom({
+                height: 150,
+                time: animTime,
+                removeOnComplete: true,
+                ease: 'easeOutSine'
+            })
+        }
 
-            if (this.doTheZoom) {
-                this.doTheZoom = false
-                viewport.snapZoom({
-                    time: (animTime * 2),
-                    removeOnComplete: true,
-                    ease: 'easeOutCirc',
-                    direction: 'y'
-                }, 150)
-            }
-        })
     } else {
+        // If no planet was clicked on, remove the follow plugin
         viewport.removePlugin('follow')
+
+        const sunRadiusSqr = 100 * 100
+
+        if (distSqr(e.world.x, e.world.y, 0, 0) < sunRadiusSqr) {
+            centerView()
+        }
     }
 })
+// Upon ending of the snap, if it was just snapping to a planet, begin to follow it. If the user was holding shift then doTheZoom!
+viewport.on('snap-end', function () {
+    if (this.snappingToPlanet) {
+        viewport.follow(this.snappingToPlanet)
+        this.snappingToPlanet = false
+    }
+})
+const animTime = 400
+
+function centerView() {
+    stopSnap()
+    stopFollow()
+    viewport.snap(0, 0, {
+        time: animTime,
+        removeOnComplete: true,
+        center: true,
+        ease: 'easeOutQuart'
+    })
+    viewport.snapZoom({
+        height: h,
+        time: animTime,
+        removeOnComplete: true,
+        center: true,
+        ease: 'easeInOutCubic'
+    })
+}
 
 var planets
 
 // The extra pixels to add to the radius of a planet to determine whether to select it when clicked
 const clickThreshold = 40
 
+function distSqr(x1, y1, x2, y2) {
+    return ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2))
+}
+
 function getPlanet(x, y) {
     for (var i in planets) {
-        var distSqr = ((x - planets[i].x) * (x - planets[i].x)) + ((y - planets[i].y) * (y - planets[i].y))
-        if (distSqr < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
+        if (distSqr(x, y, planets[i].x, planets[i].y) < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
             return planets[i]
         }
     }
@@ -46639,7 +46698,7 @@ const G = 6.67 * 0.00000000001 // Gravitational constant
 const ppm = 0.0004 // pixels per meter
 const starMass = 2188000000000000000000000000000 // kg
 
-function createPlanet(texture, orbit, scale, mass) {
+function createPlanet(texture, orbit, scale, mass, rotationConstant) {
     var planet = new PIXI.Sprite(texture)
     planet.radius = 0.5 * planet.width
     planet.orbit = orbit
@@ -46650,6 +46709,7 @@ function createPlanet(texture, orbit, scale, mass) {
     planet.position.set(orbit.radius, 0)
     planet.mass = mass
     planet.speed = Math.sqrt((G * planet.mass) / (planet.radius / ppm)) * ppm
+    planet.rotationConstant = rotationConstant
     return planet
 }
 
@@ -46660,22 +46720,20 @@ function onLoad(loader, resources) {
     var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25))
     var orbit4 = game.stage.addChild(dottedCircle(0, 0, 350, 25))
 
-    resize()
-
     var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    var planet1 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000))
-    var planet2 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000))
-    var planet3 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000))
-    var planet4 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000))
+    var planet1 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
+    var planet2 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
+    var planet3 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
+    var planet4 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
 
     planets = [planet1, planet2, planet3, planet4]
 
     this.lastElapsed = Date.now()
     game.ticker.add(function () {
 
-        viewport.update()
+        //viewport.update()
 
         var now = Date.now()
         var elasped = now - lastElapsed
@@ -46692,20 +46750,29 @@ function onLoad(loader, resources) {
 
         for (i in planets) {
             planets[i].age += eTime;
-            let radius = planets[i].orbit.radius
-            let x = Math.cos((planets[i].age * planets[i].speed) / radius) * radius
-            let y = Math.sin((planets[i].age * planets[i].speed) / radius) * radius
-            planets[i].position.set(x, y)
+            var pos = calcPlanetPosition(planets[i])
+            planets[i].position.set(pos.x, pos.y)
+            planet1.rotation = planets[i].age * planets[i].rotationConstant
         }
-
-        // TODO add these to the createPlanet stuff
-        planet1.rotation = -planet1.age / 4
-        planet2.rotation = -planet2.age / 6
-        planet3.rotation = planet3.age / 3
-        planet4.rotation = -planet4.age / 2
     })
 
     viewport.moveCenter(0, 0)
+
+    resize()
+}
+
+function calcPlanetPosition(planet, additionalAge) {
+    if (!additionalAge)
+        additionalAge = 0
+
+    let radius = planet.orbit.radius
+    let age = planet.age + additionalAge
+    let x = Math.cos((age * planet.speed) / radius) * radius
+    let y = Math.sin((age * planet.speed) / radius) * radius
+    return {
+        x: x,
+        y: y
+    }
 }
 
 function resize() {
@@ -46732,7 +46799,7 @@ function resize() {
         viewport.moveCenter(oldCenter)
     }
 
-    stopSnap()
+    //stopSnap()
 }
 
 const minDashes = 2
