@@ -1,1888 +1,373 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+require('pixi.js')
+const Viewport = require('pixi-viewport')
+// Prevents error from pixi-keyboard and pivi-particles
+window.PIXI = PIXI
+window.PIXI['default'] = PIXI
+// const Keyboard = require('pixi-keyboard')
+require('pixi-particles')
+require('pixi-keyboard')
 
-},{}],2:[function(require,module,exports){
-(function (process){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
+function updateKeyboard() {
+    /*
+    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
+        console.log('Down key is pressed')
+    }*/
 
-// resolves . and .. elements in a path array with directory names there
-// must be no slashes, empty elements, or device names (c:\) in the array
-// (so also no leading and trailing slashes - it does not distinguish
-// relative and absolute paths)
-function normalizeArray(parts, allowAboveRoot) {
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = parts.length - 1; i >= 0; i--) {
-    var last = parts[i];
-    if (last === '.') {
-      parts.splice(i, 1);
-    } else if (last === '..') {
-      parts.splice(i, 1);
-      up++;
-    } else if (up) {
-      parts.splice(i, 1);
-      up--;
-    }
-  }
+    shift = PIXI.keyboardManager.isDown(Key.SHIFT)
 
-  // if the path is allowed to go above the root, restore leading ..s
-  if (allowAboveRoot) {
-    for (; up--; up) {
-      parts.unshift('..');
-    }
-  }
-
-  return parts;
-}
-
-// Split a filename into [root, dir, basename, ext], unix version
-// 'root' is just a slash, or nothing.
-var splitPathRe =
-    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
-var splitPath = function(filename) {
-  return splitPathRe.exec(filename).slice(1);
-};
-
-// path.resolve([from ...], to)
-// posix version
-exports.resolve = function() {
-  var resolvedPath = '',
-      resolvedAbsolute = false;
-
-  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
-    var path = (i >= 0) ? arguments[i] : process.cwd();
-
-    // Skip empty and invalid entries
-    if (typeof path !== 'string') {
-      throw new TypeError('Arguments to path.resolve must be strings');
-    } else if (!path) {
-      continue;
+    if (PIXI.keyboardManager.isPressed(Key.UP)) {
+        stopSnap()
+        //viewport.plugins['decelerate'].reset()
+        stopFollow()
+        viewport.snap(0, 0, {
+            time: 1000,
+            removeOnComplete: true,
+            ease: 'easeOutQuart'
+        })
     }
 
-    resolvedPath = path + '/' + resolvedPath;
-    resolvedAbsolute = path.charAt(0) === '/';
-  }
+    if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
 
-  // At this point the path should be resolved to a full absolute path, but
-  // handle relative paths to be safe (might happen when process.cwd() fails)
-
-  // Normalize the path
-  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
-    return !!p;
-  }), !resolvedAbsolute).join('/');
-
-  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
-};
-
-// path.normalize(path)
-// posix version
-exports.normalize = function(path) {
-  var isAbsolute = exports.isAbsolute(path),
-      trailingSlash = substr(path, -1) === '/';
-
-  // Normalize the path
-  path = normalizeArray(filter(path.split('/'), function(p) {
-    return !!p;
-  }), !isAbsolute).join('/');
-
-  if (!path && !isAbsolute) {
-    path = '.';
-  }
-  if (path && trailingSlash) {
-    path += '/';
-  }
-
-  return (isAbsolute ? '/' : '') + path;
-};
-
-// posix version
-exports.isAbsolute = function(path) {
-  return path.charAt(0) === '/';
-};
-
-// posix version
-exports.join = function() {
-  var paths = Array.prototype.slice.call(arguments, 0);
-  return exports.normalize(filter(paths, function(p, index) {
-    if (typeof p !== 'string') {
-      throw new TypeError('Arguments to path.join must be strings');
-    }
-    return p;
-  }).join('/'));
-};
-
-
-// path.relative(from, to)
-// posix version
-exports.relative = function(from, to) {
-  from = exports.resolve(from).substr(1);
-  to = exports.resolve(to).substr(1);
-
-  function trim(arr) {
-    var start = 0;
-    for (; start < arr.length; start++) {
-      if (arr[start] !== '') break;
-    }
-
-    var end = arr.length - 1;
-    for (; end >= 0; end--) {
-      if (arr[end] !== '') break;
-    }
-
-    if (start > end) return [];
-    return arr.slice(start, end - start + 1);
-  }
-
-  var fromParts = trim(from.split('/'));
-  var toParts = trim(to.split('/'));
-
-  var length = Math.min(fromParts.length, toParts.length);
-  var samePartsLength = length;
-  for (var i = 0; i < length; i++) {
-    if (fromParts[i] !== toParts[i]) {
-      samePartsLength = i;
-      break;
-    }
-  }
-
-  var outputParts = [];
-  for (var i = samePartsLength; i < fromParts.length; i++) {
-    outputParts.push('..');
-  }
-
-  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-
-  return outputParts.join('/');
-};
-
-exports.sep = '/';
-exports.delimiter = ':';
-
-exports.dirname = function(path) {
-  var result = splitPath(path),
-      root = result[0],
-      dir = result[1];
-
-  if (!root && !dir) {
-    // No dirname whatsoever
-    return '.';
-  }
-
-  if (dir) {
-    // It has a dirname, strip trailing slash
-    dir = dir.substr(0, dir.length - 1);
-  }
-
-  return root + dir;
-};
-
-
-exports.basename = function(path, ext) {
-  var f = splitPath(path)[2];
-  // TODO: make this comparison case-insensitive on windows?
-  if (ext && f.substr(-1 * ext.length) === ext) {
-    f = f.substr(0, f.length - ext.length);
-  }
-  return f;
-};
-
-
-exports.extname = function(path) {
-  return splitPath(path)[3];
-};
-
-function filter (xs, f) {
-    if (xs.filter) return xs.filter(f);
-    var res = [];
-    for (var i = 0; i < xs.length; i++) {
-        if (f(xs[i], i, xs)) res.push(xs[i]);
-    }
-    return res;
-}
-
-// String.prototype.substr - negative index don't work in IE8
-var substr = 'ab'.substr(-1) === 'b'
-    ? function (str, start, len) { return str.substr(start, len) }
-    : function (str, start, len) {
-        if (start < 0) start = str.length + start;
-        return str.substr(start, len);
-    }
-;
-
-}).call(this,require('_process'))
-},{"_process":3}],3:[function(require,module,exports){
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
+        viewport.snapZoom({
+            height: 200,
+            time: 5000,
+            removeOnComplete: true,
+            ease: 'easeOutExpo',
+            center: {
+                x: 0,
+                y: 0
             }
+        })
+    }
+
+    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
+        viewport.removePlugin('snap')
+    }
+
+    PIXI.keyboardManager.update()
+}
+
+//document.addEventListener('mousewheel', mouseWheelHandler, false)
+
+const maxHeight = 1000
+const minHeight = 100
+
+window.addEventListener('resize', resize)
+window.onorientationchange = resize
+
+// h is the constant height of the viewport.
+const h = 600
+// w is less important because the width can change. Mostly just used for initializing other objects
+const w = 600
+
+// Creates the PIXI application
+var game = new PIXI.Application(w, h, {
+    antialias: true,
+    transparent: false
+})
+
+// Sets up the element
+game.view.style.position = 'absolute'
+game.view.style.display = 'block'
+document.body.appendChild(game.view)
+game.renderer.autoResize = true
+game.renderer.backgroundColor = Colour.background
+
+// Adds the keyboard update loop to the ticker
+game.ticker.add(updateKeyboard)
+
+// Viewport options. Not very important because it can vary (see resize() )
+// These are mostly just used for initialization so that no errors occur
+var options = {
+    pauseOnBlur: false,
+    screenWidth: w,
+    screenHeight: h,
+    worldWidth: w,
+    worldHeight: h,
+}
+
+var viewport = new Viewport(game.stage, options)
+
+var clampOptions = {
+    minWidth: 1,
+    minHeight: minHeight,
+    maxWidth: 1000 * w,
+    maxHeight: maxHeight
+}
+
+viewport
+    .drag()
+    .wheel()
+    .pinch({
+        percent: 4.5
+    })
+    .clampZoom(clampOptions)
+    .decelerate()
+    .start()
+
+var snappingToPlanet = false
+
+function stopSnap() {
+    viewport.removePlugin('snap')
+    viewport.removePlugin('snap-zoom')
+    this.snappingToPlanet = false
+}
+
+function stopFollow() {
+    viewport.removePlugin('follow')
+}
+
+viewport.on('drag-start', function (e) {
+    stopSnap()
+
+    viewport.removePlugin('follow')
+})
+viewport.on('pinch-start', stopSnap)
+viewport.on('wheel', stopSnap)
+viewport.on('click', function (e) {
+    stopSnap()
+
+    var planet = getPlanet(e.world.x, e.world.y)
+    if (planet) {
+
+        // If the viewport is already following the planet that was clicked on, then don't do anything
+        var follow = viewport.plugins['follow']
+        if (follow && (follow.target == planet)) {
+            return
         }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
 
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
+        /*viewport.follow(planet, {
+            speed: 2
+        })*/
+
+        this.snappingToPlanet = planet
+
+        // The calculated future positions of the planet
+        var pos = calcPlanetPosition(planet, (animTime / 1000))
+
+        // Snap to that position
+        viewport.snap(pos.x, pos.y, {
+            time: animTime,
+            removeOnComplete: true,
+            ease: 'easeOutQuart'
+        })
+
+        // Do the zoom if not holding shift
+        if (!shift) {
+            viewport.snapZoom({
+                height: 150,
+                time: animTime,
+                removeOnComplete: true,
+                ease: 'easeOutSine'
+            })
+        }
+
+    } else {
+        // If no planet was clicked on, remove the follow plugin
+        viewport.removePlugin('follow')
+
+        const sunRadiusSqr = 100 * 100
+
+        if (distSqr(e.world.x, e.world.y, 0, 0) < sunRadiusSqr) {
+            centerView()
         }
     }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
+})
+// Upon ending of the snap, if it was just snapping to a planet, begin to follow it. If the user was holding shift then doTheZoom!
+viewport.on('snap-end', function () {
+    if (this.snappingToPlanet) {
+        viewport.follow(this.snappingToPlanet)
+        this.snappingToPlanet = false
     }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-process.prependListener = noop;
-process.prependOnceListener = noop;
-
-process.listeners = function (name) { return [] }
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-},{}],4:[function(require,module,exports){
-(function (global){
-/*! https://mths.be/punycode v1.4.1 by @mathias */
-;(function(root) {
-
-	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
-	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
-	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
-		root = freeGlobal;
-	}
-
-	/**
-	 * The `punycode` object.
-	 * @name punycode
-	 * @type Object
-	 */
-	var punycode,
-
-	/** Highest positive signed 32-bit float value */
-	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
-
-	/** Bootstring parameters */
-	base = 36,
-	tMin = 1,
-	tMax = 26,
-	skew = 38,
-	damp = 700,
-	initialBias = 72,
-	initialN = 128, // 0x80
-	delimiter = '-', // '\x2D'
-
-	/** Regular expressions */
-	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
-
-	/** Error messages */
-	errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	},
-
-	/** Convenience shortcuts */
-	baseMinusTMin = base - tMin,
-	floor = Math.floor,
-	stringFromCharCode = String.fromCharCode,
-
-	/** Temporary variable */
-	key;
-
-	/*--------------------------------------------------------------------------*/
-
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw new RangeError(errors[type]);
-	}
-
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, fn) {
-		var length = array.length;
-		var result = [];
-		while (length--) {
-			result[length] = fn(array[length]);
-		}
-		return result;
-	}
-
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {Array} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
-	}
-
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		var output = [],
-		    counter = 0,
-		    length = string.length,
-		    value,
-		    extra;
-		while (counter < length) {
-			value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// high surrogate, and there is a next character
-				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// unmatched surrogate; only append this code unit, in case the next
-					// code unit is the high surrogate of a surrogate pair
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
-
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	function ucs2encode(array) {
-		return map(array, function(value) {
-			var output = '';
-			if (value > 0xFFFF) {
-				value -= 0x10000;
-				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-				value = 0xDC00 | value & 0x3FF;
-			}
-			output += stringFromCharCode(value);
-			return output;
-		}).join('');
-	}
-
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	function basicToDigit(codePoint) {
-		if (codePoint - 48 < 10) {
-			return codePoint - 22;
-		}
-		if (codePoint - 65 < 26) {
-			return codePoint - 65;
-		}
-		if (codePoint - 97 < 26) {
-			return codePoint - 97;
-		}
-		return base;
-	}
-
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	function digitToBasic(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	}
-
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	function adapt(delta, numPoints, firstTime) {
-		var k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	}
-
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	function decode(input) {
-		// Don't use UCS-2
-		var output = [],
-		    inputLength = input.length,
-		    out,
-		    i = 0,
-		    n = initialN,
-		    bias = initialBias,
-		    basic,
-		    j,
-		    index,
-		    oldi,
-		    w,
-		    k,
-		    digit,
-		    t,
-		    /** Cached calculation results */
-		    baseMinusT;
-
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
-
-		basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
-
-		for (j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
-
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
-
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
-
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
-
-				digit = basicToDigit(input.charCodeAt(index++));
-
-				if (digit >= base || digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
-
-				i += digit * w;
-				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-				if (digit < t) {
-					break;
-				}
-
-				baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
-
-				w *= baseMinusT;
-
-			}
-
-			out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
-
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
-
-			n += floor(i / out);
-			i %= out;
-
-			// Insert `n` at position `i` of the output
-			output.splice(i++, 0, n);
-
-		}
-
-		return ucs2encode(output);
-	}
-
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	function encode(input) {
-		var n,
-		    delta,
-		    handledCPCount,
-		    basicLength,
-		    bias,
-		    j,
-		    m,
-		    q,
-		    k,
-		    t,
-		    currentValue,
-		    output = [],
-		    /** `inputLength` will hold the number of code points in `input`. */
-		    inputLength,
-		    /** Cached calculation results */
-		    handledCPCountPlusOne,
-		    baseMinusT,
-		    qMinusT;
-
-		// Convert the input in UCS-2 to Unicode
-		input = ucs2decode(input);
-
-		// Cache the length
-		inputLength = input.length;
-
-		// Initialize the state
-		n = initialN;
-		delta = 0;
-		bias = initialBias;
-
-		// Handle the basic code points
-		for (j = 0; j < inputLength; ++j) {
-			currentValue = input[j];
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
-
-		handledCPCount = basicLength = output.length;
-
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
-
-		// Finish the basic string - if it is not empty - with a delimiter
-		if (basicLength) {
-			output.push(delimiter);
-		}
-
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
-
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			for (m = maxInt, j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
-
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow
-			handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
-
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
-
-			for (j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
-
-				if (currentValue == n) {
-					// Represent delta as a generalized variable-length integer
-					for (q = delta, k = base; /* no condition */; k += base) {
-						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						qMinusT = q - t;
-						baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
-
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
-
-			++delta;
-			++n;
-
-		}
-		return output.join('');
-	}
-
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	}
-
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	}
-
-	/*--------------------------------------------------------------------------*/
-
-	/** Define the public API */
-	punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '1.4.1',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
-
-	/** Expose `punycode` */
-	// Some AMD build optimizers, like r.js, check for specific condition patterns
-	// like the following:
-	if (
-		typeof define == 'function' &&
-		typeof define.amd == 'object' &&
-		define.amd
-	) {
-		define('punycode', function() {
-			return punycode;
-		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
-			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
-			for (key in punycode) {
-				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
-			}
-		}
-	} else {
-		// in Rhino or a web browser
-		root.punycode = punycode;
-	}
-
-}(this));
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-// If obj.hasOwnProperty has been overridden, then calling
-// obj.hasOwnProperty(prop) will break.
-// See: https://github.com/joyent/node/issues/1707
-function hasOwnProperty(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
+})
+const animTime = 600
+
+function centerView() {
+    stopSnap()
+    stopFollow()
+    viewport.snap(0, 0, {
+        time: animTime,
+        removeOnComplete: true,
+        ease: 'easeOutQuart'
+    })
+    viewport.snapZoom({
+        height: h,
+        time: animTime,
+        removeOnComplete: true,
+        center: true,
+        ease: 'easeInOutCubic'
+    })
 }
 
-module.exports = function(qs, sep, eq, options) {
-  sep = sep || '&';
-  eq = eq || '=';
-  var obj = {};
+var planets
 
-  if (typeof qs !== 'string' || qs.length === 0) {
-    return obj;
-  }
+// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
+const clickThreshold = 40
 
-  var regexp = /\+/g;
-  qs = qs.split(sep);
-
-  var maxKeys = 1000;
-  if (options && typeof options.maxKeys === 'number') {
-    maxKeys = options.maxKeys;
-  }
-
-  var len = qs.length;
-  // maxKeys <= 0 means that we should not limit keys count
-  if (maxKeys > 0 && len > maxKeys) {
-    len = maxKeys;
-  }
-
-  for (var i = 0; i < len; ++i) {
-    var x = qs[i].replace(regexp, '%20'),
-        idx = x.indexOf(eq),
-        kstr, vstr, k, v;
-
-    if (idx >= 0) {
-      kstr = x.substr(0, idx);
-      vstr = x.substr(idx + 1);
-    } else {
-      kstr = x;
-      vstr = '';
-    }
-
-    k = decodeURIComponent(kstr);
-    v = decodeURIComponent(vstr);
-
-    if (!hasOwnProperty(obj, k)) {
-      obj[k] = v;
-    } else if (isArray(obj[k])) {
-      obj[k].push(v);
-    } else {
-      obj[k] = [obj[k], v];
-    }
-  }
-
-  return obj;
-};
-
-var isArray = Array.isArray || function (xs) {
-  return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-},{}],6:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-var stringifyPrimitive = function(v) {
-  switch (typeof v) {
-    case 'string':
-      return v;
-
-    case 'boolean':
-      return v ? 'true' : 'false';
-
-    case 'number':
-      return isFinite(v) ? v : '';
-
-    default:
-      return '';
-  }
-};
-
-module.exports = function(obj, sep, eq, name) {
-  sep = sep || '&';
-  eq = eq || '=';
-  if (obj === null) {
-    obj = undefined;
-  }
-
-  if (typeof obj === 'object') {
-    return map(objectKeys(obj), function(k) {
-      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
-      if (isArray(obj[k])) {
-        return map(obj[k], function(v) {
-          return ks + encodeURIComponent(stringifyPrimitive(v));
-        }).join(sep);
-      } else {
-        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
-      }
-    }).join(sep);
-
-  }
-
-  if (!name) return '';
-  return encodeURIComponent(stringifyPrimitive(name)) + eq +
-         encodeURIComponent(stringifyPrimitive(obj));
-};
-
-var isArray = Array.isArray || function (xs) {
-  return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-function map (xs, f) {
-  if (xs.map) return xs.map(f);
-  var res = [];
-  for (var i = 0; i < xs.length; i++) {
-    res.push(f(xs[i], i));
-  }
-  return res;
+function distSqr(x1, y1, x2, y2) {
+    return ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2))
 }
 
-var objectKeys = Object.keys || function (obj) {
-  var res = [];
-  for (var key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
-  }
-  return res;
-};
-
-},{}],7:[function(require,module,exports){
-'use strict';
-
-exports.decode = exports.parse = require('./decode');
-exports.encode = exports.stringify = require('./encode');
-
-},{"./decode":5,"./encode":6}],8:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-'use strict';
-
-var punycode = require('punycode');
-var util = require('./util');
-
-exports.parse = urlParse;
-exports.resolve = urlResolve;
-exports.resolveObject = urlResolveObject;
-exports.format = urlFormat;
-
-exports.Url = Url;
-
-function Url() {
-  this.protocol = null;
-  this.slashes = null;
-  this.auth = null;
-  this.host = null;
-  this.port = null;
-  this.hostname = null;
-  this.hash = null;
-  this.search = null;
-  this.query = null;
-  this.pathname = null;
-  this.path = null;
-  this.href = null;
-}
-
-// Reference: RFC 3986, RFC 1808, RFC 2396
-
-// define these here so at least they only have to be
-// compiled once on the first module load.
-var protocolPattern = /^([a-z0-9.+-]+:)/i,
-    portPattern = /:[0-9]*$/,
-
-    // Special case for a simple path URL
-    simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
-
-    // RFC 2396: characters reserved for delimiting URLs.
-    // We actually just auto-escape these.
-    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
-
-    // RFC 2396: characters not allowed for various reasons.
-    unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
-
-    // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
-    autoEscape = ['\''].concat(unwise),
-    // Characters that are never ever allowed in a hostname.
-    // Note that any invalid chars are also handled, but these
-    // are the ones that are *expected* to be seen, so we fast-path
-    // them.
-    nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
-    hostEndingChars = ['/', '?', '#'],
-    hostnameMaxLen = 255,
-    hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
-    hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
-    // protocols that can allow "unsafe" and "unwise" chars.
-    unsafeProtocol = {
-      'javascript': true,
-      'javascript:': true
-    },
-    // protocols that never have a hostname.
-    hostlessProtocol = {
-      'javascript': true,
-      'javascript:': true
-    },
-    // protocols that always contain a // bit.
-    slashedProtocol = {
-      'http': true,
-      'https': true,
-      'ftp': true,
-      'gopher': true,
-      'file': true,
-      'http:': true,
-      'https:': true,
-      'ftp:': true,
-      'gopher:': true,
-      'file:': true
-    },
-    querystring = require('querystring');
-
-function urlParse(url, parseQueryString, slashesDenoteHost) {
-  if (url && util.isObject(url) && url instanceof Url) return url;
-
-  var u = new Url;
-  u.parse(url, parseQueryString, slashesDenoteHost);
-  return u;
-}
-
-Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
-  if (!util.isString(url)) {
-    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
-  }
-
-  // Copy chrome, IE, opera backslash-handling behavior.
-  // Back slashes before the query string get converted to forward slashes
-  // See: https://code.google.com/p/chromium/issues/detail?id=25916
-  var queryIndex = url.indexOf('?'),
-      splitter =
-          (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
-      uSplit = url.split(splitter),
-      slashRegex = /\\/g;
-  uSplit[0] = uSplit[0].replace(slashRegex, '/');
-  url = uSplit.join(splitter);
-
-  var rest = url;
-
-  // trim before proceeding.
-  // This is to support parse stuff like "  http://foo.com  \n"
-  rest = rest.trim();
-
-  if (!slashesDenoteHost && url.split('#').length === 1) {
-    // Try fast path regexp
-    var simplePath = simplePathPattern.exec(rest);
-    if (simplePath) {
-      this.path = rest;
-      this.href = rest;
-      this.pathname = simplePath[1];
-      if (simplePath[2]) {
-        this.search = simplePath[2];
-        if (parseQueryString) {
-          this.query = querystring.parse(this.search.substr(1));
-        } else {
-          this.query = this.search.substr(1);
+function getPlanet(x, y) {
+    for (var i in planets) {
+        if (distSqr(x, y, planets[i].x, planets[i].y) < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
+            return planets[i]
         }
-      } else if (parseQueryString) {
-        this.search = '';
-        this.query = {};
-      }
-      return this;
-    }
-  }
-
-  var proto = protocolPattern.exec(rest);
-  if (proto) {
-    proto = proto[0];
-    var lowerProto = proto.toLowerCase();
-    this.protocol = lowerProto;
-    rest = rest.substr(proto.length);
-  }
-
-  // figure out if it's got a host
-  // user@server is *always* interpreted as a hostname, and url
-  // resolution will treat //foo/bar as host=foo,path=bar because that's
-  // how the browser resolves relative URLs.
-  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
-    var slashes = rest.substr(0, 2) === '//';
-    if (slashes && !(proto && hostlessProtocol[proto])) {
-      rest = rest.substr(2);
-      this.slashes = true;
-    }
-  }
-
-  if (!hostlessProtocol[proto] &&
-      (slashes || (proto && !slashedProtocol[proto]))) {
-
-    // there's a hostname.
-    // the first instance of /, ?, ;, or # ends the host.
-    //
-    // If there is an @ in the hostname, then non-host chars *are* allowed
-    // to the left of the last @ sign, unless some host-ending character
-    // comes *before* the @-sign.
-    // URLs are obnoxious.
-    //
-    // ex:
-    // http://a@b@c/ => user:a@b host:c
-    // http://a@b?@c => user:a host:c path:/?@c
-
-    // v0.12 TODO(isaacs): This is not quite how Chrome does things.
-    // Review our test case against browsers more comprehensively.
-
-    // find the first instance of any hostEndingChars
-    var hostEnd = -1;
-    for (var i = 0; i < hostEndingChars.length; i++) {
-      var hec = rest.indexOf(hostEndingChars[i]);
-      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
-        hostEnd = hec;
     }
 
-    // at this point, either we have an explicit point where the
-    // auth portion cannot go past, or the last @ char is the decider.
-    var auth, atSign;
-    if (hostEnd === -1) {
-      // atSign can be anywhere.
-      atSign = rest.lastIndexOf('@');
-    } else {
-      // atSign must be in auth portion.
-      // http://a@b/c@d => host:b auth:a path:/c@d
-      atSign = rest.lastIndexOf('@', hostEnd);
-    }
+    return null
+}
 
-    // Now we have a portion which is definitely the auth.
-    // Pull that off.
-    if (atSign !== -1) {
-      auth = rest.slice(0, atSign);
-      rest = rest.slice(atSign + 1);
-      this.auth = decodeURIComponent(auth);
-    }
+PIXI.loader
+    .add('sunTexture', 'game/sun.png')
+    .add('planet1', 'game/planet1.png')
+    .add('planet2', 'game/planet2.png')
+    .load(onLoad)
 
-    // the host is the remaining to the left of the first non-host char
-    hostEnd = -1;
-    for (var i = 0; i < nonHostChars.length; i++) {
-      var hec = rest.indexOf(nonHostChars[i]);
-      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
-        hostEnd = hec;
-    }
-    // if we still have not hit it, then the entire thing is a host.
-    if (hostEnd === -1)
-      hostEnd = rest.length;
+const G = 6.67 * 0.00000000001 // Gravitational constant
+const ppm = 0.0004 // pixels per meter
+const starMass = 2188000000000000000000000000000 // kg
 
-    this.host = rest.slice(0, hostEnd);
-    rest = rest.slice(hostEnd);
+function createPlanet(texture, orbit, scale, mass, rotationConstant) {
+    var planet = new PIXI.Sprite(texture)
+    planet.radius = 0.5 * planet.width
+    planet.orbit = orbit
+    planet.pivot.set(planet.radius, planet.radius)
+    planet.scale.set(scale)
+    planet.radius = planet.radius * planet.scale.x
+    planet.age = 0
+    planet.position.set(orbit.radius, 0)
+    planet.mass = mass
+    planet.speed = Math.sqrt((G * planet.mass) / (planet.radius / ppm)) * ppm
+    planet.rotationConstant = rotationConstant
+    return planet
+}
 
-    // pull out port.
-    this.parseHost();
+function onLoad(loader, resources) {
 
-    // we've indicated that there is a hostname,
-    // so even if it's empty, it has to be present.
-    this.hostname = this.hostname || '';
+    var orbit1 = game.stage.addChild(dottedCircle(0, 0, 150, 25))
+    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 220, 25))
+    var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25))
+    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 350, 25))
 
-    // if hostname begins with [ and ends with ]
-    // assume that it's an IPv6 address.
-    var ipv6Hostname = this.hostname[0] === '[' &&
-        this.hostname[this.hostname.length - 1] === ']';
+    var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle)
+    sun.emit = true
 
-    // validate a little.
-    if (!ipv6Hostname) {
-      var hostparts = this.hostname.split(/\./);
-      for (var i = 0, l = hostparts.length; i < l; i++) {
-        var part = hostparts[i];
-        if (!part) continue;
-        if (!part.match(hostnamePartPattern)) {
-          var newpart = '';
-          for (var j = 0, k = part.length; j < k; j++) {
-            if (part.charCodeAt(j) > 127) {
-              // we replace non-ASCII char with a temporary placeholder
-              // we need this to make sure size of hostname is not
-              // broken by replacing non-ASCII by nothing
-              newpart += 'x';
-            } else {
-              newpart += part[j];
-            }
-          }
-          // we test again with ASCII char only
-          if (!newpart.match(hostnamePartPattern)) {
-            var validParts = hostparts.slice(0, i);
-            var notHost = hostparts.slice(i + 1);
-            var bit = part.match(hostnamePartStart);
-            if (bit) {
-              validParts.push(bit[1]);
-              notHost.unshift(bit[2]);
-            }
-            if (notHost.length) {
-              rest = '/' + notHost.join('.') + rest;
-            }
-            this.hostname = validParts.join('.');
-            break;
-          }
+    var planet1 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
+    var planet2 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
+    var planet3 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
+    var planet4 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
+
+    planets = [planet1, planet2, planet3, planet4]
+
+    this.lastElapsed = Date.now()
+    game.ticker.add(function () {
+
+        //viewport.update()
+
+        var now = Date.now()
+        var elasped = now - lastElapsed
+        lastElapsed = now
+        let eTime = (elasped * 0.001)
+
+        sun.update(eTime)
+
+        // Rotate the orbits (purely for visual effects)
+        orbit1.rotation += eTime / 50
+        orbit2.rotation += eTime / 80
+        orbit3.rotation += eTime / 140
+        orbit4.rotation += eTime / 200
+
+        for (i in planets) {
+            planets[i].age += eTime;
+            var pos = calcPlanetPosition(planets[i])
+            planets[i].position.set(pos.x, pos.y)
+            planet1.rotation = planets[i].age * planets[i].rotationConstant
         }
-      }
-    }
+    })
 
-    if (this.hostname.length > hostnameMaxLen) {
-      this.hostname = '';
-    } else {
-      // hostnames are always lower case.
-      this.hostname = this.hostname.toLowerCase();
-    }
+    viewport.moveCenter(0, 0)
 
-    if (!ipv6Hostname) {
-      // IDNA Support: Returns a punycoded representation of "domain".
-      // It only converts parts of the domain name that
-      // have non-ASCII characters, i.e. it doesn't matter if
-      // you call it with a domain that already is ASCII-only.
-      this.hostname = punycode.toASCII(this.hostname);
-    }
-
-    var p = this.port ? ':' + this.port : '';
-    var h = this.hostname || '';
-    this.host = h + p;
-    this.href += this.host;
-
-    // strip [ and ] from the hostname
-    // the host field still retains them, though
-    if (ipv6Hostname) {
-      this.hostname = this.hostname.substr(1, this.hostname.length - 2);
-      if (rest[0] !== '/') {
-        rest = '/' + rest;
-      }
-    }
-  }
-
-  // now rest is set to the post-host stuff.
-  // chop off any delim chars.
-  if (!unsafeProtocol[lowerProto]) {
-
-    // First, make 100% sure that any "autoEscape" chars get
-    // escaped, even if encodeURIComponent doesn't think they
-    // need to be.
-    for (var i = 0, l = autoEscape.length; i < l; i++) {
-      var ae = autoEscape[i];
-      if (rest.indexOf(ae) === -1)
-        continue;
-      var esc = encodeURIComponent(ae);
-      if (esc === ae) {
-        esc = escape(ae);
-      }
-      rest = rest.split(ae).join(esc);
-    }
-  }
-
-
-  // chop off from the tail first.
-  var hash = rest.indexOf('#');
-  if (hash !== -1) {
-    // got a fragment string.
-    this.hash = rest.substr(hash);
-    rest = rest.slice(0, hash);
-  }
-  var qm = rest.indexOf('?');
-  if (qm !== -1) {
-    this.search = rest.substr(qm);
-    this.query = rest.substr(qm + 1);
-    if (parseQueryString) {
-      this.query = querystring.parse(this.query);
-    }
-    rest = rest.slice(0, qm);
-  } else if (parseQueryString) {
-    // no query string, but parseQueryString still requested
-    this.search = '';
-    this.query = {};
-  }
-  if (rest) this.pathname = rest;
-  if (slashedProtocol[lowerProto] &&
-      this.hostname && !this.pathname) {
-    this.pathname = '/';
-  }
-
-  //to support http.request
-  if (this.pathname || this.search) {
-    var p = this.pathname || '';
-    var s = this.search || '';
-    this.path = p + s;
-  }
-
-  // finally, reconstruct the href based on what has been validated.
-  this.href = this.format();
-  return this;
-};
-
-// format a parsed object into a url string
-function urlFormat(obj) {
-  // ensure it's an object, and not a string url.
-  // If it's an obj, this is a no-op.
-  // this way, you can call url_format() on strings
-  // to clean up potentially wonky urls.
-  if (util.isString(obj)) obj = urlParse(obj);
-  if (!(obj instanceof Url)) return Url.prototype.format.call(obj);
-  return obj.format();
+    resize()
 }
 
-Url.prototype.format = function() {
-  var auth = this.auth || '';
-  if (auth) {
-    auth = encodeURIComponent(auth);
-    auth = auth.replace(/%3A/i, ':');
-    auth += '@';
-  }
+function calcPlanetPosition(planet, additionalAge) {
+    if (!additionalAge)
+        additionalAge = 0
 
-  var protocol = this.protocol || '',
-      pathname = this.pathname || '',
-      hash = this.hash || '',
-      host = false,
-      query = '';
-
-  if (this.host) {
-    host = auth + this.host;
-  } else if (this.hostname) {
-    host = auth + (this.hostname.indexOf(':') === -1 ?
-        this.hostname :
-        '[' + this.hostname + ']');
-    if (this.port) {
-      host += ':' + this.port;
+    let radius = planet.orbit.radius
+    let age = planet.age + additionalAge
+    let x = Math.cos((age * planet.speed) / radius) * radius
+    let y = Math.sin((age * planet.speed) / radius) * radius
+    return {
+        x: x,
+        y: y
     }
-  }
-
-  if (this.query &&
-      util.isObject(this.query) &&
-      Object.keys(this.query).length) {
-    query = querystring.stringify(this.query);
-  }
-
-  var search = this.search || (query && ('?' + query)) || '';
-
-  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
-
-  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
-  // unless they had them to begin with.
-  if (this.slashes ||
-      (!protocol || slashedProtocol[protocol]) && host !== false) {
-    host = '//' + (host || '');
-    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
-  } else if (!host) {
-    host = '';
-  }
-
-  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
-  if (search && search.charAt(0) !== '?') search = '?' + search;
-
-  pathname = pathname.replace(/[?#]/g, function(match) {
-    return encodeURIComponent(match);
-  });
-  search = search.replace('#', '%23');
-
-  return protocol + host + pathname + search + hash;
-};
-
-function urlResolve(source, relative) {
-  return urlParse(source, false, true).resolve(relative);
 }
 
-Url.prototype.resolve = function(relative) {
-  return this.resolveObject(urlParse(relative, false, true)).format();
-};
+function resize() {
+    window.scrollTo(0, 0)
 
-function urlResolveObject(source, relative) {
-  if (!source) return relative;
-  return urlParse(source, false, true).resolveObject(relative);
+    var oldCenter
+    if (viewport.center) {
+        oldCenter = viewport.center
+    }
+
+    var prevHeight = viewport.worldScreenHeight
+
+    var width = window.innerWidth
+    var height = window.innerHeight
+    var ratio = height / h
+
+    game.renderer.resize(width, height)
+    viewport.resize(width, height)
+    viewport.fitHeight(prevHeight, false)
+
+    // Must maintain the center manually instad of using fitHeight's built in one because the
+    // center value will change upon resizing the viewport and game window
+    if (oldCenter) {
+        viewport.moveCenter(oldCenter)
+    }
+
+    stopSnap()
 }
 
-Url.prototype.resolveObject = function(relative) {
-  if (util.isString(relative)) {
-    var rel = new Url();
-    rel.parse(relative, false, true);
-    relative = rel;
-  }
+const minDashes = 2
+const dashThickness = 1.4
 
-  var result = new Url();
-  var tkeys = Object.keys(this);
-  for (var tk = 0; tk < tkeys.length; tk++) {
-    var tkey = tkeys[tk];
-    result[tkey] = this[tkey];
-  }
+function dottedCircle(x, y, radius, dashLength) {
 
-  // hash is always overridden, no matter what.
-  // even href="" will remove it.
-  result.hash = relative.hash;
+    var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
+    var dashRadians = dashLength / radius
+    var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
 
-  // if the relative url is empty, then there's nothing left to do here.
-  if (relative.href === '') {
-    result.href = result.format();
-    return result;
-  }
+    var pixiCircle = new PIXI.Graphics()
+    pixiCircle.radius = radius
 
-  // hrefs like //foo/bar always cut to the protocol.
-  if (relative.slashes && !relative.protocol) {
-    // take everything except the protocol from relative
-    var rkeys = Object.keys(relative);
-    for (var rk = 0; rk < rkeys.length; rk++) {
-      var rkey = rkeys[rk];
-      if (rkey !== 'protocol')
-        result[rkey] = relative[rkey];
+    // If it's a full circle, draw it full (more optimised)
+    if (spacingRadians <= 0) {
+        pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+        pixiCircle.arc(x, y, radius, 0, 2 * Math.PI)
+    } else { // Else, draw it dashed
+        for (i = 0; i < numOfDashes; i++) {
+            var start = i * (dashRadians + spacingRadians)
+            var end1 = start + dashRadians
+            var end2 = end1 + spacingRadians
+            pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+            pixiCircle.arc(x, y, radius, start, end1)
+            pixiCircle.lineStyle(dashThickness, Colour.background, 0)
+            pixiCircle.arc(x, y, radius, end1, end2)
+        }
     }
 
-    //urlParse appends trailing / to urls like http://www.example.com
-    if (slashedProtocol[result.protocol] &&
-        result.hostname && !result.pathname) {
-      result.path = result.pathname = '/';
-    }
+    // disgusting
+    // pixiCircle.cacheAsBitmap = true
 
-    result.href = result.format();
-    return result;
-  }
+    return pixiCircle
+}
 
-  if (relative.protocol && relative.protocol !== result.protocol) {
-    // if it's a known url protocol, then changing
-    // the protocol does weird things
-    // first, if it's not file:, then we MUST have a host,
-    // and if there was a path
-    // to begin with, then we MUST have a path.
-    // if it is file:, then the host is dropped,
-    // because that's known to be hostless.
-    // anything else is assumed to be absolute.
-    if (!slashedProtocol[relative.protocol]) {
-      var keys = Object.keys(relative);
-      for (var v = 0; v < keys.length; v++) {
-        var k = keys[v];
-        result[k] = relative[k];
-      }
-      result.href = result.format();
-      return result;
-    }
-
-    result.protocol = relative.protocol;
-    if (!relative.host && !hostlessProtocol[relative.protocol]) {
-      var relPath = (relative.pathname || '').split('/');
-      while (relPath.length && !(relative.host = relPath.shift()));
-      if (!relative.host) relative.host = '';
-      if (!relative.hostname) relative.hostname = '';
-      if (relPath[0] !== '') relPath.unshift('');
-      if (relPath.length < 2) relPath.unshift('');
-      result.pathname = relPath.join('/');
-    } else {
-      result.pathname = relative.pathname;
-    }
-    result.search = relative.search;
-    result.query = relative.query;
-    result.host = relative.host || '';
-    result.auth = relative.auth;
-    result.hostname = relative.hostname || relative.host;
-    result.port = relative.port;
-    // to support http.request
-    if (result.pathname || result.search) {
-      var p = result.pathname || '';
-      var s = result.search || '';
-      result.path = p + s;
-    }
-    result.slashes = result.slashes || relative.slashes;
-    result.href = result.format();
-    return result;
-  }
-
-  var isSourceAbs = (result.pathname && result.pathname.charAt(0) === '/'),
-      isRelAbs = (
-          relative.host ||
-          relative.pathname && relative.pathname.charAt(0) === '/'
-      ),
-      mustEndAbs = (isRelAbs || isSourceAbs ||
-                    (result.host && relative.pathname)),
-      removeAllDots = mustEndAbs,
-      srcPath = result.pathname && result.pathname.split('/') || [],
-      relPath = relative.pathname && relative.pathname.split('/') || [],
-      psychotic = result.protocol && !slashedProtocol[result.protocol];
-
-  // if the url is a non-slashed url, then relative
-  // links like ../.. should be able
-  // to crawl up to the hostname, as well.  This is strange.
-  // result.protocol has already been set by now.
-  // Later on, put the first path part into the host field.
-  if (psychotic) {
-    result.hostname = '';
-    result.port = null;
-    if (result.host) {
-      if (srcPath[0] === '') srcPath[0] = result.host;
-      else srcPath.unshift(result.host);
-    }
-    result.host = '';
-    if (relative.protocol) {
-      relative.hostname = null;
-      relative.port = null;
-      if (relative.host) {
-        if (relPath[0] === '') relPath[0] = relative.host;
-        else relPath.unshift(relative.host);
-      }
-      relative.host = null;
-    }
-    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
-  }
-
-  if (isRelAbs) {
-    // it's absolute.
-    result.host = (relative.host || relative.host === '') ?
-                  relative.host : result.host;
-    result.hostname = (relative.hostname || relative.hostname === '') ?
-                      relative.hostname : result.hostname;
-    result.search = relative.search;
-    result.query = relative.query;
-    srcPath = relPath;
-    // fall through to the dot-handling below.
-  } else if (relPath.length) {
-    // it's relative
-    // throw away the existing file, and take the new path instead.
-    if (!srcPath) srcPath = [];
-    srcPath.pop();
-    srcPath = srcPath.concat(relPath);
-    result.search = relative.search;
-    result.query = relative.query;
-  } else if (!util.isNullOrUndefined(relative.search)) {
-    // just pull out the search.
-    // like href='?foo'.
-    // Put this after the other two cases because it simplifies the booleans
-    if (psychotic) {
-      result.hostname = result.host = srcPath.shift();
-      //occationaly the auth can get stuck only in host
-      //this especially happens in cases like
-      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-      var authInHost = result.host && result.host.indexOf('@') > 0 ?
-                       result.host.split('@') : false;
-      if (authInHost) {
-        result.auth = authInHost.shift();
-        result.host = result.hostname = authInHost.shift();
-      }
-    }
-    result.search = relative.search;
-    result.query = relative.query;
-    //to support http.request
-    if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
-      result.path = (result.pathname ? result.pathname : '') +
-                    (result.search ? result.search : '');
-    }
-    result.href = result.format();
-    return result;
-  }
-
-  if (!srcPath.length) {
-    // no path at all.  easy.
-    // we've already handled the other stuff above.
-    result.pathname = null;
-    //to support http.request
-    if (result.search) {
-      result.path = '/' + result.search;
-    } else {
-      result.path = null;
-    }
-    result.href = result.format();
-    return result;
-  }
-
-  // if a url ENDs in . or .., then it must get a trailing slash.
-  // however, if it ends in anything else non-slashy,
-  // then it must NOT get a trailing slash.
-  var last = srcPath.slice(-1)[0];
-  var hasTrailingSlash = (
-      (result.host || relative.host || srcPath.length > 1) &&
-      (last === '.' || last === '..') || last === '');
-
-  // strip single dots, resolve double dots to parent dir
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = srcPath.length; i >= 0; i--) {
-    last = srcPath[i];
-    if (last === '.') {
-      srcPath.splice(i, 1);
-    } else if (last === '..') {
-      srcPath.splice(i, 1);
-      up++;
-    } else if (up) {
-      srcPath.splice(i, 1);
-      up--;
-    }
-  }
-
-  // if the path is allowed to go above the root, restore leading ..s
-  if (!mustEndAbs && !removeAllDots) {
-    for (; up--; up) {
-      srcPath.unshift('..');
-    }
-  }
-
-  if (mustEndAbs && srcPath[0] !== '' &&
-      (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
-    srcPath.unshift('');
-  }
-
-  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
-    srcPath.push('');
-  }
-
-  var isAbsolute = srcPath[0] === '' ||
-      (srcPath[0] && srcPath[0].charAt(0) === '/');
-
-  // put the host back
-  if (psychotic) {
-    result.hostname = result.host = isAbsolute ? '' :
-                                    srcPath.length ? srcPath.shift() : '';
-    //occationaly the auth can get stuck only in host
-    //this especially happens in cases like
-    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-    var authInHost = result.host && result.host.indexOf('@') > 0 ?
-                     result.host.split('@') : false;
-    if (authInHost) {
-      result.auth = authInHost.shift();
-      result.host = result.hostname = authInHost.shift();
-    }
-  }
-
-  mustEndAbs = mustEndAbs || (result.host && srcPath.length);
-
-  if (mustEndAbs && !isAbsolute) {
-    srcPath.unshift('');
-  }
-
-  if (!srcPath.length) {
-    result.pathname = null;
-    result.path = null;
-  } else {
-    result.pathname = srcPath.join('/');
-  }
-
-  //to support request.http
-  if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
-    result.path = (result.pathname ? result.pathname : '') +
-                  (result.search ? result.search : '');
-  }
-  result.auth = relative.auth || result.auth;
-  result.slashes = result.slashes || relative.slashes;
-  result.href = result.format();
-  return result;
-};
-
-Url.prototype.parseHost = function() {
-  var host = this.host;
-  var port = portPattern.exec(host);
-  if (port) {
-    port = port[0];
-    if (port !== ':') {
-      this.port = port.substr(1);
-    }
-    host = host.substr(0, host.length - port.length);
-  }
-  if (host) this.hostname = host;
-};
-
-},{"./util":9,"punycode":4,"querystring":7}],9:[function(require,module,exports){
-'use strict';
-
-module.exports = {
-  isString: function(arg) {
-    return typeof(arg) === 'string';
-  },
-  isObject: function(arg) {
-    return typeof(arg) === 'object' && arg !== null;
-  },
-  isNull: function(arg) {
-    return arg === null;
-  },
-  isNullOrUndefined: function(arg) {
-    return arg == null;
-  }
-};
-
-},{}],10:[function(require,module,exports){
+},{"pixi-keyboard":39,"pixi-particles":40,"pixi-viewport":41,"pixi.js":170}],2:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -2088,10 +573,11 @@ exports.nextCombination = function(v) {
 }
 
 
-},{}],11:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 'use strict';
 
 module.exports = earcut;
+module.exports.default = earcut;
 
 function earcut(data, holeIndices, dim) {
 
@@ -2104,7 +590,7 @@ function earcut(data, holeIndices, dim) {
 
     if (!outerNode) return triangles;
 
-    var minX, minY, maxX, maxY, x, y, size;
+    var minX, minY, maxX, maxY, x, y, invSize;
 
     if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
 
@@ -2122,11 +608,12 @@ function earcut(data, holeIndices, dim) {
             if (y > maxY) maxY = y;
         }
 
-        // minX, minY and size are later used to transform coords into integers for z-order calculation
-        size = Math.max(maxX - minX, maxY - minY);
+        // minX, minY and invSize are later used to transform coords into integers for z-order calculation
+        invSize = Math.max(maxX - minX, maxY - minY);
+        invSize = invSize !== 0 ? 1 / invSize : 0;
     }
 
-    earcutLinked(outerNode, triangles, dim, minX, minY, size);
+    earcutLinked(outerNode, triangles, dim, minX, minY, invSize);
 
     return triangles;
 }
@@ -2162,7 +649,7 @@ function filterPoints(start, end) {
         if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
             removeNode(p);
             p = end = p.prev;
-            if (p === p.next) return null;
+            if (p === p.next) break;
             again = true;
 
         } else {
@@ -2174,11 +661,11 @@ function filterPoints(start, end) {
 }
 
 // main ear slicing loop which triangulates a polygon (given as a linked list)
-function earcutLinked(ear, triangles, dim, minX, minY, size, pass) {
+function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
     if (!ear) return;
 
     // interlink polygon nodes in z-order
-    if (!pass && size) indexCurve(ear, minX, minY, size);
+    if (!pass && invSize) indexCurve(ear, minX, minY, invSize);
 
     var stop = ear,
         prev, next;
@@ -2188,7 +675,7 @@ function earcutLinked(ear, triangles, dim, minX, minY, size, pass) {
         prev = ear.prev;
         next = ear.next;
 
-        if (size ? isEarHashed(ear, minX, minY, size) : isEar(ear)) {
+        if (invSize ? isEarHashed(ear, minX, minY, invSize) : isEar(ear)) {
             // cut off the triangle
             triangles.push(prev.i / dim);
             triangles.push(ear.i / dim);
@@ -2209,16 +696,16 @@ function earcutLinked(ear, triangles, dim, minX, minY, size, pass) {
         if (ear === stop) {
             // try filtering points and slicing again
             if (!pass) {
-                earcutLinked(filterPoints(ear), triangles, dim, minX, minY, size, 1);
+                earcutLinked(filterPoints(ear), triangles, dim, minX, minY, invSize, 1);
 
             // if this didn't work, try curing all small self-intersections locally
             } else if (pass === 1) {
                 ear = cureLocalIntersections(ear, triangles, dim);
-                earcutLinked(ear, triangles, dim, minX, minY, size, 2);
+                earcutLinked(ear, triangles, dim, minX, minY, invSize, 2);
 
             // as a last resort, try splitting the remaining polygon into two
             } else if (pass === 2) {
-                splitEarcut(ear, triangles, dim, minX, minY, size);
+                splitEarcut(ear, triangles, dim, minX, minY, invSize);
             }
 
             break;
@@ -2246,7 +733,7 @@ function isEar(ear) {
     return true;
 }
 
-function isEarHashed(ear, minX, minY, size) {
+function isEarHashed(ear, minX, minY, invSize) {
     var a = ear.prev,
         b = ear,
         c = ear.next;
@@ -2260,8 +747,8 @@ function isEarHashed(ear, minX, minY, size) {
         maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
 
     // z-order range for the current triangle bbox;
-    var minZ = zOrder(minTX, minTY, minX, minY, size),
-        maxZ = zOrder(maxTX, maxTY, minX, minY, size);
+    var minZ = zOrder(minTX, minTY, minX, minY, invSize),
+        maxZ = zOrder(maxTX, maxTY, minX, minY, invSize);
 
     // first look for points inside the triangle in increasing z-order
     var p = ear.nextZ;
@@ -2312,7 +799,7 @@ function cureLocalIntersections(start, triangles, dim) {
 }
 
 // try splitting polygon into two and triangulate them independently
-function splitEarcut(start, triangles, dim, minX, minY, size) {
+function splitEarcut(start, triangles, dim, minX, minY, invSize) {
     // look for a valid diagonal that divides the polygon into two
     var a = start;
     do {
@@ -2327,8 +814,8 @@ function splitEarcut(start, triangles, dim, minX, minY, size) {
                 c = filterPoints(c, c.next);
 
                 // run earcut on each half
-                earcutLinked(a, triangles, dim, minX, minY, size);
-                earcutLinked(c, triangles, dim, minX, minY, size);
+                earcutLinked(a, triangles, dim, minX, minY, invSize);
+                earcutLinked(c, triangles, dim, minX, minY, invSize);
                 return;
             }
             b = b.next;
@@ -2385,7 +872,7 @@ function findHoleBridge(hole, outerNode) {
     // find a segment intersected by a ray from the hole's leftmost point to the left;
     // segment's endpoint with lesser x will be potential connection point
     do {
-        if (hy <= p.y && hy >= p.next.y) {
+        if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
             var x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
             if (x <= hx && x > qx) {
                 qx = x;
@@ -2416,7 +903,7 @@ function findHoleBridge(hole, outerNode) {
     p = m.next;
 
     while (p !== stop) {
-        if (hx >= p.x && p.x >= mx &&
+        if (hx >= p.x && p.x >= mx && hx !== p.x &&
                 pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
 
             tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
@@ -2434,10 +921,10 @@ function findHoleBridge(hole, outerNode) {
 }
 
 // interlink polygon nodes in z-order
-function indexCurve(start, minX, minY, size) {
+function indexCurve(start, minX, minY, invSize) {
     var p = start;
     do {
-        if (p.z === null) p.z = zOrder(p.x, p.y, minX, minY, size);
+        if (p.z === null) p.z = zOrder(p.x, p.y, minX, minY, invSize);
         p.prevZ = p.prev;
         p.nextZ = p.next;
         p = p.next;
@@ -2470,20 +957,11 @@ function sortLinked(list) {
                 q = q.nextZ;
                 if (!q) break;
             }
-
             qSize = inSize;
 
             while (pSize > 0 || (qSize > 0 && q)) {
 
-                if (pSize === 0) {
-                    e = q;
-                    q = q.nextZ;
-                    qSize--;
-                } else if (qSize === 0 || !q) {
-                    e = p;
-                    p = p.nextZ;
-                    pSize--;
-                } else if (p.z <= q.z) {
+                if (pSize !== 0 && (qSize === 0 || !q || p.z <= q.z)) {
                     e = p;
                     p = p.nextZ;
                     pSize--;
@@ -2511,11 +989,11 @@ function sortLinked(list) {
     return list;
 }
 
-// z-order of a point given coords and size of the data bounding box
-function zOrder(x, y, minX, minY, size) {
+// z-order of a point given coords and inverse of the longer side of data bbox
+function zOrder(x, y, minX, minY, invSize) {
     // coords are transformed into non-negative 15-bit integer range
-    x = 32767 * (x - minX) / size;
-    y = 32767 * (y - minY) / size;
+    x = 32767 * (x - minX) * invSize;
+    y = 32767 * (y - minY) * invSize;
 
     x = (x | (x << 8)) & 0x00FF00FF;
     x = (x | (x << 4)) & 0x0F0F0F0F;
@@ -2599,7 +1077,8 @@ function middleInside(a, b) {
         px = (a.x + b.x) / 2,
         py = (a.y + b.y) / 2;
     do {
-        if (((p.y > py) !== (p.next.y > py)) && (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
+        if (((p.y > py) !== (p.next.y > py)) && p.next.y !== p.y &&
+                (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
             inside = !inside;
         p = p.next;
     } while (p !== a);
@@ -2734,7 +1213,7 @@ earcut.flatten = function (data) {
     return result;
 };
 
-},{}],12:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -3047,7 +1526,7 @@ if ('undefined' !== typeof module) {
   module.exports = EventEmitter;
 }
 
-},{}],13:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = exists;
 
 module.exports.allExist = allExist;
@@ -3060,7 +1539,7 @@ function allExist (/* vals */) {
   var vals = Array.prototype.slice.call(arguments);
   return vals.every(exists);
 }
-},{}],14:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /**
  * isMobile.js v0.4.1
  *
@@ -3199,7 +1678,7 @@ function allExist (/* vals */) {
 
 })(this);
 
-},{}],15:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
@@ -3366,7 +1845,7 @@ MiniSignal.MiniSignalBinding = MiniSignalBinding;
 exports['default'] = MiniSignal;
 module.exports = exports['default'];
 
-},{}],16:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /*
 object-assign
 (c) Sindre Sorhus
@@ -3458,7 +1937,7 @@ module.exports = shouldUseNative() ? Object.assign : function (target, source) {
 	return to;
 };
 
-},{}],17:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 'use strict'
 
 module.exports = function parseURI (str, opts) {
@@ -3490,7 +1969,7 @@ module.exports = function parseURI (str, opts) {
   return uri
 }
 
-},{}],18:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 
 /*
 	Copyright © 2001 Robert Penner
@@ -3758,7 +2237,7 @@ module.exports = function parseURI (str, opts) {
 
 }).call(this);
 
-},{}],19:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 const list = require('./src/list')
 
 module.exports = {
@@ -3775,7 +2254,7 @@ module.exports = {
 
     default: new list()
 }
-},{"./src/angle":20,"./src/face":21,"./src/list":22,"./src/load":23,"./src/movie":24,"./src/shake":25,"./src/target":26,"./src/tint":27,"./src/to":28,"./src/wait":29}],20:[function(require,module,exports){
+},{"./src/angle":12,"./src/face":13,"./src/list":14,"./src/load":15,"./src/movie":16,"./src/shake":17,"./src/target":18,"./src/tint":19,"./src/to":20,"./src/wait":21}],12:[function(require,module,exports){
 const wait = require('./wait')
 
 /** animate object's {x, y} using an angle */
@@ -3846,7 +2325,7 @@ module.exports = class angle extends wait
         this.angle += Math.PI
     }
 }
-},{"./wait":29}],21:[function(require,module,exports){
+},{"./wait":21}],13:[function(require,module,exports){
 const Angle = require('yy-angle')
 const wait = require('./wait')
 
@@ -3916,7 +2395,7 @@ module.exports = class face extends wait
         }
     }
 }
-},{"./wait":29,"yy-angle":226}],22:[function(require,module,exports){
+},{"./wait":21,"yy-angle":219}],14:[function(require,module,exports){
 const Loop = require('yy-loop')
 
 const Angle = require('./angle')
@@ -4067,7 +2546,7 @@ module.exports = class List extends Loop
      */
     // timeout(callback, time)
 }
-},{"./angle":20,"./face":21,"./load":23,"./movie":24,"./shake":25,"./target":26,"./tint":27,"./to":28,"./wait":29,"yy-loop":229}],23:[function(require,module,exports){
+},{"./angle":12,"./face":13,"./load":15,"./movie":16,"./shake":17,"./target":18,"./tint":19,"./to":20,"./wait":21,"yy-loop":221}],15:[function(require,module,exports){
 const wait = require('./wait')
 const to = require('./to')
 const tint = require('./tint')
@@ -4108,7 +2587,7 @@ module.exports = function load(object, load)
             return new movie(object, object[1], null, options)
     }
 }
-},{"./angle":20,"./face":21,"./movie":24,"./shake":25,"./target":26,"./tint":27,"./to":28,"./wait":29}],24:[function(require,module,exports){
+},{"./angle":12,"./face":13,"./movie":16,"./shake":17,"./target":18,"./tint":19,"./to":20,"./wait":21}],16:[function(require,module,exports){
 const wait = require('./wait')
 
 /**
@@ -4217,7 +2696,7 @@ module.exports = class movie extends wait
         }
     }
 }
-},{"./wait":29}],25:[function(require,module,exports){
+},{"./wait":21}],17:[function(require,module,exports){
 const wait = require('./wait')
 
 /**
@@ -4326,7 +2805,7 @@ module.exports = class shake extends wait
         }
     }
 }
-},{"./wait":29}],26:[function(require,module,exports){
+},{"./wait":21}],18:[function(require,module,exports){
 const wait = require('./wait')
 
 /** move an object to a target's location */
@@ -4403,7 +2882,7 @@ module.exports = class target extends wait
         }
     }
 }
-},{"./wait":29}],27:[function(require,module,exports){
+},{"./wait":21}],19:[function(require,module,exports){
 const Color = require('yy-color')
 const wait = require('./wait')
 
@@ -4526,7 +3005,7 @@ module.exports = class tint extends wait
         }
     }
 }
-},{"./wait":29,"yy-color":227}],28:[function(require,module,exports){
+},{"./wait":21,"yy-color":220}],20:[function(require,module,exports){
 const wait = require('./wait')
 
 /** animate any numeric parameter of an object or array of objects */
@@ -4754,7 +3233,7 @@ module.exports = class to extends wait
         }
     }
 }
-},{"./wait":29}],29:[function(require,module,exports){
+},{"./wait":21}],21:[function(require,module,exports){
 const Easing = require('penner')
 const EventEmitter = require('eventemitter3')
 
@@ -5021,7 +3500,7 @@ module.exports = class wait extends EventEmitter
 
     calculate() {}
 }
-},{"eventemitter3":12,"penner":18}],30:[function(require,module,exports){
+},{"eventemitter3":4,"penner":10}],22:[function(require,module,exports){
 var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
 
 /**
@@ -5142,7 +3621,7 @@ Buffer.prototype.destroy = function(){
 
 module.exports = Buffer;
 
-},{}],31:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 
 var Texture = require('./GLTexture');
 
@@ -5369,7 +3848,7 @@ Framebuffer.createFloat32 = function(gl, width, height, data)
 
 module.exports = Framebuffer;
 
-},{"./GLTexture":33}],32:[function(require,module,exports){
+},{"./GLTexture":25}],24:[function(require,module,exports){
 
 var compileProgram = require('./shader/compileProgram'),
 	extractAttributes = require('./shader/extractAttributes'),
@@ -5462,7 +3941,7 @@ Shader.prototype.destroy = function()
 
 module.exports = Shader;
 
-},{"./shader/compileProgram":38,"./shader/extractAttributes":40,"./shader/extractUniforms":41,"./shader/generateUniformAccessObject":42,"./shader/setPrecision":46}],33:[function(require,module,exports){
+},{"./shader/compileProgram":30,"./shader/extractAttributes":32,"./shader/extractUniforms":33,"./shader/generateUniformAccessObject":34,"./shader/setPrecision":38}],25:[function(require,module,exports){
 
 /**
  * Helper class to create a WebGL Texture
@@ -5797,7 +4276,7 @@ Texture.fromData = function(gl, data, width, height)
 
 module.exports = Texture;
 
-},{}],34:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 
 // state object//
 var setVertexAttribArrays = require( './setVertexAttribArrays' );
@@ -6061,7 +4540,7 @@ VertexArrayObject.prototype.getSize = function()
     return attrib.buffer.data.length / (( attrib.stride/4 ) || attrib.attribute.size);
 };
 
-},{"./setVertexAttribArrays":37}],35:[function(require,module,exports){
+},{"./setVertexAttribArrays":29}],27:[function(require,module,exports){
 
 /**
  * Helper class to create a webGL Context
@@ -6089,7 +4568,7 @@ var createContext = function(canvas, options)
 
 module.exports = createContext;
 
-},{}],36:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var gl = {
     createContext:          require('./createContext'),
     setVertexAttribArrays:  require('./setVertexAttribArrays'),
@@ -6116,7 +4595,7 @@ if (typeof window !== 'undefined')
     window.PIXI.glCore = gl;
 }
 
-},{"./GLBuffer":30,"./GLFramebuffer":31,"./GLShader":32,"./GLTexture":33,"./VertexArrayObject":34,"./createContext":35,"./setVertexAttribArrays":37,"./shader":43}],37:[function(require,module,exports){
+},{"./GLBuffer":22,"./GLFramebuffer":23,"./GLShader":24,"./GLTexture":25,"./VertexArrayObject":26,"./createContext":27,"./setVertexAttribArrays":29,"./shader":35}],29:[function(require,module,exports){
 // var GL_MAP = {};
 
 /**
@@ -6173,7 +4652,7 @@ var setVertexAttribArrays = function (gl, attribs, state)
 
 module.exports = setVertexAttribArrays;
 
-},{}],38:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 
 /**
  * @class
@@ -6255,7 +4734,7 @@ var compileShader = function (gl, type, src)
 
 module.exports = compileProgram;
 
-},{}],39:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI.glCore.shader
@@ -6335,7 +4814,7 @@ var booleanArray = function(size)
 
 module.exports = defaultValue;
 
-},{}],40:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 
 var mapType = require('./mapType');
 var mapSize = require('./mapSize');
@@ -6378,7 +4857,7 @@ var pointer = function(type, normalized, stride, start){
 
 module.exports = extractAttributes;
 
-},{"./mapSize":44,"./mapType":45}],41:[function(require,module,exports){
+},{"./mapSize":36,"./mapType":37}],33:[function(require,module,exports){
 var mapType = require('./mapType');
 var defaultValue = require('./defaultValue');
 
@@ -6415,7 +4894,7 @@ var extractUniforms = function(gl, program)
 
 module.exports = extractUniforms;
 
-},{"./defaultValue":39,"./mapType":45}],42:[function(require,module,exports){
+},{"./defaultValue":31,"./mapType":37}],34:[function(require,module,exports){
 /**
  * Extracts the attributes
  * @class
@@ -6558,7 +5037,7 @@ var GLSL_TO_ARRAY_SETTERS = {
 
 module.exports = generateUniformAccessObject;
 
-},{}],43:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = {
     compileProgram: require('./compileProgram'),
     defaultValue: require('./defaultValue'),
@@ -6569,7 +5048,7 @@ module.exports = {
     mapSize: require('./mapSize'),
     mapType: require('./mapType')
 };
-},{"./compileProgram":38,"./defaultValue":39,"./extractAttributes":40,"./extractUniforms":41,"./generateUniformAccessObject":42,"./mapSize":44,"./mapType":45,"./setPrecision":46}],44:[function(require,module,exports){
+},{"./compileProgram":30,"./defaultValue":31,"./extractAttributes":32,"./extractUniforms":33,"./generateUniformAccessObject":34,"./mapSize":36,"./mapType":37,"./setPrecision":38}],36:[function(require,module,exports){
 /**
  * @class
  * @memberof PIXI.glCore.shader
@@ -6607,7 +5086,7 @@ var GLSL_TO_SIZE = {
 
 module.exports = mapSize;
 
-},{}],45:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 
 
 var mapSize = function(gl, type) 
@@ -6655,7 +5134,7 @@ var GL_TO_GLSL_TYPES = {
 
 module.exports = mapSize;
 
-},{}],46:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 /**
  * Sets the float precision on the shader. If the precision is already present this function will do nothing
  * @param {string} src       the shader source
@@ -6675,10 +5154,10 @@ var setPrecision = function(src, precision)
 
 module.exports = setPrecision;
 
-},{}],47:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 !function(e){function t(s){if(n[s])return n[s].exports;var i=n[s]={exports:{},id:s,loaded:!1};return e[s].call(i.exports,i,i.exports,t),i.loaded=!0,i.exports}var n={};return t.m=e,t.c=n,t.p="",t(0)}([function(e,t,n){e.exports=n(5)},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}var r=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var o=n(2),a=s(o),u=function(){function e(t,n){i(this,e),this.key=t,this.manager=n,this.isPressed=!1,this.isDown=!1,this.isReleased=!1,this.crtl=!1,this.shift=!1,this.alt=!1}return r(e,[{key:"update",value:function(){this.isDown=this.manager.isDown(this.key),this.isPressed=this.manager.isPressed(this.key),this.isReleased=this.manager.isReleased(this.key),this.crtl=this.manager.isDown(a["default"].CTRL),this.shift=this.manager.isDown(a["default"].SHIFT),this.alt=this.manager.isDown(a["default"].ALT)}},{key:"remove",value:function(){this.manager.removeHotKey(this.key)}}]),e}();t["default"]=u},function(e,t){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var n={BACKSPACE:8,TAB:9,ENTER:13,SHIFT:16,PAUSE:19,CTRL:17,ALT:18,CAPS_LOCK:20,ESCAPE:27,SPACE:32,PAGE_UP:33,PAGE_DOWN:34,END:35,HOME:36,LEFT:37,UP:38,RIGHT:39,DOWN:40,PRINT_SCREEN:44,INSERT:45,DELETE:46,_0:48,_1:49,_2:50,_3:51,_4:52,_5:53,_6:54,_7:55,_8:56,_9:57,A:65,B:66,C:67,D:68,E:69,F:70,G:71,H:72,I:73,J:74,K:75,L:76,M:77,N:78,O:79,P:80,Q:81,R:82,S:83,T:84,U:85,V:86,W:87,X:88,Y:89,Z:90,CMD:91,CMD_RIGHT:93,NUM_0:96,NUM_1:97,NUM_2:98,NUM_3:99,NUM_4:100,NUM_5:101,NUM_6:102,NUM_7:103,NUM_8:104,NUM_9:105,MULTIPLY:106,ADD:107,SUBTRACT:109,DECIMAL_POINT:110,DIVIDE:111,F1:112,F2:113,F3:114,F4:115,F5:116,F6:117,F7:118,F8:119,F9:120,F10:121,F11:122,F12:123,NUM_LOCK:144,SCROLL_LOCK:145,SEMI_COLON:186,EQUAL:187,COMMA:188,DASH:189,PERIOD:190,FORWARD_SLASH:191,OPEN_BRACKET:219,BACK_SLASH:220,CLOSE_BRACKET:221,SINGLE_QUOTE:222};t["default"]=n},function(e,t){e.exports=PIXI},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function r(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t}function o(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}function a(e){return"[object Array]"===Object.prototype.toString.call(e)}var u=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var l=n(3),f=s(l),d=n(1),h=s(d),y=function(e){function t(){i(this,t);var e=r(this,Object.getPrototypeOf(t).call(this));return e.isEnabled=!1,e._pressedKeys=[],e._releasedKeys=[],e._downKeys=[],e._hotKeys=[],e._preventDefaultKeys=[],e}return o(t,e),u(t,[{key:"enable",value:function(){this.isEnabled||(this.isEnabled=!0,this._enableEvents())}},{key:"_enableEvents",value:function(){window.addEventListener("keydown",this._onKeyDown.bind(this),!0),window.addEventListener("keyup",this._onKeyUp.bind(this),!0)}},{key:"disable",value:function(){this.isEnabled&&(this.isEnabled=!1,this._disableEvents())}},{key:"_disableEvents",value:function(){window.removeEventListener("keydown",this._onKeyDown,!0),window.removeEventListener("keyup",this._onKeyUp,!0)}},{key:"setPreventDefault",value:function(e){var t=arguments.length<=1||void 0===arguments[1]?!0:arguments[1];if(a(e))for(var n=0;n<e.length;n++)this._preventDefaultKeys[e[n]]=t;else this._preventDefaultKeys[e]=t}},{key:"_onKeyDown",value:function(e){var t=e.which||e.keyCode;this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)||(this._downKeys.push(t),this._pressedKeys[t]=!0,this.emit("pressed",t))}},{key:"_onKeyUp",value:function(e){var t=e.which||e.keyCode;if(this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)){this._pressedKeys[t]=!1,this._releasedKeys[t]=!0;var n=this._downKeys.indexOf(t);-1!==n&&this._downKeys.splice(n,1),this.emit("released",t)}}},{key:"isDown",value:function(e){return-1!==this._downKeys.indexOf(e)}},{key:"isPressed",value:function(e){return!!this._pressedKeys[e]}},{key:"isReleased",value:function(e){return!!this._releasedKeys[e]}},{key:"update",value:function(){for(var e in this._hotKeys)this._hotKeys[e].update();for(var t=0;t<this._downKeys.length;t++)this.emit("down",this._downKeys[t]);this._pressedKeys.length=0,this._releasedKeys.length=0}},{key:"getHotKey",value:function(e){var t=this._hotKeys[e]||new h["default"](e,this);return this._hotKeys[e]=t,t}},{key:"removeHotKey",value:function(e){this._hotKeys[e]&&delete this._hotKeys[e]}}]),t}(f["default"].utils.EventEmitter);t["default"]=y},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}Object.defineProperty(t,"__esModule",{value:!0});var i=n(3),r=s(i),o=n(4),a=s(o),u=n(1),l=s(u),f=n(2),d=s(f),h={KeyboardManager:a["default"],Key:d["default"],HotKey:l["default"]};if(!r["default"].keyboard){var y=new a["default"];y.enable(),r["default"].keyboard=h,r["default"].keyboardManager=y}t["default"]=h}]);
 
-},{}],48:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (global){
 /*!
  * pixi-particles - v2.1.8
@@ -6691,9 +5170,402 @@ module.exports = setPrecision;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],49:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = require('./src/viewport')
-},{"./src/viewport":60}],50:[function(require,module,exports){
+},{"./src/viewport":53}],42:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const EventEmitter = require('eventemitter3')
+
+module.exports = class Input extends EventEmitter
+{
+    /**
+     * basic input support for touch, mouse, and keyboard
+     *
+     * @param {object} [options]
+     * @param {HTMLElement} [options.div=document] object to attach listener to
+     * @param {boolean} [options.noPointers] turns off mouse/touch/pen listeners
+     * @param {boolean} [options.noKeyboard] turns off key listener
+     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
+     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
+     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
+     *
+     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
+     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
+     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
+     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
+     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
+     *
+     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
+     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
+        this.chromeDebug = options.chromeDebug
+        this.preventDefault = options.preventDefault
+
+        this.pointers = []
+        this.keys = {}
+        this.input = []
+
+        this.div = options.div || document
+        this.options = options
+        this.callbacks = [
+            this.mouseDown.bind(this),
+            this.mouseMove.bind(this),
+            this.mouseUp.bind(this), // 2
+            this.touchStart.bind(this),
+            this.touchMove.bind(this),
+            this.touchEnd.bind(this),
+            this.keydown.bind(this), // 6
+            this.keyup.bind(this),
+            this.wheel.bind(this) // 8
+        ]
+        if (!options.noPointers)
+        {
+            this.addPointers()
+        }
+        if (!options.noKeyboard)
+        {
+            this.addKeyboard()
+        }
+    }
+
+    /**
+     * remove all listeners
+     */
+    destroy()
+    {
+        this.removePointers()
+        this.removeKeyboard()
+    }
+
+    /**
+     * turns on pointer listeners (on by default); can be used after removePointers()
+     */
+    addPointers()
+    {
+        if (!this.listeningPointer)
+        {
+            const div = this.div
+            div.addEventListener('mousedown', this.callbacks[0])
+            div.addEventListener('mousemove', this.callbacks[1])
+            div.addEventListener('mouseup', this.callbacks[2])
+            div.addEventListener('mouseout', this.callbacks[2])
+            div.addEventListener('wheel', this.callbacks[8])
+
+            div.addEventListener('touchstart', this.callbacks[3])
+            div.addEventListener('touchmove', this.callbacks[4])
+            div.addEventListener('touchend', this.callbacks[5])
+            div.addEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = true
+        }
+    }
+
+    /**
+     * remove pointers listener
+     */
+    removePointers()
+    {
+        if (this.listeningPointer)
+        {
+            const div = this.div
+            div.removeEventListener('mousedown', this.callbacks[0])
+            div.removeEventListener('mousemove', this.callbacks[1])
+            div.removeEventListener('mouseup', this.callbacks[2])
+            div.removeEventListener('mouseout', this.callbacks[2])
+            div.removeEventListener('wheel', this.callbacks[8])
+
+            div.removeEventListener('touchstart', this.callbacks[3])
+            div.removeEventListener('touchmove', this.callbacks[4])
+            div.removeEventListener('touchend', this.callbacks[5])
+            div.removeEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = false
+        }
+    }
+
+    /**
+     * turns on keyboard listener (off by default); can be used after removeKeyboard()
+     */
+    addKeyboard()
+    {
+        if (!this.listeningKeyboard)
+        {
+            document.addEventListener('keydown', this.callbacks[6])
+            document.addEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = true
+        }
+    }
+
+    /**
+     * removes keyboard listener
+     */
+    removeKeyboard()
+    {
+        if (this.listeningKeyboard)
+        {
+            document.removeEventListener('keydown', this.callbacks[6])
+            document.removeEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = false
+        }
+    }
+
+    /**
+     * helper function to find touch from list based on id
+     * @private
+     * @param  {number} id for saved touch
+     * @return {object}
+     */
+    findTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                return this.pointers[i]
+            }
+        }
+        return null
+    }
+
+    /**
+     * helper function to remove touch from touch list
+     * @private
+     * @param  {object} touch object
+     */
+    removeTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                this.pointers.splice(i, 1)
+                return
+            }
+        }
+    }
+
+    /**
+     * Handle touch start
+     * @private
+     * @param  {object} e touch event
+     */
+    touchStart(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const touches = e.changedTouches
+        for (let i = 0; i < touches.length; i++)
+        {
+            const touch = touches[i]
+            const entry = {
+                identifier: touch.identifier,
+                x: touch.clientX,
+                y: touch.clientY
+            }
+            this.pointers.push(entry)
+            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch move
+     * @private
+     * @param  {object} e touch event
+     */
+    touchMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch end
+     * @private
+     * @param  {object} e touch event
+     */
+    touchEnd(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            const previous = this.findTouch(touch.identifier)
+            if (previous !== null)
+            {
+                this.removeTouch(touch.identifier)
+                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
+            }
+        }
+    }
+
+    /**
+     * Handle mouse down
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseDown(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        while (this.pointers.length)
+        {
+            this.pointers.pop()
+        }
+        this.pointers.push({id: 'mouse'})
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleDown(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse move
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleMove(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse up
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseUp(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.pointers.pop()
+        this.handleUp(x, y, e, 'mouse')
+    }
+
+    handleDown(x, y, e, id)
+    {
+        this.emit('down', x, y, { event: e, input: this, id })
+        if (!this.threshold || this.pointers > 1)
+        {
+            this.start = null
+        }
+        else
+        {
+            this.start = { x, y }
+        }
+    }
+
+    handleUp(x, y, e, id)
+    {
+        if (this.start)
+        {
+            this.emit('click', x, y, { event: e, input: this, id })
+        }
+        this.emit('up', x, y, { event: e, input: this, id })
+    }
+
+    handleMove(x, y, e, id)
+    {
+        if (this.start)
+        {
+            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
+            {
+                this.start = null
+            }
+        }
+        this.emit('move', x, y, { event: e, input: this, id })
+    }
+
+    wheel(e)
+    {
+        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
+    }
+
+    /**
+     * Sets event listener for keyboard
+     * @private
+     */
+    keysListener()
+    {
+    }
+
+    /**
+     * @private
+     * @param  {object} e
+     */
+    keydown(e)
+    {
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        if (this.chromeDebug)
+        {
+            // allow chrome to open developer console
+            if (this.keys.meta && code === 73)
+            {
+                return
+            }
+
+            // reload page with meta + r
+            if (code === 82 && this.keys.meta)
+            {
+                window.location.reload()
+                return
+            }
+        }
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('keydown', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * Handle key up
+     * @private
+     * @param  {object}
+     */
+    keyup(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        this.emit('keyup', code, this.keys, { event: e, input: this })
+    }
+}
+},{"eventemitter3":4}],43:[function(require,module,exports){
 const Ease = require('pixi-ease')
 const exists = require('exists')
 
@@ -6881,7 +5753,7 @@ module.exports = class Bounce extends Plugin
         this.toX = this.toY = null
     }
 }
-},{"./plugin":57,"exists":13,"pixi-ease":19}],51:[function(require,module,exports){
+},{"./plugin":50,"exists":5,"pixi-ease":11}],44:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class ClampZoom extends Plugin
@@ -6941,7 +5813,7 @@ module.exports = class ClampZoom extends Plugin
     }
 }
 
-},{"./plugin":57}],52:[function(require,module,exports){
+},{"./plugin":50}],45:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class clamp extends Plugin
@@ -7063,7 +5935,7 @@ module.exports = class clamp extends Plugin
         }
     }
 }
-},{"./plugin":57}],53:[function(require,module,exports){
+},{"./plugin":50}],46:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Decelerate extends Plugin
@@ -7161,7 +6033,7 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = null
     }
 }
-},{"./plugin":57}],54:[function(require,module,exports){
+},{"./plugin":50}],47:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Drag extends Plugin
@@ -7235,7 +6107,7 @@ module.exports = class Drag extends Plugin
     }
 }
 
-},{"./plugin":57}],55:[function(require,module,exports){
+},{"./plugin":50}],48:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Follow extends Plugin
@@ -7263,38 +6135,43 @@ module.exports = class Follow extends Plugin
             return
         }
 
+        const center = this.parent.center
+        let toX = this.target.x, toY = this.target.y
         if (this.radius)
         {
-            const center = this.parent.center
             const distance = Math.sqrt(Math.pow(this.target.y - center.y, 2) + Math.pow(this.target.x - center.x, 2))
             if (distance > this.radius)
             {
                 const angle = Math.atan2(this.target.y - center.y, this.target.x - center.x)
-                this.parent.moveCenter(this.target.x - Math.cos(angle) * this.radius, this.target.y - Math.sin(angle) * this.radius)
+                toX = this.target.x - Math.cos(angle) * this.radius
+                toY = this.target.y - Math.sin(angle) * this.radius
+            }
+            else
+            {
+                return
             }
         }
-        else if (this.speed)
+        if (this.speed)
         {
-            const center = this.parent.center
-            const deltaX = this.target.x - center.x
-            const deltaY = this.target.y - center.y
+            const deltaX = toX - center.x
+            const deltaY = toY - center.y
             if (deltaX || deltaY)
             {
-                const angle = Math.atan2(this.target.y - center.y, this.target.x - center.x)
+                const angle = Math.atan2(toY - center.y, toX - center.x)
                 const changeX = Math.cos(angle) * this.speed
                 const changeY = Math.sin(angle) * this.speed
-                const x = Math.abs(changeX) > Math.abs(deltaX) ? this.target.x : center.x + changeX
-                const y = Math.abs(changeY) > Math.abs(deltaY) ? this.target.y : center.y + changeY
+                const x = Math.abs(changeX) > Math.abs(deltaX) ? toX : center.x + changeX
+                const y = Math.abs(changeY) > Math.abs(deltaY) ? toY : center.y + changeY
                 this.parent.moveCenter(x, y)
             }
         }
         else
         {
-            this.parent.moveCenter(this.target.x, this.target.y)
+            this.parent.moveCenter(toX, toY)
         }
     }
 }
-},{"./plugin":57}],56:[function(require,module,exports){
+},{"./plugin":50}],49:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Pinch extends Plugin
@@ -7408,7 +6285,7 @@ module.exports = class Pinch extends Plugin
         }
     }
 }
-},{"./plugin":57}],57:[function(require,module,exports){
+},{"./plugin":50}],50:[function(require,module,exports){
 module.exports = class Plugin
 {
     constructor(parent)
@@ -7423,6 +6300,7 @@ module.exports = class Plugin
     wheel() { }
     update() { }
     resize() { }
+    reset() { }
 
     pause()
     {
@@ -7434,7 +6312,7 @@ module.exports = class Plugin
         this.paused = false
     }
 }
-},{}],58:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -7575,7 +6453,7 @@ module.exports = class SnapZoom extends Plugin
         super.resume()
     }
 }
-},{"./plugin":57,"exists":13,"pixi-ease":19}],59:[function(require,module,exports){
+},{"./plugin":50,"exists":5,"pixi-ease":11}],52:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -7587,14 +6465,15 @@ module.exports = class Snap extends Plugin
      * @param {number} x
      * @param {number} y
      * @param {object} [options]
-     * @param {boolean} [options.center] snap to the center of the camera instead of the top-left corner of viewport
+     * @param {boolean} [options.topLeft] snap to the top-left of viewport instead of center
      * @param {number} [options.friction=0.8] friction/frame to apply if decelerate is active
      * @param {number} [options.time=1000]
      * @param {string|function} [options.ease=easeInOutSine] ease function or name (see http://easings.net/ for supported names)
      * @param {boolean} [options.interrupt=true] pause snapping with any user input on the viewport
-     * @param {boolean} [options.removeOnComplete=true] removes this plugin after snapping is complete
+     * @param {boolean} [options.removeOnComplete] removes this plugin after snapping is complete
      *
      * @event snap-start(Viewport) emitted each time a snap animation starts
+     * @event snap-restart(Viewport) emitted each time a snap resets because of a change in viewport size
      * @event snap-end(Viewport) emitted each time snap reaches its target
      */
     constructor(parent, x, y, options)
@@ -7604,45 +6483,28 @@ module.exports = class Snap extends Plugin
         this.friction = options.friction || 0.8
         this.time = options.time || 1000
         this.ease = options.ease || 'easeInOutSine'
-        this.targetX = x
-        this.targetY = y
-        this.center = options.center
-        if (!this.center)
-        {
-            // Always target the center, and calculate the new top-left corner to target upon resizing
-            this.originalTargetX = this.targetX
-            this.originalTargetY = this.targetY
-            
-            this.resize()
-        }
-        this.originalCenter = this.parent.center
+        this.x = x
+        this.y = y
+        this.topLeft = options.topLeft
         this.interrupt = exists(options.interrupt) ? options.interrupt : true
-        this.removeOnComplete = exists(options.removeOnComplete) ? options.removeOnComplete: true
+        this.removeOnComplete = options.removeOnComplete
     }
 
-    reset()
+    startEase()
     {
-        this.snapping = null
+        const current = this.topLeft ? this.parent.corner : this.parent.center
+        this.deltaX = this.x - current.x
+        this.deltaY = this.y - current.y
+        this.startX = current.x
+        this.startY = current.y
     }
 
-    resize()
-    {
-        if (!this.center)
-        {
-            /* Finds target center based on the given originalTarget point (the top left corner)
-             * DOES NOT WORK WHEN the snap-zoom plugin is working simultaneously because this.parent.container.scale.x and y are
-             * constantly changing, therefore worldScreenWidth and worldScreenHeight are constantly changing, and the pixi-ease
-             * library does not support constantly changing values
-             */
-            this.originalCenter = this.parent.center
-            this.targetX = this.parent.worldScreenWidth / 2 + this.originalTargetX
-            this.targetY = this.parent.worldScreenHeight / 2 + this.originalTargetY
-        }
-    }
-    
     down()
     {
-        this.snapping = null
+        if (this.interrupt)
+        {
+            this.snapping = null
+        }
     }
 
     up()
@@ -7667,18 +6529,31 @@ module.exports = class Snap extends Plugin
         {
             return
         }
-        let center = this.parent.center
-        if (!this.snapping && (center.x !== this.targetX || center.y !== this.targetY))
+        if (!this.snapping)
         {
-            this.snapping = new Ease.to(this.originalCenter, { x: this.targetX, y: this.targetY }, this.time, { ease: this.ease })
-            this.parent.emit('snap-start', this.parent)
+            const current = this.topLeft ? this.parent.corner : this.parent.center
+            if (current.x !== this.x || current.y !== this.y)
+            {
+                this.percent = 0
+                this.snapping = new Ease.to(this, { percent: 1 }, this.time, { ease: this.ease })
+                this.startEase()
+                this.parent.emit('snap-start', this.parent)
+            }
         }
-        else if (this.snapping)
+        else
         {
-            var finished = this.snapping.update(elapsed)
-            
-            this.parent.moveCenter(this.originalCenter)
-            
+            const finished = this.snapping.update(elapsed)
+            const x = this.startX + this.deltaX * this.percent
+            const y = this.startY + this.deltaY * this.percent
+            if (this.topLeft)
+            {
+                this.parent.moveCorner(x, y)
+            }
+            else
+            {
+                this.parent.moveCenter(x, y)
+            }
+
             if (finished)
             {
                 if (this.removeOnComplete)
@@ -7690,14 +6565,8 @@ module.exports = class Snap extends Plugin
             }
         }
     }
-
-    resume()
-    {
-        this.snapping = null
-        super.resume()
-    }
 }
-},{"./plugin":57,"exists":13,"pixi-ease":19}],60:[function(require,module,exports){
+},{"./plugin":50,"exists":5,"pixi-ease":11}],53:[function(require,module,exports){
 const Loop = require('yy-loop')
 const Input = require('yy-input')
 const exists = require('exists')
@@ -8110,11 +6979,11 @@ module.exports = class Viewport extends Loop
     {
         if (arguments.length === 1)
         {
-            this.container.position.set(arguments[0].x, arguments[0].y)
+            this.container.position.set(-arguments[0].x * this.container.scale.x, -arguments[0].y * this.container.scale.y)
         }
         else
         {
-            this.container.position.set(arguments[0], arguments[1])
+            this.container.position.set(-arguments[0] * this.container.scale.x, -arguments[1] * this.container.scale.y)
         }
         this._reset()
         return this
@@ -8502,7 +7371,7 @@ module.exports = class Viewport extends Loop
     }
 }
 
-},{"./bounce":50,"./clamp":52,"./clamp-zoom":51,"./decelerate":53,"./drag":54,"./follow":55,"./pinch":56,"./snap":59,"./snap-zoom":58,"./wheel":61,"exists":13,"yy-input":228,"yy-loop":229}],61:[function(require,module,exports){
+},{"./bounce":43,"./clamp":45,"./clamp-zoom":44,"./decelerate":46,"./drag":47,"./follow":48,"./pinch":49,"./snap":52,"./snap-zoom":51,"./wheel":54,"exists":5,"yy-input":42,"yy-loop":221}],54:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Wheel extends Plugin
@@ -8577,7 +7446,7 @@ module.exports = class Wheel extends Plugin
         this.parent.emit('wheel', { wheel: {dx, dy, dz}, viewport: this.parent})
     }
 }
-},{"./plugin":57}],62:[function(require,module,exports){
+},{"./plugin":50}],55:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9071,7 +7940,7 @@ exports.default = AccessibilityManager;
 core.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
 core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
 
-},{"../core":87,"./accessibleTarget":63,"ismobilejs":14}],63:[function(require,module,exports){
+},{"../core":80,"./accessibleTarget":56,"ismobilejs":6}],56:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -9129,7 +7998,7 @@ exports.default = {
   _accessibleDiv: false
 };
 
-},{}],64:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9154,7 +8023,7 @@ Object.defineProperty(exports, 'AccessibilityManager', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./AccessibilityManager":62,"./accessibleTarget":63}],65:[function(require,module,exports){
+},{"./AccessibilityManager":55,"./accessibleTarget":56}],58:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9377,7 +8246,7 @@ var Application = function () {
 
 exports.default = Application;
 
-},{"./autoDetectRenderer":67,"./const":68,"./display/Container":70,"./settings":123,"./ticker":142}],66:[function(require,module,exports){
+},{"./autoDetectRenderer":60,"./const":61,"./display/Container":63,"./settings":116,"./ticker":136}],59:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9441,7 +8310,7 @@ var Shader = function (_GLShader) {
 
 exports.default = Shader;
 
-},{"./settings":123,"pixi-gl-core":36}],67:[function(require,module,exports){
+},{"./settings":116,"pixi-gl-core":28}],60:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9510,7 +8379,7 @@ function autoDetectRenderer(options, arg1, arg2, arg3) {
     return new _CanvasRenderer2.default(options, arg1, arg2);
 }
 
-},{"./renderers/canvas/CanvasRenderer":99,"./renderers/webgl/WebGLRenderer":106,"./utils":146}],68:[function(require,module,exports){
+},{"./renderers/canvas/CanvasRenderer":92,"./renderers/webgl/WebGLRenderer":99,"./utils":140}],61:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9523,7 +8392,7 @@ exports.__esModule = true;
  * @name VERSION
  * @type {string}
  */
-var VERSION = exports.VERSION = '4.5.6';
+var VERSION = exports.VERSION = '4.6.0';
 
 /**
  * Two Pi.
@@ -9853,7 +8722,7 @@ var UPDATE_PRIORITY = exports.UPDATE_PRIORITY = {
   UTILITY: -50
 };
 
-},{}],69:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10196,7 +9065,7 @@ var Bounds = function () {
 
 exports.default = Bounds;
 
-},{"../math":92}],70:[function(require,module,exports){
+},{"../math":85}],63:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10814,7 +9683,7 @@ var Container = function (_DisplayObject) {
 exports.default = Container;
 Container.prototype.containerUpdateTransform = Container.prototype.updateTransform;
 
-},{"../utils":146,"./DisplayObject":71}],71:[function(require,module,exports){
+},{"../utils":140,"./DisplayObject":64}],64:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11506,7 +10375,7 @@ var DisplayObject = function (_EventEmitter) {
 exports.default = DisplayObject;
 DisplayObject.prototype.displayObjectUpdateTransform = DisplayObject.prototype.updateTransform;
 
-},{"../const":68,"../math":92,"../settings":123,"./Bounds":69,"./Transform":72,"./TransformStatic":74,"eventemitter3":12}],72:[function(require,module,exports){
+},{"../const":61,"../math":85,"../settings":116,"./Bounds":62,"./Transform":65,"./TransformStatic":67,"eventemitter3":4}],65:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11687,7 +10556,7 @@ var Transform = function (_TransformBase) {
 
 exports.default = Transform;
 
-},{"../math":92,"./TransformBase":73}],73:[function(require,module,exports){
+},{"../math":85,"./TransformBase":66}],66:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11774,7 +10643,7 @@ TransformBase.prototype.updateWorldTransform = TransformBase.prototype.updateTra
 
 TransformBase.IDENTITY = new TransformBase();
 
-},{"../math":92}],74:[function(require,module,exports){
+},{"../math":85}],67:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11984,7 +10853,7 @@ var TransformStatic = function (_TransformBase) {
 
 exports.default = TransformStatic;
 
-},{"../math":92,"./TransformBase":73}],75:[function(require,module,exports){
+},{"../math":85,"./TransformBase":66}],68:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13156,7 +12025,7 @@ exports.default = Graphics;
 
 Graphics._SPRITE_TEXTURE = null;
 
-},{"../const":68,"../display/Bounds":69,"../display/Container":70,"../math":92,"../renderers/canvas/CanvasRenderer":99,"../sprites/Sprite":124,"../textures/RenderTexture":135,"../textures/Texture":137,"../utils":146,"./GraphicsData":76,"./utils/bezierCurveTo":78}],76:[function(require,module,exports){
+},{"../const":61,"../display/Bounds":62,"../display/Container":63,"../math":85,"../renderers/canvas/CanvasRenderer":92,"../sprites/Sprite":117,"../textures/RenderTexture":128,"../textures/Texture":130,"../utils":140,"./GraphicsData":69,"./utils/bezierCurveTo":71}],69:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13278,7 +12147,7 @@ var GraphicsData = function () {
 
 exports.default = GraphicsData;
 
-},{}],77:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13547,7 +12416,7 @@ exports.default = CanvasGraphicsRenderer;
 
 _CanvasRenderer2.default.registerPlugin('graphics', CanvasGraphicsRenderer);
 
-},{"../../const":68,"../../renderers/canvas/CanvasRenderer":99}],78:[function(require,module,exports){
+},{"../../const":61,"../../renderers/canvas/CanvasRenderer":92}],71:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13597,7 +12466,7 @@ function bezierCurveTo(fromX, fromY, cpX, cpY, cpX2, cpY2, toX, toY) {
     return path;
 }
 
-},{}],79:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13862,7 +12731,7 @@ exports.default = GraphicsRenderer;
 
 _WebGLRenderer2.default.registerPlugin('graphics', GraphicsRenderer);
 
-},{"../../const":68,"../../renderers/webgl/WebGLRenderer":106,"../../renderers/webgl/utils/ObjectRenderer":116,"../../utils":146,"./WebGLGraphicsData":80,"./shaders/PrimitiveShader":81,"./utils/buildCircle":82,"./utils/buildPoly":84,"./utils/buildRectangle":85,"./utils/buildRoundedRectangle":86}],80:[function(require,module,exports){
+},{"../../const":61,"../../renderers/webgl/WebGLRenderer":99,"../../renderers/webgl/utils/ObjectRenderer":109,"../../utils":140,"./WebGLGraphicsData":73,"./shaders/PrimitiveShader":74,"./utils/buildCircle":75,"./utils/buildPoly":77,"./utils/buildRectangle":78,"./utils/buildRoundedRectangle":79}],73:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14005,7 +12874,7 @@ var WebGLGraphicsData = function () {
 
 exports.default = WebGLGraphicsData;
 
-},{"pixi-gl-core":36}],81:[function(require,module,exports){
+},{"pixi-gl-core":28}],74:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14050,7 +12919,7 @@ var PrimitiveShader = function (_Shader) {
 
 exports.default = PrimitiveShader;
 
-},{"../../../Shader":66}],82:[function(require,module,exports){
+},{"../../../Shader":59}],75:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14143,7 +13012,7 @@ function buildCircle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../const":68,"../../../utils":146,"./buildLine":83}],83:[function(require,module,exports){
+},{"../../../const":61,"../../../utils":140,"./buildLine":76}],76:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14413,7 +13282,7 @@ function buildNativeLine(graphicsData, webGLData) {
     }
 }
 
-},{"../../../math":92,"../../../utils":146}],84:[function(require,module,exports){
+},{"../../../math":85,"../../../utils":140}],77:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14499,7 +13368,7 @@ function buildPoly(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":146,"./buildLine":83,"earcut":11}],85:[function(require,module,exports){
+},{"../../../utils":140,"./buildLine":76,"earcut":3}],78:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14575,7 +13444,7 @@ function buildRectangle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":146,"./buildLine":83}],86:[function(require,module,exports){
+},{"../../../utils":140,"./buildLine":76}],79:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14731,11 +13600,11 @@ function quadraticBezierCurve(fromX, fromY, cpX, cpY, toX, toY) {
     return points;
 }
 
-},{"../../../utils":146,"./buildLine":83,"earcut":11}],87:[function(require,module,exports){
+},{"../../../utils":140,"./buildLine":76,"earcut":3}],80:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
-exports.autoDetectRenderer = exports.Application = exports.Filter = exports.SpriteMaskFilter = exports.Quad = exports.RenderTarget = exports.ObjectRenderer = exports.WebGLManager = exports.Shader = exports.CanvasRenderTarget = exports.TextureUvs = exports.VideoBaseTexture = exports.BaseRenderTexture = exports.RenderTexture = exports.BaseTexture = exports.Texture = exports.Spritesheet = exports.CanvasGraphicsRenderer = exports.GraphicsRenderer = exports.GraphicsData = exports.Graphics = exports.TextMetrics = exports.TextStyle = exports.Text = exports.SpriteRenderer = exports.CanvasTinter = exports.CanvasSpriteRenderer = exports.Sprite = exports.TransformBase = exports.TransformStatic = exports.Transform = exports.Container = exports.DisplayObject = exports.Bounds = exports.glCore = exports.WebGLRenderer = exports.CanvasRenderer = exports.ticker = exports.utils = exports.settings = undefined;
+exports.autoDetectRenderer = exports.Application = exports.Filter = exports.SpriteMaskFilter = exports.Quad = exports.RenderTarget = exports.ObjectRenderer = exports.WebGLManager = exports.Shader = exports.CanvasRenderTarget = exports.TextureUvs = exports.VideoBaseTexture = exports.BaseRenderTexture = exports.RenderTexture = exports.BaseTexture = exports.TextureMatrix = exports.Texture = exports.Spritesheet = exports.CanvasGraphicsRenderer = exports.GraphicsRenderer = exports.GraphicsData = exports.Graphics = exports.TextMetrics = exports.TextStyle = exports.Text = exports.SpriteRenderer = exports.CanvasTinter = exports.CanvasSpriteRenderer = exports.Sprite = exports.TransformBase = exports.TransformStatic = exports.Transform = exports.Container = exports.DisplayObject = exports.Bounds = exports.glCore = exports.WebGLRenderer = exports.CanvasRenderer = exports.ticker = exports.utils = exports.settings = undefined;
 
 var _const = require('./const');
 
@@ -14941,6 +13810,15 @@ Object.defineProperty(exports, 'Texture', {
   }
 });
 
+var _TextureMatrix = require('./textures/TextureMatrix');
+
+Object.defineProperty(exports, 'TextureMatrix', {
+  enumerable: true,
+  get: function get() {
+    return _interopRequireDefault(_TextureMatrix).default;
+  }
+});
+
 var _BaseTexture = require('./textures/BaseTexture');
 
 Object.defineProperty(exports, 'BaseTexture', {
@@ -15108,7 +13986,7 @@ exports.WebGLRenderer = _WebGLRenderer2.default; /**
                                                   * @namespace PIXI
                                                   */
 
-},{"./Application":65,"./Shader":66,"./autoDetectRenderer":67,"./const":68,"./display/Bounds":69,"./display/Container":70,"./display/DisplayObject":71,"./display/Transform":72,"./display/TransformBase":73,"./display/TransformStatic":74,"./graphics/Graphics":75,"./graphics/GraphicsData":76,"./graphics/canvas/CanvasGraphicsRenderer":77,"./graphics/webgl/GraphicsRenderer":79,"./math":92,"./renderers/canvas/CanvasRenderer":99,"./renderers/canvas/utils/CanvasRenderTarget":101,"./renderers/webgl/WebGLRenderer":106,"./renderers/webgl/filters/Filter":108,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":111,"./renderers/webgl/managers/WebGLManager":115,"./renderers/webgl/utils/ObjectRenderer":116,"./renderers/webgl/utils/Quad":117,"./renderers/webgl/utils/RenderTarget":118,"./settings":123,"./sprites/Sprite":124,"./sprites/canvas/CanvasSpriteRenderer":125,"./sprites/canvas/CanvasTinter":126,"./sprites/webgl/SpriteRenderer":128,"./text/Text":130,"./text/TextMetrics":131,"./text/TextStyle":132,"./textures/BaseRenderTexture":133,"./textures/BaseTexture":134,"./textures/RenderTexture":135,"./textures/Spritesheet":136,"./textures/Texture":137,"./textures/TextureUvs":138,"./textures/VideoBaseTexture":139,"./ticker":142,"./utils":146,"pixi-gl-core":36}],88:[function(require,module,exports){
+},{"./Application":58,"./Shader":59,"./autoDetectRenderer":60,"./const":61,"./display/Bounds":62,"./display/Container":63,"./display/DisplayObject":64,"./display/Transform":65,"./display/TransformBase":66,"./display/TransformStatic":67,"./graphics/Graphics":68,"./graphics/GraphicsData":69,"./graphics/canvas/CanvasGraphicsRenderer":70,"./graphics/webgl/GraphicsRenderer":72,"./math":85,"./renderers/canvas/CanvasRenderer":92,"./renderers/canvas/utils/CanvasRenderTarget":94,"./renderers/webgl/WebGLRenderer":99,"./renderers/webgl/filters/Filter":101,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":104,"./renderers/webgl/managers/WebGLManager":108,"./renderers/webgl/utils/ObjectRenderer":109,"./renderers/webgl/utils/Quad":110,"./renderers/webgl/utils/RenderTarget":111,"./settings":116,"./sprites/Sprite":117,"./sprites/canvas/CanvasSpriteRenderer":118,"./sprites/canvas/CanvasTinter":119,"./sprites/webgl/SpriteRenderer":121,"./text/Text":123,"./text/TextMetrics":124,"./text/TextStyle":125,"./textures/BaseRenderTexture":126,"./textures/BaseTexture":127,"./textures/RenderTexture":128,"./textures/Spritesheet":129,"./textures/Texture":130,"./textures/TextureMatrix":131,"./textures/TextureUvs":132,"./textures/VideoBaseTexture":133,"./ticker":136,"./utils":140,"pixi-gl-core":28}],81:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15233,13 +14111,14 @@ var GroupD8 = {
     },
 
     /**
-     * I dont know why sometimes width and heights needs to be swapped. We'll fix it later.
+     * Direction of main vector can be horizontal, vertical or diagonal.
+     * Some objects work with vertical directions different.
      *
      * @memberof PIXI.GroupD8
      * @param {number} rotation - The number to check.
-     * @returns {boolean} Whether or not the width/height should be swapped.
+     * @returns {boolean} Whether or not the direction is vertical
      */
-    isSwapWidthHeight: function isSwapWidthHeight(rotation) {
+    isVertical: function isVertical(rotation) {
         return (rotation & 3) === 2;
     },
 
@@ -15300,7 +14179,7 @@ var GroupD8 = {
 
 exports.default = GroupD8;
 
-},{"./Matrix":89}],89:[function(require,module,exports){
+},{"./Matrix":82}],82:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15831,7 +14710,7 @@ var Matrix = function () {
 
 exports.default = Matrix;
 
-},{"./Point":91}],90:[function(require,module,exports){
+},{"./Point":84}],83:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -15948,7 +14827,7 @@ var ObservablePoint = function () {
 
 exports.default = ObservablePoint;
 
-},{}],91:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16039,7 +14918,7 @@ var Point = function () {
 
 exports.default = Point;
 
-},{}],92:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16127,7 +15006,7 @@ Object.defineProperty(exports, 'RoundedRectangle', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./GroupD8":88,"./Matrix":89,"./ObservablePoint":90,"./Point":91,"./shapes/Circle":93,"./shapes/Ellipse":94,"./shapes/Polygon":95,"./shapes/Rectangle":96,"./shapes/RoundedRectangle":97}],93:[function(require,module,exports){
+},{"./GroupD8":81,"./Matrix":82,"./ObservablePoint":83,"./Point":84,"./shapes/Circle":86,"./shapes/Ellipse":87,"./shapes/Polygon":88,"./shapes/Rectangle":89,"./shapes/RoundedRectangle":90}],86:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16241,7 +15120,7 @@ var Circle = function () {
 
 exports.default = Circle;
 
-},{"../../const":68,"./Rectangle":96}],94:[function(require,module,exports){
+},{"../../const":61,"./Rectangle":89}],87:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16363,7 +15242,7 @@ var Ellipse = function () {
 
 exports.default = Ellipse;
 
-},{"../../const":68,"./Rectangle":96}],95:[function(require,module,exports){
+},{"../../const":61,"./Rectangle":89}],88:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16494,7 +15373,7 @@ var Polygon = function () {
 
 exports.default = Polygon;
 
-},{"../../const":68,"../Point":91}],96:[function(require,module,exports){
+},{"../../const":61,"../Point":84}],89:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16757,7 +15636,7 @@ var Rectangle = function () {
 
 exports.default = Rectangle;
 
-},{"../../const":68}],97:[function(require,module,exports){
+},{"../../const":61}],90:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16890,7 +15769,7 @@ var RoundedRectangle = function () {
 
 exports.default = RoundedRectangle;
 
-},{"../../const":68}],98:[function(require,module,exports){
+},{"../../const":61}],91:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17253,7 +16132,7 @@ var SystemRenderer = function (_EventEmitter) {
 
 exports.default = SystemRenderer;
 
-},{"../const":68,"../display/Container":70,"../math":92,"../settings":123,"../textures/RenderTexture":135,"../utils":146,"eventemitter3":12}],99:[function(require,module,exports){
+},{"../const":61,"../display/Container":63,"../math":85,"../settings":116,"../textures/RenderTexture":128,"../utils":140,"eventemitter3":4}],92:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17465,6 +16344,7 @@ var CanvasRenderer = function (_SystemRenderer) {
             // displayObject.hitArea = //TODO add a temp hit area
         }
 
+        context.save();
         context.setTransform(1, 0, 0, 1, 0, 0);
         context.globalAlpha = 1;
         this._activeBlendMode = _const.BLEND_MODES.NORMAL;
@@ -17494,6 +16374,8 @@ var CanvasRenderer = function (_SystemRenderer) {
         this.context = context;
         displayObject.renderCanvas(this);
         this.context = tempContext;
+
+        context.restore();
 
         this.resolution = rootResolution;
 
@@ -17615,7 +16497,7 @@ var CanvasRenderer = function (_SystemRenderer) {
 exports.default = CanvasRenderer;
 _utils.pluginTarget.mixin(CanvasRenderer);
 
-},{"../../const":68,"../../settings":123,"../../utils":146,"../SystemRenderer":98,"./utils/CanvasMaskManager":100,"./utils/CanvasRenderTarget":101,"./utils/mapCanvasBlendModesToPixi":103}],100:[function(require,module,exports){
+},{"../../const":61,"../../settings":116,"../../utils":140,"../SystemRenderer":91,"./utils/CanvasMaskManager":93,"./utils/CanvasRenderTarget":94,"./utils/mapCanvasBlendModesToPixi":96}],93:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17784,7 +16666,7 @@ var CanvasMaskManager = function () {
 
 exports.default = CanvasMaskManager;
 
-},{"../../../const":68}],101:[function(require,module,exports){
+},{"../../../const":61}],94:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17908,7 +16790,7 @@ var CanvasRenderTarget = function () {
 
 exports.default = CanvasRenderTarget;
 
-},{"../../../settings":123}],102:[function(require,module,exports){
+},{"../../../settings":116}],95:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17969,7 +16851,7 @@ function canUseNewCanvasBlendModes() {
     return data[0] === 255 && data[1] === 0 && data[2] === 0;
 }
 
-},{}],103:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18041,7 +16923,7 @@ function mapCanvasBlendModesToPixi() {
     return array;
 }
 
-},{"../../../const":68,"./canUseNewCanvasBlendModes":102}],104:[function(require,module,exports){
+},{"../../../const":61,"./canUseNewCanvasBlendModes":95}],97:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18161,7 +17043,7 @@ var TextureGarbageCollector = function () {
 
 exports.default = TextureGarbageCollector;
 
-},{"../../const":68,"../../settings":123}],105:[function(require,module,exports){
+},{"../../const":61,"../../settings":116}],98:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18417,7 +17299,7 @@ var TextureManager = function () {
 
 exports.default = TextureManager;
 
-},{"../../const":68,"../../utils":146,"./utils/RenderTarget":118,"pixi-gl-core":36}],106:[function(require,module,exports){
+},{"../../const":61,"../../utils":140,"./utils/RenderTarget":111,"pixi-gl-core":28}],99:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19120,7 +18002,12 @@ var WebGLRenderer = function (_SystemRenderer) {
         this.setObjectRenderer(this.emptyRenderer);
 
         this._activeShader = null;
+        this._activeVao = null;
         this._activeRenderTarget = this.rootRenderTarget;
+
+        for (var i = 0; i < this.boundTextures.length; i++) {
+            this.boundTextures[i] = this.emptyTextures[i];
+        }
 
         // bind the main frame buffer (the screen);
         this.rootRenderTarget.activate();
@@ -19229,7 +18116,7 @@ var WebGLRenderer = function (_SystemRenderer) {
 exports.default = WebGLRenderer;
 _utils.pluginTarget.mixin(WebGLRenderer);
 
-},{"../../const":68,"../../textures/BaseTexture":134,"../../utils":146,"../SystemRenderer":98,"./TextureGarbageCollector":104,"./TextureManager":105,"./WebGLState":107,"./managers/FilterManager":112,"./managers/MaskManager":113,"./managers/StencilManager":114,"./utils/ObjectRenderer":116,"./utils/RenderTarget":118,"./utils/mapWebGLDrawModesToPixi":121,"./utils/validateContext":122,"pixi-gl-core":36}],107:[function(require,module,exports){
+},{"../../const":61,"../../textures/BaseTexture":127,"../../utils":140,"../SystemRenderer":91,"./TextureGarbageCollector":97,"./TextureManager":98,"./WebGLState":100,"./managers/FilterManager":105,"./managers/MaskManager":106,"./managers/StencilManager":107,"./utils/ObjectRenderer":109,"./utils/RenderTarget":111,"./utils/mapWebGLDrawModesToPixi":114,"./utils/validateContext":115,"pixi-gl-core":28}],100:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19509,7 +18396,7 @@ var WebGLState = function () {
 
 exports.default = WebGLState;
 
-},{"./utils/mapWebGLBlendModesToPixi":120}],108:[function(require,module,exports){
+},{"./utils/mapWebGLBlendModesToPixi":113}],101:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19705,7 +18592,7 @@ var Filter = function () {
 
 exports.default = Filter;
 
-},{"../../../const":68,"../../../settings":123,"../../../utils":146,"./extractUniformsFromSrc":109}],109:[function(require,module,exports){
+},{"../../../const":61,"../../../settings":116,"../../../utils":140,"./extractUniformsFromSrc":102}],102:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19767,7 +18654,7 @@ function extractUniformsFromString(string) {
     return uniforms;
 }
 
-},{"pixi-gl-core":36}],110:[function(require,module,exports){
+},{"pixi-gl-core":28}],103:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19814,19 +18701,19 @@ function calculateNormalizedScreenSpaceMatrix(outputMatrix, filterArea, textureS
 
 // this will map the filter coord so that a texture can be used based on the transform of a sprite
 function calculateSpriteMatrix(outputMatrix, filterArea, textureSize, sprite) {
-    var texture = sprite._texture.baseTexture;
+    var orig = sprite._texture.orig;
     var mappedMatrix = outputMatrix.set(textureSize.width, 0, 0, textureSize.height, filterArea.x, filterArea.y);
     var worldTransform = sprite.worldTransform.copy(_math.Matrix.TEMP_MATRIX);
 
     worldTransform.invert();
     mappedMatrix.prepend(worldTransform);
-    mappedMatrix.scale(1.0 / texture.width, 1.0 / texture.height);
+    mappedMatrix.scale(1.0 / orig.width, 1.0 / orig.height);
     mappedMatrix.translate(sprite.anchor.x, sprite.anchor.y);
 
     return mappedMatrix;
 }
 
-},{"../../../math":92}],111:[function(require,module,exports){
+},{"../../../math":85}],104:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19838,6 +18725,10 @@ var _Filter3 = _interopRequireDefault(_Filter2);
 var _math = require('../../../../math');
 
 var _path = require('path');
+
+var _TextureMatrix = require('../../../../textures/TextureMatrix');
+
+var _TextureMatrix2 = _interopRequireDefault(_TextureMatrix);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -19865,7 +18756,7 @@ var SpriteMaskFilter = function (_Filter) {
 
         var maskMatrix = new _math.Matrix();
 
-        var _this = _possibleConstructorReturn(this, _Filter.call(this, 'attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat3 projectionMatrix;\nuniform mat3 otherMatrix;\n\nvarying vec2 vMaskCoord;\nvarying vec2 vTextureCoord;\n\nvoid main(void)\n{\n    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n\n    vTextureCoord = aTextureCoord;\n    vMaskCoord = ( otherMatrix * vec3( aTextureCoord, 1.0)  ).xy;\n}\n', 'varying vec2 vMaskCoord;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float alpha;\nuniform sampler2D mask;\n\nvoid main(void)\n{\n    // check clip! this will stop the mask bleeding out from the edges\n    vec2 text = abs( vMaskCoord - 0.5 );\n    text = step(0.5, text);\n\n    float clip = 1.0 - max(text.y, text.x);\n    vec4 original = texture2D(uSampler, vTextureCoord);\n    vec4 masky = texture2D(mask, vMaskCoord);\n\n    original *= (masky.r * masky.a * alpha * clip);\n\n    gl_FragColor = original;\n}\n'));
+        var _this = _possibleConstructorReturn(this, _Filter.call(this, 'attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat3 projectionMatrix;\nuniform mat3 otherMatrix;\n\nvarying vec2 vMaskCoord;\nvarying vec2 vTextureCoord;\n\nvoid main(void)\n{\n    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n\n    vTextureCoord = aTextureCoord;\n    vMaskCoord = ( otherMatrix * vec3( aTextureCoord, 1.0)  ).xy;\n}\n', 'varying vec2 vMaskCoord;\nvarying vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform sampler2D mask;\nuniform float alpha;\nuniform vec4 maskClamp;\n\nvoid main(void)\n{\n    float clip = step(3.5,\n        step(maskClamp.x, vMaskCoord.x) +\n        step(maskClamp.y, vMaskCoord.y) +\n        step(vMaskCoord.x, maskClamp.z) +\n        step(vMaskCoord.y, maskClamp.w));\n\n    vec4 original = texture2D(uSampler, vTextureCoord);\n    vec4 masky = texture2D(mask, vMaskCoord);\n\n    original *= (masky.r * masky.a * alpha * clip);\n\n    gl_FragColor = original;\n}\n'));
 
         sprite.renderable = false;
 
@@ -19885,10 +18776,22 @@ var SpriteMaskFilter = function (_Filter) {
 
     SpriteMaskFilter.prototype.apply = function apply(filterManager, input, output) {
         var maskSprite = this.maskSprite;
+        var tex = this.maskSprite.texture;
 
-        this.uniforms.mask = maskSprite._texture;
-        this.uniforms.otherMatrix = filterManager.calculateSpriteMatrix(this.maskMatrix, maskSprite);
+        if (!tex.valid) {
+            return;
+        }
+        if (!tex.transform) {
+            // margin = 0.0, let it bleed a bit, shader code becomes easier
+            // assuming that atlas textures were made with 1-pixel padding
+            tex.transform = new _TextureMatrix2.default(tex, 0.0);
+        }
+        tex.transform.update();
+
+        this.uniforms.mask = tex;
+        this.uniforms.otherMatrix = filterManager.calculateSpriteMatrix(this.maskMatrix, maskSprite).prepend(tex.transform.mapCoord);
         this.uniforms.alpha = maskSprite.worldAlpha;
+        this.uniforms.maskClamp = tex.transform.uClampFrame;
 
         filterManager.applyFilter(this, input, output);
     };
@@ -19898,7 +18801,7 @@ var SpriteMaskFilter = function (_Filter) {
 
 exports.default = SpriteMaskFilter;
 
-},{"../../../../math":92,"../Filter":108,"path":2}],112:[function(require,module,exports){
+},{"../../../../math":85,"../../../../textures/TextureMatrix":131,"../Filter":101,"path":226}],105:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20492,7 +19395,7 @@ var FilterManager = function (_WebGLManager) {
 
 exports.default = FilterManager;
 
-},{"../../../Shader":66,"../../../math":92,"../filters/filterTransforms":110,"../utils/Quad":117,"../utils/RenderTarget":118,"./WebGLManager":115,"bit-twiddle":10}],113:[function(require,module,exports){
+},{"../../../Shader":59,"../../../math":85,"../filters/filterTransforms":103,"../utils/Quad":110,"../utils/RenderTarget":111,"./WebGLManager":108,"bit-twiddle":2}],106:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20702,7 +19605,7 @@ var MaskManager = function (_WebGLManager) {
 
 exports.default = MaskManager;
 
-},{"../filters/spriteMask/SpriteMaskFilter":111,"./WebGLManager":115}],114:[function(require,module,exports){
+},{"../filters/spriteMask/SpriteMaskFilter":104,"./WebGLManager":108}],107:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20855,7 +19758,7 @@ var StencilManager = function (_WebGLManager) {
 
 exports.default = StencilManager;
 
-},{"./WebGLManager":115}],115:[function(require,module,exports){
+},{"./WebGLManager":108}],108:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20910,7 +19813,7 @@ var WebGLManager = function () {
 
 exports.default = WebGLManager;
 
-},{}],116:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20988,7 +19891,7 @@ var ObjectRenderer = function (_WebGLManager) {
 
 exports.default = ObjectRenderer;
 
-},{"../managers/WebGLManager":115}],117:[function(require,module,exports){
+},{"../managers/WebGLManager":108}],110:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21169,7 +20072,7 @@ var Quad = function () {
 
 exports.default = Quad;
 
-},{"../../../utils/createIndicesForQuads":144,"pixi-gl-core":36}],118:[function(require,module,exports){
+},{"../../../utils/createIndicesForQuads":138,"pixi-gl-core":28}],111:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21496,7 +20399,7 @@ var RenderTarget = function () {
 
 exports.default = RenderTarget;
 
-},{"../../../const":68,"../../../math":92,"../../../settings":123,"pixi-gl-core":36}],119:[function(require,module,exports){
+},{"../../../const":61,"../../../math":85,"../../../settings":116,"pixi-gl-core":28}],112:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21571,7 +20474,7 @@ function generateIfTestSrc(maxIfs) {
     return src;
 }
 
-},{"pixi-gl-core":36}],120:[function(require,module,exports){
+},{"pixi-gl-core":28}],113:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21620,7 +20523,7 @@ function mapWebGLBlendModesToPixi(gl) {
     return array;
 }
 
-},{"../../../const":68}],121:[function(require,module,exports){
+},{"../../../const":61}],114:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21652,7 +20555,7 @@ function mapWebGLDrawModesToPixi(gl) {
   return object;
 }
 
-},{"../../../const":68}],122:[function(require,module,exports){
+},{"../../../const":61}],115:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21668,7 +20571,7 @@ function validateContext(gl) {
     }
 }
 
-},{}],123:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21903,7 +20806,7 @@ exports.default = {
 
 };
 
-},{"./utils/canUploadSameBuffer":143,"./utils/maxRecommendedTextures":148}],124:[function(require,module,exports){
+},{"./utils/canUploadSameBuffer":137,"./utils/maxRecommendedTextures":142}],117:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22526,7 +21429,7 @@ var Sprite = function (_Container) {
 
 exports.default = Sprite;
 
-},{"../const":68,"../display/Container":70,"../math":92,"../textures/Texture":137,"../utils":146}],125:[function(require,module,exports){
+},{"../const":61,"../display/Container":63,"../math":85,"../textures/Texture":130,"../utils":140}],118:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22679,7 +21582,7 @@ exports.default = CanvasSpriteRenderer;
 
 _CanvasRenderer2.default.registerPlugin('sprite', CanvasSpriteRenderer);
 
-},{"../../const":68,"../../math":92,"../../renderers/canvas/CanvasRenderer":99,"./CanvasTinter":126}],126:[function(require,module,exports){
+},{"../../const":61,"../../math":85,"../../renderers/canvas/CanvasRenderer":92,"./CanvasTinter":119}],119:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22930,7 +21833,7 @@ CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMul
 
 exports.default = CanvasTinter;
 
-},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":102,"../../utils":146}],127:[function(require,module,exports){
+},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":95,"../../utils":140}],120:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -22983,7 +21886,7 @@ var Buffer = function () {
 
 exports.default = Buffer;
 
-},{}],128:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23525,7 +22428,7 @@ exports.default = SpriteRenderer;
 
 _WebGLRenderer2.default.registerPlugin('sprite', SpriteRenderer);
 
-},{"../../renderers/webgl/WebGLRenderer":106,"../../renderers/webgl/utils/ObjectRenderer":116,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":119,"../../settings":123,"../../utils":146,"../../utils/createIndicesForQuads":144,"./BatchBuffer":127,"./generateMultiTextureShader":129,"bit-twiddle":10,"pixi-gl-core":36}],129:[function(require,module,exports){
+},{"../../renderers/webgl/WebGLRenderer":99,"../../renderers/webgl/utils/ObjectRenderer":109,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":112,"../../settings":116,"../../utils":140,"../../utils/createIndicesForQuads":138,"./BatchBuffer":120,"./generateMultiTextureShader":122,"bit-twiddle":2,"pixi-gl-core":28}],122:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23588,7 +22491,7 @@ function generateSampleSrc(maxTextures) {
     return src;
 }
 
-},{"../../Shader":66,"path":2}],130:[function(require,module,exports){
+},{"../../Shader":59,"path":226}],123:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24243,7 +23146,7 @@ var Text = function (_Sprite) {
 
 exports.default = Text;
 
-},{"../const":68,"../math":92,"../settings":123,"../sprites/Sprite":124,"../textures/Texture":137,"../utils":146,"../utils/trimCanvas":151,"./TextMetrics":131,"./TextStyle":132}],131:[function(require,module,exports){
+},{"../const":61,"../math":85,"../settings":116,"../sprites/Sprite":117,"../textures/Texture":130,"../utils":140,"../utils/trimCanvas":145,"./TextMetrics":124,"./TextStyle":125}],124:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24545,7 +23448,7 @@ TextMetrics._context = canvas.getContext('2d');
  */
 TextMetrics._fonts = {};
 
-},{}],132:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25329,7 +24232,7 @@ function areArraysEqual(array1, array2) {
     return true;
 }
 
-},{"../const":68,"../utils":146}],133:[function(require,module,exports){
+},{"../const":61,"../utils":140}],126:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25410,8 +24313,8 @@ var BaseRenderTexture = function (_BaseTexture) {
 
     _this.resolution = resolution || _settings2.default.RESOLUTION;
 
-    _this.width = width;
-    _this.height = height;
+    _this.width = Math.ceil(width);
+    _this.height = Math.ceil(height);
 
     _this.realWidth = _this.width * _this.resolution;
     _this.realHeight = _this.height * _this.resolution;
@@ -25453,6 +24356,9 @@ var BaseRenderTexture = function (_BaseTexture) {
 
 
   BaseRenderTexture.prototype.resize = function resize(width, height) {
+    width = Math.ceil(width);
+    height = Math.ceil(height);
+
     if (width === this.width && height === this.height) {
       return;
     }
@@ -25488,7 +24394,7 @@ var BaseRenderTexture = function (_BaseTexture) {
 
 exports.default = BaseRenderTexture;
 
-},{"../settings":123,"./BaseTexture":134}],134:[function(require,module,exports){
+},{"../settings":116,"./BaseTexture":127}],127:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26332,7 +25238,7 @@ var BaseTexture = function (_EventEmitter) {
 
 exports.default = BaseTexture;
 
-},{"../settings":123,"../utils":146,"../utils/determineCrossOrigin":145,"bit-twiddle":10,"eventemitter3":12}],135:[function(require,module,exports){
+},{"../settings":116,"../utils":140,"../utils/determineCrossOrigin":139,"bit-twiddle":2,"eventemitter3":4}],128:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26450,6 +25356,9 @@ var RenderTexture = function (_Texture) {
 
 
     RenderTexture.prototype.resize = function resize(width, height, doNotResizeBaseTexture) {
+        width = Math.ceil(width);
+        height = Math.ceil(height);
+
         // TODO - could be not required..
         this.valid = width > 0 && height > 0;
 
@@ -26483,7 +25392,7 @@ var RenderTexture = function (_Texture) {
 
 exports.default = RenderTexture;
 
-},{"./BaseRenderTexture":133,"./Texture":137}],136:[function(require,module,exports){
+},{"./BaseRenderTexture":126,"./Texture":130}],129:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26745,7 +25654,7 @@ var Spritesheet = function () {
 
 exports.default = Spritesheet;
 
-},{"../":87,"../utils":146}],137:[function(require,module,exports){
+},{"../":80,"../utils":140}],130:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26858,6 +25767,7 @@ var Texture = function (_EventEmitter) {
 
         /**
          * This is the trimmed area of original texture, before it was put in atlas
+         * Please call `_updateUvs()` after you change coordinates of `trim` manually.
          *
          * @member {PIXI.Rectangle}
          */
@@ -26924,8 +25834,10 @@ var Texture = function (_EventEmitter) {
         _this._updateID = 0;
 
         /**
-         * Extra field for extra plugins. May contain clamp settings and some matrices
-         * @type {Object}
+         * Contains data for uvs. May contain clamp settings and some matrices.
+         * Its a bit heavy, so by default that object is not created.
+         * @type {PIXI.TextureMatrix}
+         * @default null
          */
         _this.transform = null;
 
@@ -27037,9 +25949,7 @@ var Texture = function (_EventEmitter) {
     };
 
     /**
-     * Updates the internal WebGL UV cache.
-     *
-     * @protected
+     * Updates the internal WebGL UV cache. Use it after you change `frame` or `trim` of the texture.
      */
 
 
@@ -27294,6 +26204,7 @@ var Texture = function (_EventEmitter) {
 
     /**
      * The frame specifies the region of the base texture that this texture uses.
+     * Please call `_updateUvs()` after you change coordinates of `frame` manually.
      *
      * @member {PIXI.Rectangle}
      */
@@ -27435,7 +26346,171 @@ Texture.WHITE = createWhiteTexture();
 removeAllHandlers(Texture.WHITE);
 removeAllHandlers(Texture.WHITE.baseTexture);
 
-},{"../math":92,"../settings":123,"../utils":146,"./BaseTexture":134,"./TextureUvs":138,"./VideoBaseTexture":139,"eventemitter3":12}],138:[function(require,module,exports){
+},{"../math":85,"../settings":116,"../utils":140,"./BaseTexture":127,"./TextureUvs":132,"./VideoBaseTexture":133,"eventemitter3":4}],131:[function(require,module,exports){
+'use strict';
+
+exports.__esModule = true;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _Matrix = require('../math/Matrix');
+
+var _Matrix2 = _interopRequireDefault(_Matrix);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var tempMat = new _Matrix2.default();
+
+/**
+ * Class controls uv transform and frame clamp for texture
+ * Can be used in Texture "transform" field, or separately, you can use different clamp settings on the same texture.
+ * If you want to add support for texture region of certain feature or filter, that's what you're looking for.
+ *
+ * @see PIXI.Texture
+ * @see PIXI.mesh.Mesh
+ * @see PIXI.extras.TilingSprite
+ * @class
+ * @memberof PIXI
+ */
+
+var TextureMatrix = function () {
+    /**
+     *
+     * @param {PIXI.Texture} texture observed texture
+     * @param {number} [clampMargin] Changes frame clamping, 0.5 by default. Use -0.5 for extra border.
+     * @constructor
+     */
+    function TextureMatrix(texture, clampMargin) {
+        _classCallCheck(this, TextureMatrix);
+
+        this._texture = texture;
+
+        this.mapCoord = new _Matrix2.default();
+
+        this.uClampFrame = new Float32Array(4);
+
+        this.uClampOffset = new Float32Array(2);
+
+        this._lastTextureID = -1;
+
+        /**
+         * Changes frame clamping
+         * Works with TilingSprite and Mesh
+         * Change to 1.5 if you texture has repeated right and bottom lines, that leads to smoother borders
+         *
+         * @default 0
+         * @member {number}
+         */
+        this.clampOffset = 0;
+
+        /**
+         * Changes frame clamping
+         * Works with TilingSprite and Mesh
+         * Change to -0.5 to add a pixel to the edge, recommended for transparent trimmed textures in atlas
+         *
+         * @default 0.5
+         * @member {number}
+         */
+        this.clampMargin = typeof clampMargin === 'undefined' ? 0.5 : clampMargin;
+    }
+
+    /**
+     * texture property
+     * @member {PIXI.Texture}
+     */
+
+
+    /**
+     * Multiplies uvs array to transform
+     * @param {Float32Array} uvs mesh uvs
+     * @param {Float32Array} [out=uvs] output
+     * @returns {Float32Array} output
+     */
+    TextureMatrix.prototype.multiplyUvs = function multiplyUvs(uvs, out) {
+        if (out === undefined) {
+            out = uvs;
+        }
+
+        var mat = this.mapCoord;
+
+        for (var i = 0; i < uvs.length; i += 2) {
+            var x = uvs[i];
+            var y = uvs[i + 1];
+
+            out[i] = x * mat.a + y * mat.c + mat.tx;
+            out[i + 1] = x * mat.b + y * mat.d + mat.ty;
+        }
+
+        return out;
+    };
+
+    /**
+     * updates matrices if texture was changed
+     * @param {boolean} forceUpdate if true, matrices will be updated any case
+     * @returns {boolean} whether or not it was updated
+     */
+
+
+    TextureMatrix.prototype.update = function update(forceUpdate) {
+        var tex = this._texture;
+
+        if (!tex || !tex.valid) {
+            return false;
+        }
+
+        if (!forceUpdate && this._lastTextureID === tex._updateID) {
+            return false;
+        }
+
+        this._lastTextureID = tex._updateID;
+
+        var uvs = tex._uvs;
+
+        this.mapCoord.set(uvs.x1 - uvs.x0, uvs.y1 - uvs.y0, uvs.x3 - uvs.x0, uvs.y3 - uvs.y0, uvs.x0, uvs.y0);
+
+        var orig = tex.orig;
+        var trim = tex.trim;
+
+        if (trim) {
+            tempMat.set(orig.width / trim.width, 0, 0, orig.height / trim.height, -trim.x / trim.width, -trim.y / trim.height);
+            this.mapCoord.append(tempMat);
+        }
+
+        var texBase = tex.baseTexture;
+        var frame = this.uClampFrame;
+        var margin = this.clampMargin / texBase.resolution;
+        var offset = this.clampOffset;
+
+        frame[0] = (tex._frame.x + margin + offset) / texBase.width;
+        frame[1] = (tex._frame.y + margin + offset) / texBase.height;
+        frame[2] = (tex._frame.x + tex._frame.width - margin + offset) / texBase.width;
+        frame[3] = (tex._frame.y + tex._frame.height - margin + offset) / texBase.height;
+        this.uClampOffset[0] = offset / texBase.realWidth;
+        this.uClampOffset[1] = offset / texBase.realHeight;
+
+        return true;
+    };
+
+    _createClass(TextureMatrix, [{
+        key: 'texture',
+        get: function get() {
+            return this._texture;
+        },
+        set: function set(value) // eslint-disable-line require-jsdoc
+        {
+            this._texture = value;
+            this._lastTextureID = -1;
+        }
+    }]);
+
+    return TextureMatrix;
+}();
+
+exports.default = TextureMatrix;
+
+},{"../math/Matrix":82}],132:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27540,7 +26615,7 @@ var TextureUvs = function () {
 
 exports.default = TextureUvs;
 
-},{"../math/GroupD8":88}],139:[function(require,module,exports){
+},{"../math/GroupD8":81}],133:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27556,6 +26631,10 @@ var _utils = require('../utils');
 var _ticker = require('../ticker');
 
 var _const = require('../const');
+
+var _determineCrossOrigin = require('../utils/determineCrossOrigin');
+
+var _determineCrossOrigin2 = _interopRequireDefault(_determineCrossOrigin);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -27790,15 +26869,24 @@ var VideoBaseTexture = function (_BaseTexture) {
      * @param {string} [videoSrc.mime] - The mimetype of the video (e.g. 'video/mp4'). If not specified
      *  the url's extension will be used as the second part of the mime type.
      * @param {number} scaleMode - See {@link PIXI.SCALE_MODES} for possible values
+     * @param {boolean} [crossorigin=(auto)] - Should use anonymous CORS? Defaults to true if the URL is not a data-URI.
      * @return {PIXI.VideoBaseTexture} Newly created VideoBaseTexture
      */
 
 
-    VideoBaseTexture.fromUrl = function fromUrl(videoSrc, scaleMode) {
+    VideoBaseTexture.fromUrl = function fromUrl(videoSrc, scaleMode, crossorigin) {
         var video = document.createElement('video');
 
         video.setAttribute('webkit-playsinline', '');
         video.setAttribute('playsinline', '');
+
+        var url = Array.isArray(videoSrc) ? videoSrc[0].src || videoSrc[0] : videoSrc.src || videoSrc;
+
+        if (crossorigin === undefined && url.indexOf('data:') !== 0) {
+            video.crossOrigin = (0, _determineCrossOrigin2.default)(url);
+        } else if (crossorigin) {
+            video.crossOrigin = typeof crossorigin === 'string' ? crossorigin : 'anonymous';
+        }
 
         // array of objects or strings
         if (Array.isArray(videoSrc)) {
@@ -27808,7 +26896,7 @@ var VideoBaseTexture = function (_BaseTexture) {
         }
         // single object or string
         else {
-                video.appendChild(createSource(videoSrc.src || videoSrc, videoSrc.mime));
+                video.appendChild(createSource(url, videoSrc.mime));
             }
 
         video.load();
@@ -27865,7 +26953,7 @@ function createSource(path, type) {
     return source;
 }
 
-},{"../const":68,"../ticker":142,"../utils":146,"./BaseTexture":134}],140:[function(require,module,exports){
+},{"../const":61,"../ticker":136,"../utils":140,"../utils/determineCrossOrigin":139,"./BaseTexture":127}],134:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28338,7 +27426,7 @@ var Ticker = function () {
 
 exports.default = Ticker;
 
-},{"../const":68,"../settings":123,"./TickerListener":141}],141:[function(require,module,exports){
+},{"../const":61,"../settings":116,"./TickerListener":135}],135:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -28512,7 +27600,7 @@ var TickerListener = function () {
 
 exports.default = TickerListener;
 
-},{}],142:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28592,7 +27680,7 @@ shared.destroy = function () {
 exports.shared = shared;
 exports.Ticker = _Ticker2.default;
 
-},{"./Ticker":140}],143:[function(require,module,exports){
+},{"./Ticker":134}],137:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -28606,7 +27694,7 @@ function canUploadSameBuffer() {
 	return !ios;
 }
 
-},{}],144:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -28640,7 +27728,7 @@ function createIndicesForQuads(size) {
     return indices;
 }
 
-},{}],145:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28696,7 +27784,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":8}],146:[function(require,module,exports){
+},{"url":232}],140:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29170,7 +28258,7 @@ function premultiplyTintToRgba(tint, alpha, out, premultiply) {
     return out;
 }
 
-},{"../const":68,"../settings":123,"./mapPremultipliedBlendModes":147,"./mixin":149,"./pluginTarget":150,"eventemitter3":12,"ismobilejs":14,"remove-array-items":211}],147:[function(require,module,exports){
+},{"../const":61,"../settings":116,"./mapPremultipliedBlendModes":141,"./mixin":143,"./pluginTarget":144,"eventemitter3":4,"ismobilejs":6,"remove-array-items":204}],141:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29213,7 +28301,7 @@ function mapPremultipliedBlendModes() {
     return array;
 }
 
-},{"../const":68}],148:[function(require,module,exports){
+},{"../const":61}],142:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29235,7 +28323,7 @@ function maxRecommendedTextures(max) {
     return max;
 }
 
-},{"ismobilejs":14}],149:[function(require,module,exports){
+},{"ismobilejs":6}],143:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29297,7 +28385,7 @@ function performMixins() {
     mixins.length = 0;
 }
 
-},{}],150:[function(require,module,exports){
+},{}],144:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29363,7 +28451,7 @@ exports.default = {
     }
 };
 
-},{}],151:[function(require,module,exports){
+},{}],145:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29439,7 +28527,7 @@ function trimCanvas(canvas) {
     };
 }
 
-},{}],152:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29976,6 +29064,25 @@ function deprecation(core) {
         });
     }
 
+    if (extras) {
+        Object.defineProperties(extras, {
+            /**
+             * @class
+             * @name TextureTransform
+             * @memberof PIXI.extras
+             * @see PIXI.TextureMatrix
+             * @deprecated since version 4.6.0
+             */
+            TextureTransform: {
+                get: function get() {
+                    warn('The TextureTransform class has been renamed to TextureMatrix, ' + 'please use PIXI.TextureMatrix from now on.');
+
+                    return core.TextureMatrix;
+                }
+            }
+        });
+    }
+
     core.DisplayObject.prototype.generateTexture = function generateTexture(renderer, scaleMode, resolution) {
         warn('generateTexture has moved to the renderer, please use renderer.generateTexture(displayObject)');
 
@@ -29986,6 +29093,20 @@ function deprecation(core) {
         warn('graphics generate texture has moved to the renderer. ' + 'Or to render a graphics to a texture using canvas please use generateCanvasTexture');
 
         return this.generateCanvasTexture(scaleMode, resolution);
+    };
+
+    /**
+     * @method
+     * @name PIXI.GroupD8.isSwapWidthHeight
+     * @see PIXI.GroupD8.isVertical
+     * @param {number} rotation - The number to check.
+     * @returns {boolean} Whether or not the direction is vertical
+     * @deprecated since version 4.6.0
+     */
+    core.GroupD8.isSwapWidthHeight = function isSwapWidthHeight(rotation) {
+        warn('GroupD8.isSwapWidthHeight was renamed to GroupD8.isVertical');
+
+        return core.GroupD8.isVertical(rotation);
     };
 
     core.RenderTexture.prototype.render = function render(displayObject, matrix, clear, updateTransform) {
@@ -30288,6 +29409,21 @@ function deprecation(core) {
 
                 return core.SpriteMaskFilter;
             }
+        },
+
+        /**
+         * @class
+         * @private
+         * @name PIXI.filters.VoidFilter
+         * @see PIXI.filters.AlphaFilter
+         * @deprecated since version 4.5.7
+         */
+        VoidFilter: {
+            get: function get() {
+                warn('VoidFilter has been renamed to AlphaFilter, please use PIXI.filters.AlphaFilter');
+
+                return filters.AlphaFilter;
+            }
         }
     });
 
@@ -30535,7 +29671,7 @@ function deprecation(core) {
     }
 }
 
-},{}],153:[function(require,module,exports){
+},{}],147:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30715,7 +29851,7 @@ exports.default = CanvasExtract;
 
 core.CanvasRenderer.registerPlugin('extract', CanvasExtract);
 
-},{"../../core":87}],154:[function(require,module,exports){
+},{"../../core":80}],148:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30740,7 +29876,7 @@ Object.defineProperty(exports, 'canvas', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./canvas/CanvasExtract":153,"./webgl/WebGLExtract":155}],155:[function(require,module,exports){
+},{"./canvas/CanvasExtract":147,"./webgl/WebGLExtract":149}],149:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30963,7 +30099,7 @@ exports.default = WebGLExtract;
 
 core.WebGLRenderer.registerPlugin('extract', WebGLExtract);
 
-},{"../../core":87}],156:[function(require,module,exports){
+},{"../../core":80}],150:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31372,7 +30508,7 @@ var AnimatedSprite = function (_core$Sprite) {
 
 exports.default = AnimatedSprite;
 
-},{"../core":87}],157:[function(require,module,exports){
+},{"../core":80}],151:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31386,6 +30522,8 @@ var core = _interopRequireWildcard(_core);
 var _ObservablePoint = require('../core/math/ObservablePoint');
 
 var _ObservablePoint2 = _interopRequireDefault(_ObservablePoint);
+
+var _utils = require('../core/utils');
 
 var _settings = require('../core/settings');
 
@@ -31729,7 +30867,8 @@ var BitmapText = function (_core$Container) {
         var data = {};
         var info = xml.getElementsByTagName('info')[0];
         var common = xml.getElementsByTagName('common')[0];
-        var res = texture.baseTexture.resolution || _settings2.default.RESOLUTION;
+        var fileName = xml.getElementsByTagName('page')[0].getAttribute('file');
+        var res = (0, _utils.getResolutionOfUrl)(fileName, _settings2.default.RESOLUTION);
 
         data.font = info.getAttribute('face');
         data.size = parseInt(info.getAttribute('size'), 10);
@@ -31960,166 +31099,7 @@ exports.default = BitmapText;
 
 BitmapText.fonts = {};
 
-},{"../core":87,"../core/math/ObservablePoint":90,"../core/settings":123}],158:[function(require,module,exports){
-'use strict';
-
-exports.__esModule = true;
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _Matrix = require('../core/math/Matrix');
-
-var _Matrix2 = _interopRequireDefault(_Matrix);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var tempMat = new _Matrix2.default();
-
-/**
- * class controls uv transform and frame clamp for texture
- *
- * @class
- * @memberof PIXI.extras
- */
-
-var TextureTransform = function () {
-    /**
-     *
-     * @param {PIXI.Texture} texture observed texture
-     * @param {number} [clampMargin] Changes frame clamping, 0.5 by default. Use -0.5 for extra border.
-     * @constructor
-     */
-    function TextureTransform(texture, clampMargin) {
-        _classCallCheck(this, TextureTransform);
-
-        this._texture = texture;
-
-        this.mapCoord = new _Matrix2.default();
-
-        this.uClampFrame = new Float32Array(4);
-
-        this.uClampOffset = new Float32Array(2);
-
-        this._lastTextureID = -1;
-
-        /**
-         * Changes frame clamping
-         * Works with TilingSprite and Mesh
-         * Change to 1.5 if you texture has repeated right and bottom lines, that leads to smoother borders
-         *
-         * @default 0
-         * @member {number}
-         */
-        this.clampOffset = 0;
-
-        /**
-         * Changes frame clamping
-         * Works with TilingSprite and Mesh
-         * Change to -0.5 to add a pixel to the edge, recommended for transparent trimmed textures in atlas
-         *
-         * @default 0.5
-         * @member {number}
-         */
-        this.clampMargin = typeof clampMargin === 'undefined' ? 0.5 : clampMargin;
-    }
-
-    /**
-     * texture property
-     * @member {PIXI.Texture}
-     */
-
-
-    /**
-     * Multiplies uvs array to transform
-     * @param {Float32Array} uvs mesh uvs
-     * @param {Float32Array} [out=uvs] output
-     * @returns {Float32Array} output
-     */
-    TextureTransform.prototype.multiplyUvs = function multiplyUvs(uvs, out) {
-        if (out === undefined) {
-            out = uvs;
-        }
-
-        var mat = this.mapCoord;
-
-        for (var i = 0; i < uvs.length; i += 2) {
-            var x = uvs[i];
-            var y = uvs[i + 1];
-
-            out[i] = x * mat.a + y * mat.c + mat.tx;
-            out[i + 1] = x * mat.b + y * mat.d + mat.ty;
-        }
-
-        return out;
-    };
-
-    /**
-     * updates matrices if texture was changed
-     * @param {boolean} forceUpdate if true, matrices will be updated any case
-     * @returns {boolean} whether or not it was updated
-     */
-
-
-    TextureTransform.prototype.update = function update(forceUpdate) {
-        var tex = this._texture;
-
-        if (!tex || !tex.valid) {
-            return false;
-        }
-
-        if (!forceUpdate && this._lastTextureID === tex._updateID) {
-            return false;
-        }
-
-        this._lastTextureID = tex._updateID;
-
-        var uvs = tex._uvs;
-
-        this.mapCoord.set(uvs.x1 - uvs.x0, uvs.y1 - uvs.y0, uvs.x3 - uvs.x0, uvs.y3 - uvs.y0, uvs.x0, uvs.y0);
-
-        var orig = tex.orig;
-        var trim = tex.trim;
-
-        if (trim) {
-            tempMat.set(orig.width / trim.width, 0, 0, orig.height / trim.height, -trim.x / trim.width, -trim.y / trim.height);
-            this.mapCoord.append(tempMat);
-        }
-
-        var texBase = tex.baseTexture;
-        var frame = this.uClampFrame;
-        var margin = this.clampMargin / texBase.resolution;
-        var offset = this.clampOffset;
-
-        frame[0] = (tex._frame.x + margin + offset) / texBase.width;
-        frame[1] = (tex._frame.y + margin + offset) / texBase.height;
-        frame[2] = (tex._frame.x + tex._frame.width - margin + offset) / texBase.width;
-        frame[3] = (tex._frame.y + tex._frame.height - margin + offset) / texBase.height;
-        this.uClampOffset[0] = offset / texBase.realWidth;
-        this.uClampOffset[1] = offset / texBase.realHeight;
-
-        return true;
-    };
-
-    _createClass(TextureTransform, [{
-        key: 'texture',
-        get: function get() {
-            return this._texture;
-        },
-        set: function set(value) // eslint-disable-line require-jsdoc
-        {
-            this._texture = value;
-            this._lastTextureID = -1;
-        }
-    }]);
-
-    return TextureTransform;
-}();
-
-exports.default = TextureTransform;
-
-},{"../core/math/Matrix":89}],159:[function(require,module,exports){
+},{"../core":80,"../core/math/ObservablePoint":83,"../core/settings":116,"../core/utils":140}],152:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32133,10 +31113,6 @@ var core = _interopRequireWildcard(_core);
 var _CanvasTinter = require('../core/sprites/canvas/CanvasTinter');
 
 var _CanvasTinter2 = _interopRequireDefault(_CanvasTinter);
-
-var _TextureTransform = require('./TextureTransform');
-
-var _TextureTransform2 = _interopRequireDefault(_TextureTransform);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -32210,9 +31186,9 @@ var TilingSprite = function (_core$Sprite) {
         /**
          * transform that is applied to UV to get the texture coords
          *
-         * @member {PIXI.extras.TextureTransform}
+         * @member {PIXI.TextureMatrix}
          */
-        _this.uvTransform = texture.transform || new _TextureTransform2.default(texture);
+        _this.uvTransform = texture.transform || new core.TextureMatrix(texture);
 
         /**
          * Plugin that is responsible for rendering this element.
@@ -32569,7 +31545,7 @@ var TilingSprite = function (_core$Sprite) {
 
 exports.default = TilingSprite;
 
-},{"../core":87,"../core/sprites/canvas/CanvasTinter":126,"./TextureTransform":158}],160:[function(require,module,exports){
+},{"../core":80,"../core/sprites/canvas/CanvasTinter":119}],153:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -32973,7 +31949,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy(o
     this.destroy(options);
 };
 
-},{"../core":87,"../core/textures/BaseTexture":134,"../core/textures/Texture":137,"../core/utils":146}],161:[function(require,module,exports){
+},{"../core":80,"../core/textures/BaseTexture":127,"../core/textures/Texture":130,"../core/utils":140}],154:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33007,7 +31983,7 @@ core.Container.prototype.getChildByName = function getChildByName(name) {
     return null;
 };
 
-},{"../core":87}],162:[function(require,module,exports){
+},{"../core":80}],155:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33040,11 +32016,11 @@ core.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition() {
     return point;
 };
 
-},{"../core":87}],163:[function(require,module,exports){
+},{"../core":80}],156:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
-exports.BitmapText = exports.TilingSpriteRenderer = exports.TilingSprite = exports.TextureTransform = exports.AnimatedSprite = undefined;
+exports.BitmapText = exports.TilingSpriteRenderer = exports.TilingSprite = exports.AnimatedSprite = undefined;
 
 var _AnimatedSprite = require('./AnimatedSprite');
 
@@ -33052,15 +32028,6 @@ Object.defineProperty(exports, 'AnimatedSprite', {
   enumerable: true,
   get: function get() {
     return _interopRequireDefault(_AnimatedSprite).default;
-  }
-});
-
-var _TextureTransform = require('./TextureTransform');
-
-Object.defineProperty(exports, 'TextureTransform', {
-  enumerable: true,
-  get: function get() {
-    return _interopRequireDefault(_TextureTransform).default;
   }
 });
 
@@ -33101,7 +32068,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // imported for side effect of extending the prototype only, contains no exports
 
-},{"./AnimatedSprite":156,"./BitmapText":157,"./TextureTransform":158,"./TilingSprite":159,"./cacheAsBitmap":160,"./getChildByName":161,"./getGlobalPosition":162,"./webgl/TilingSpriteRenderer":164}],164:[function(require,module,exports){
+},{"./AnimatedSprite":150,"./BitmapText":151,"./TilingSprite":152,"./cacheAsBitmap":153,"./getChildByName":154,"./getGlobalPosition":155,"./webgl/TilingSpriteRenderer":157}],157:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33263,7 +32230,89 @@ exports.default = TilingSpriteRenderer;
 
 core.WebGLRenderer.registerPlugin('tilingSprite', TilingSpriteRenderer);
 
-},{"../../core":87,"../../core/const":68,"path":2}],165:[function(require,module,exports){
+},{"../../core":80,"../../core/const":61,"path":226}],158:[function(require,module,exports){
+'use strict';
+
+exports.__esModule = true;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _core = require('../../core');
+
+var core = _interopRequireWildcard(_core);
+
+var _path = require('path');
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+/**
+ * Simplest filter - applies alpha
+ *
+ * Use this instead of Container's alpha property to avoid visual layering of individual elements.
+ * AlphaFilter applies alpha evenly across the entire display object and any opaque elements it contains.
+ * If elements are not opaque, they will blend with each other anyway.
+ *
+ * Very handy if you want to use common features of all filters:
+ *
+ * 1. Assign a blendMode to this filter, blend all elements inside display object with background.
+ *
+ * 2. To use clipping in display coordinates, assign a filterArea to the same container that has this filter.
+ *
+ * @class
+ * @extends PIXI.Filter
+ * @memberof PIXI.filters
+ */
+var AlphaFilter = function (_core$Filter) {
+    _inherits(AlphaFilter, _core$Filter);
+
+    /**
+     *
+     */
+    function AlphaFilter() {
+        _classCallCheck(this, AlphaFilter);
+
+        var _this = _possibleConstructorReturn(this, _core$Filter.call(this,
+        // vertex shader
+        'attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat3 projectionMatrix;\n\nvarying vec2 vTextureCoord;\n\nvoid main(void)\n{\n    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n    vTextureCoord = aTextureCoord;\n}',
+        // fragment shader
+        'varying vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float uAlpha;\n\nvoid main(void)\n{\n   gl_FragColor = texture2D(uSampler, vTextureCoord) * uAlpha;\n}\n'));
+
+        _this.alpha = 1.0;
+        _this.glShaderKey = 'alpha';
+        return _this;
+    }
+
+    /**
+     * Coefficient for alpha multiplication
+     *
+     * @member {number}
+     * @default 1
+     */
+
+
+    _createClass(AlphaFilter, [{
+        key: 'alpha',
+        get: function get() {
+            return this.uniforms.uAlpha;
+        },
+        set: function set(value) // eslint-disable-line require-jsdoc
+        {
+            this.uniforms.uAlpha = value;
+        }
+    }]);
+
+    return AlphaFilter;
+}(core.Filter);
+
+exports.default = AlphaFilter;
+
+},{"../../core":80,"path":226}],159:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33437,7 +32486,7 @@ var BlurFilter = function (_core$Filter) {
 
 exports.default = BlurFilter;
 
-},{"../../core":87,"./BlurXFilter":166,"./BlurYFilter":167}],166:[function(require,module,exports){
+},{"../../core":80,"./BlurXFilter":160,"./BlurYFilter":161}],160:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33603,7 +32652,7 @@ var BlurXFilter = function (_core$Filter) {
 
 exports.default = BlurXFilter;
 
-},{"../../core":87,"./generateBlurFragSource":168,"./generateBlurVertSource":169,"./getMaxBlurKernelSize":170}],167:[function(require,module,exports){
+},{"../../core":80,"./generateBlurFragSource":162,"./generateBlurVertSource":163,"./getMaxBlurKernelSize":164}],161:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33768,7 +32817,7 @@ var BlurYFilter = function (_core$Filter) {
 
 exports.default = BlurYFilter;
 
-},{"../../core":87,"./generateBlurFragSource":168,"./generateBlurVertSource":169,"./getMaxBlurKernelSize":170}],168:[function(require,module,exports){
+},{"../../core":80,"./generateBlurFragSource":162,"./generateBlurVertSource":163,"./getMaxBlurKernelSize":164}],162:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33815,7 +32864,7 @@ function generateFragBlurSource(kernelSize) {
     return fragSource;
 }
 
-},{}],169:[function(require,module,exports){
+},{}],163:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33859,7 +32908,7 @@ function generateVertBlurSource(kernelSize, x) {
     return vertSource;
 }
 
-},{}],170:[function(require,module,exports){
+},{}],164:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -33875,7 +32924,7 @@ function getMaxKernelSize(gl) {
     return kernelSize;
 }
 
-},{}],171:[function(require,module,exports){
+},{}],165:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34426,7 +33475,7 @@ var ColorMatrixFilter = function (_core$Filter) {
 exports.default = ColorMatrixFilter;
 ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 
-},{"../../core":87,"path":2}],172:[function(require,module,exports){
+},{"../../core":80,"path":226}],166:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34536,7 +33585,7 @@ var DisplacementFilter = function (_core$Filter) {
 
 exports.default = DisplacementFilter;
 
-},{"../../core":87,"path":2}],173:[function(require,module,exports){
+},{"../../core":80,"path":226}],167:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34590,7 +33639,7 @@ var FXAAFilter = function (_core$Filter) {
 
 exports.default = FXAAFilter;
 
-},{"../../core":87,"path":2}],174:[function(require,module,exports){
+},{"../../core":80,"path":226}],168:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34658,18 +33707,18 @@ Object.defineProperty(exports, 'ColorMatrixFilter', {
   }
 });
 
-var _VoidFilter = require('./void/VoidFilter');
+var _AlphaFilter = require('./alpha/AlphaFilter');
 
-Object.defineProperty(exports, 'VoidFilter', {
+Object.defineProperty(exports, 'AlphaFilter', {
   enumerable: true,
   get: function get() {
-    return _interopRequireDefault(_VoidFilter).default;
+    return _interopRequireDefault(_AlphaFilter).default;
   }
 });
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./blur/BlurFilter":165,"./blur/BlurXFilter":166,"./blur/BlurYFilter":167,"./colormatrix/ColorMatrixFilter":171,"./displacement/DisplacementFilter":172,"./fxaa/FXAAFilter":173,"./noise/NoiseFilter":175,"./void/VoidFilter":176}],175:[function(require,module,exports){
+},{"./alpha/AlphaFilter":158,"./blur/BlurFilter":159,"./blur/BlurXFilter":160,"./blur/BlurYFilter":161,"./colormatrix/ColorMatrixFilter":165,"./displacement/DisplacementFilter":166,"./fxaa/FXAAFilter":167,"./noise/NoiseFilter":169}],169:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34766,57 +33815,7 @@ var NoiseFilter = function (_core$Filter) {
 
 exports.default = NoiseFilter;
 
-},{"../../core":87,"path":2}],176:[function(require,module,exports){
-'use strict';
-
-exports.__esModule = true;
-
-var _core = require('../../core');
-
-var core = _interopRequireWildcard(_core);
-
-var _path = require('path');
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-/**
- * Does nothing. Very handy.
- *
- * @class
- * @extends PIXI.Filter
- * @memberof PIXI.filters
- */
-var VoidFilter = function (_core$Filter) {
-    _inherits(VoidFilter, _core$Filter);
-
-    /**
-     *
-     */
-    function VoidFilter() {
-        _classCallCheck(this, VoidFilter);
-
-        var _this = _possibleConstructorReturn(this, _core$Filter.call(this,
-        // vertex shader
-        'attribute vec2 aVertexPosition;\nattribute vec2 aTextureCoord;\n\nuniform mat3 projectionMatrix;\n\nvarying vec2 vTextureCoord;\n\nvoid main(void)\n{\n    gl_Position = vec4((projectionMatrix * vec3(aVertexPosition, 1.0)).xy, 0.0, 1.0);\n    vTextureCoord = aTextureCoord;\n}',
-        // fragment shader
-        'varying vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\n\nvoid main(void)\n{\n   gl_FragColor = texture2D(uSampler, vTextureCoord);\n}\n'));
-
-        _this.glShaderKey = 'void';
-        return _this;
-    }
-
-    return VoidFilter;
-}(core.Filter);
-
-exports.default = VoidFilter;
-
-},{"../../core":87,"path":2}],177:[function(require,module,exports){
+},{"../../core":80,"path":226}],170:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -34930,7 +33929,7 @@ if (typeof _deprecation2.default === 'function') {
 global.PIXI = exports; // eslint-disable-line
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./accessibility":64,"./core":87,"./deprecation":152,"./extract":154,"./extras":163,"./filters":174,"./interaction":182,"./loaders":185,"./mesh":194,"./particles":197,"./polyfill":203,"./prepare":207}],178:[function(require,module,exports){
+},{"./accessibility":57,"./core":80,"./deprecation":146,"./extract":148,"./extras":156,"./filters":168,"./interaction":175,"./loaders":178,"./mesh":187,"./particles":190,"./polyfill":196,"./prepare":200}],171:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35154,7 +34153,7 @@ var InteractionData = function () {
 
 exports.default = InteractionData;
 
-},{"../core":87}],179:[function(require,module,exports){
+},{"../core":80}],172:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -35239,7 +34238,7 @@ var InteractionEvent = function () {
 
 exports.default = InteractionEvent;
 
-},{}],180:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -36999,7 +35998,7 @@ exports.default = InteractionManager;
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":87,"./InteractionData":178,"./InteractionEvent":179,"./InteractionTrackingData":181,"./interactiveTarget":183,"eventemitter3":12}],181:[function(require,module,exports){
+},{"../core":80,"./InteractionData":171,"./InteractionEvent":172,"./InteractionTrackingData":174,"./interactiveTarget":176,"eventemitter3":4}],174:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -37175,7 +36174,7 @@ InteractionTrackingData.FLAGS = Object.freeze({
     RIGHT_DOWN: 1 << 2
 });
 
-},{}],182:[function(require,module,exports){
+},{}],175:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37227,7 +36226,7 @@ Object.defineProperty(exports, 'InteractionEvent', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./InteractionData":178,"./InteractionEvent":179,"./InteractionManager":180,"./InteractionTrackingData":181,"./interactiveTarget":183}],183:[function(require,module,exports){
+},{"./InteractionData":171,"./InteractionEvent":172,"./InteractionManager":173,"./InteractionTrackingData":174,"./interactiveTarget":176}],176:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37344,7 +36343,7 @@ exports.default = {
   _trackedPointers: undefined
 };
 
-},{}],184:[function(require,module,exports){
+},{}],177:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37436,7 +36435,7 @@ function parse(resource, texture) {
     resource.bitmapFont = _extras.BitmapText.registerFont(resource.data, texture);
 }
 
-},{"../core":87,"../extras":163,"path":2,"resource-loader":216}],185:[function(require,module,exports){
+},{"../core":80,"../extras":156,"path":226,"resource-loader":209}],178:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37564,7 +36563,7 @@ AppPrototype.destroy = function destroy(removeView) {
     this._parentDestroy(removeView);
 };
 
-},{"../core/Application":65,"./bitmapFontParser":184,"./loader":186,"./spritesheetParser":187,"./textureParser":188,"resource-loader":216}],186:[function(require,module,exports){
+},{"../core/Application":58,"./bitmapFontParser":177,"./loader":179,"./spritesheetParser":180,"./textureParser":181,"resource-loader":209}],179:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37735,7 +36734,7 @@ var Resource = _resourceLoader2.default.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":184,"./spritesheetParser":187,"./textureParser":188,"eventemitter3":12,"resource-loader":216,"resource-loader/lib/middlewares/parsing/blob":217}],187:[function(require,module,exports){
+},{"./bitmapFontParser":177,"./spritesheetParser":180,"./textureParser":181,"eventemitter3":4,"resource-loader":209,"resource-loader/lib/middlewares/parsing/blob":210}],180:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37794,7 +36793,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":87,"resource-loader":216,"url":8}],188:[function(require,module,exports){
+},{"../core":80,"resource-loader":209,"url":232}],181:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37817,7 +36816,7 @@ var _Texture2 = _interopRequireDefault(_Texture);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"../core/textures/Texture":137,"resource-loader":216}],189:[function(require,module,exports){
+},{"../core/textures/Texture":130,"resource-loader":209}],182:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37828,9 +36827,9 @@ var _core = require('../core');
 
 var core = _interopRequireWildcard(_core);
 
-var _TextureTransform = require('../extras/TextureTransform');
+var _Texture = require('../core/textures/Texture');
 
-var _TextureTransform2 = _interopRequireDefault(_TextureTransform);
+var _Texture2 = _interopRequireDefault(_Texture);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -37869,11 +36868,12 @@ var Mesh = function (_core$Container) {
      * The texture of the Mesh
      *
      * @member {PIXI.Texture}
+     * @default PIXI.Texture.EMPTY
      * @private
      */
     var _this = _possibleConstructorReturn(this, _core$Container.call(this));
 
-    _this._texture = texture;
+    _this._texture = texture || _Texture2.default.EMPTY;
 
     /**
      * The Uvs of the Mesh
@@ -37965,10 +36965,10 @@ var Mesh = function (_core$Container) {
      * its updated independently from texture uvTransform
      * updates of uvs are tied to that thing
      *
-     * @member {PIXI.extras.TextureTransform}
+     * @member {PIXI.TextureMatrix}
      * @private
      */
-    _this._uvTransform = new _TextureTransform2.default(texture);
+    _this._uvTransform = new core.TextureMatrix(_this._texture);
 
     /**
      * whether or not upload uvTransform to shader
@@ -38185,7 +37185,7 @@ Mesh.DRAW_MODES = {
   TRIANGLES: 1
 };
 
-},{"../core":87,"../extras/TextureTransform":158}],190:[function(require,module,exports){
+},{"../core":80,"../core/textures/Texture":130}],183:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38366,8 +37366,8 @@ var NineSlicePlane = function (_Plane) {
 
         var base = this._texture.baseTexture;
         var textureSource = base.source;
-        var w = base.width;
-        var h = base.height;
+        var w = base.width * base.resolution;
+        var h = base.height * base.resolution;
 
         this.drawSegment(context, textureSource, w, h, 0, 1, 10, 11);
         this.drawSegment(context, textureSource, w, h, 2, 3, 12, 13);
@@ -38571,7 +37571,7 @@ var NineSlicePlane = function (_Plane) {
 
 exports.default = NineSlicePlane;
 
-},{"./Plane":191}],191:[function(require,module,exports){
+},{"./Plane":184}],184:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38684,6 +37684,8 @@ var Plane = function (_Mesh) {
         this.uvs = new Float32Array(uvs);
         this.colors = new Float32Array(colors);
         this.indices = new Uint16Array(indices);
+
+        this.dirty++;
         this.indexDirty++;
 
         this.multiplyUvs();
@@ -38710,7 +37712,7 @@ var Plane = function (_Mesh) {
 
 exports.default = Plane;
 
-},{"./Mesh":189}],192:[function(require,module,exports){
+},{"./Mesh":182}],185:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38946,7 +37948,7 @@ var Rope = function (_Mesh) {
 
 exports.default = Rope;
 
-},{"./Mesh":189}],193:[function(require,module,exports){
+},{"./Mesh":182}],186:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39229,7 +38231,7 @@ exports.default = MeshSpriteRenderer;
 
 core.CanvasRenderer.registerPlugin('mesh', MeshSpriteRenderer);
 
-},{"../../core":87,"../Mesh":189}],194:[function(require,module,exports){
+},{"../../core":80,"../Mesh":182}],187:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39290,7 +38292,7 @@ Object.defineProperty(exports, 'Rope', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./Mesh":189,"./NineSlicePlane":190,"./Plane":191,"./Rope":192,"./canvas/CanvasMeshRenderer":193,"./webgl/MeshRenderer":195}],195:[function(require,module,exports){
+},{"./Mesh":182,"./NineSlicePlane":183,"./Plane":184,"./Rope":185,"./canvas/CanvasMeshRenderer":186,"./webgl/MeshRenderer":188}],188:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39441,7 +38443,7 @@ exports.default = MeshRenderer;
 
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
-},{"../../core":87,"../Mesh":189,"path":2,"pixi-gl-core":36}],196:[function(require,module,exports){
+},{"../../core":80,"../Mesh":182,"path":226,"pixi-gl-core":28}],189:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39819,7 +38821,7 @@ var ParticleContainer = function (_core$Container) {
 
 exports.default = ParticleContainer;
 
-},{"../core":87,"../core/utils":146}],197:[function(require,module,exports){
+},{"../core":80,"../core/utils":140}],190:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39844,7 +38846,7 @@ Object.defineProperty(exports, 'ParticleRenderer', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./ParticleContainer":196,"./webgl/ParticleRenderer":199}],198:[function(require,module,exports){
+},{"./ParticleContainer":189,"./webgl/ParticleRenderer":192}],191:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40087,7 +39089,7 @@ var ParticleBuffer = function () {
 
 exports.default = ParticleBuffer;
 
-},{"../../core/utils/createIndicesForQuads":144,"pixi-gl-core":36}],199:[function(require,module,exports){
+},{"../../core/utils/createIndicesForQuads":138,"pixi-gl-core":28}],192:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40563,7 +39565,7 @@ exports.default = ParticleRenderer;
 
 core.WebGLRenderer.registerPlugin('particle', ParticleRenderer);
 
-},{"../../core":87,"../../core/utils":146,"./ParticleBuffer":198,"./ParticleShader":200}],200:[function(require,module,exports){
+},{"../../core":80,"../../core/utils":140,"./ParticleBuffer":191,"./ParticleShader":193}],193:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40606,7 +39608,7 @@ var ParticleShader = function (_Shader) {
 
 exports.default = ParticleShader;
 
-},{"../../core/Shader":66}],201:[function(require,module,exports){
+},{"../../core/Shader":59}],194:[function(require,module,exports){
 "use strict";
 
 // References:
@@ -40624,7 +39626,7 @@ if (!Math.sign) {
     };
 }
 
-},{}],202:[function(require,module,exports){
+},{}],195:[function(require,module,exports){
 'use strict';
 
 var _objectAssign = require('object-assign');
@@ -40639,7 +39641,7 @@ if (!Object.assign) {
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
 
-},{"object-assign":16}],203:[function(require,module,exports){
+},{"object-assign":8}],196:[function(require,module,exports){
 'use strict';
 
 require('./Object.assign');
@@ -40664,7 +39666,7 @@ if (!window.Uint16Array) {
     window.Uint16Array = Array;
 }
 
-},{"./Math.sign":201,"./Object.assign":202,"./requestAnimationFrame":204}],204:[function(require,module,exports){
+},{"./Math.sign":194,"./Object.assign":195,"./requestAnimationFrame":197}],197:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -40741,7 +39743,7 @@ if (!global.cancelAnimationFrame) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],205:[function(require,module,exports){
+},{}],198:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41229,7 +40231,7 @@ function findTextStyle(item, queue) {
     return false;
 }
 
-},{"../core":87,"./limiters/CountLimiter":208}],206:[function(require,module,exports){
+},{"../core":80,"./limiters/CountLimiter":201}],199:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41349,7 +40351,7 @@ function uploadBaseTextures(prepare, item) {
 
 core.CanvasRenderer.registerPlugin('prepare', CanvasPrepare);
 
-},{"../../core":87,"../BasePrepare":205}],207:[function(require,module,exports){
+},{"../../core":80,"../BasePrepare":198}],200:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41401,7 +40403,7 @@ Object.defineProperty(exports, 'TimeLimiter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./BasePrepare":205,"./canvas/CanvasPrepare":206,"./limiters/CountLimiter":208,"./limiters/TimeLimiter":209,"./webgl/WebGLPrepare":210}],208:[function(require,module,exports){
+},{"./BasePrepare":198,"./canvas/CanvasPrepare":199,"./limiters/CountLimiter":201,"./limiters/TimeLimiter":202,"./webgl/WebGLPrepare":203}],201:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41459,7 +40461,7 @@ var CountLimiter = function () {
 
 exports.default = CountLimiter;
 
-},{}],209:[function(require,module,exports){
+},{}],202:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41517,7 +40519,7 @@ var TimeLimiter = function () {
 
 exports.default = TimeLimiter;
 
-},{}],210:[function(require,module,exports){
+},{}],203:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41639,7 +40641,7 @@ function findGraphics(item, queue) {
 
 core.WebGLRenderer.registerPlugin('prepare', WebGLPrepare);
 
-},{"../../core":87,"../BasePrepare":205}],211:[function(require,module,exports){
+},{"../../core":80,"../BasePrepare":198}],204:[function(require,module,exports){
 'use strict'
 
 /**
@@ -41669,7 +40671,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
   arr.length = len
 }
 
-},{}],212:[function(require,module,exports){
+},{}],205:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42287,7 +41289,7 @@ var Loader = function () {
 
 exports.default = Loader;
 
-},{"./Resource":213,"./async":214,"mini-signals":15,"parse-uri":17}],213:[function(require,module,exports){
+},{"./Resource":206,"./async":207,"mini-signals":7,"parse-uri":9}],206:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43443,7 +42445,7 @@ function reqType(xhr) {
     return xhr.toString().replace('object ', '');
 }
 
-},{"mini-signals":15,"parse-uri":17}],214:[function(require,module,exports){
+},{"mini-signals":7,"parse-uri":9}],207:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43652,7 +42654,7 @@ function queue(worker, concurrency) {
     return q;
 }
 
-},{}],215:[function(require,module,exports){
+},{}],208:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43720,7 +42722,7 @@ function encodeBinary(input) {
     return output;
 }
 
-},{}],216:[function(require,module,exports){
+},{}],209:[function(require,module,exports){
 'use strict';
 
 // import Loader from './Loader';
@@ -43744,7 +42746,7 @@ module.exports = Loader;
 // export default Loader;
 module.exports.default = Loader;
 
-},{"./Loader":212,"./Resource":213,"./async":214,"./b64":215}],217:[function(require,module,exports){
+},{"./Loader":205,"./Resource":206,"./async":207,"./b64":208}],210:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43832,7 +42834,7 @@ function blobMiddlewareFactory() {
     };
 }
 
-},{"../../Resource":213,"../../b64":215}],218:[function(require,module,exports){
+},{"../../Resource":206,"../../b64":208}],211:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -43894,7 +42896,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":219,"./lib/tychei":220,"./lib/xor128":221,"./lib/xor4096":222,"./lib/xorshift7":223,"./lib/xorwow":224,"./seedrandom":225}],219:[function(require,module,exports){
+},{"./lib/alea":212,"./lib/tychei":213,"./lib/xor128":214,"./lib/xor4096":215,"./lib/xorshift7":216,"./lib/xorwow":217,"./seedrandom":218}],212:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -44010,7 +43012,7 @@ if (module && module.exports) {
 
 
 
-},{}],220:[function(require,module,exports){
+},{}],213:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -44115,7 +43117,7 @@ if (module && module.exports) {
 
 
 
-},{}],221:[function(require,module,exports){
+},{}],214:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44198,7 +43200,7 @@ if (module && module.exports) {
 
 
 
-},{}],222:[function(require,module,exports){
+},{}],215:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -44346,7 +43348,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],223:[function(require,module,exports){
+},{}],216:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -44445,7 +43447,7 @@ if (module && module.exports) {
 );
 
 
-},{}],224:[function(require,module,exports){
+},{}],217:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44533,7 +43535,7 @@ if (module && module.exports) {
 
 
 
-},{}],225:[function(require,module,exports){
+},{}],218:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -44782,7 +43784,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":1}],226:[function(require,module,exports){
+},{"crypto":225}],219:[function(require,module,exports){
 // angle.js <https://github.com/davidfig/anglejs>
 // Released under MIT license <https://github.com/davidfig/angle/blob/master/LICENSE>
 // Author: David Figatner
@@ -45058,7 +44060,7 @@ module.exports = {
     equals,
     explain
 }
-},{}],227:[function(require,module,exports){
+},{}],220:[function(require,module,exports){
 /**
  * @file color.js
  * @author David Figatner
@@ -45367,402 +44369,9 @@ class Color
 };
 
 module.exports = new Color();
-},{"yy-random":232}],228:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
-
-const EventEmitter = require('eventemitter3')
-
-module.exports = class Input extends EventEmitter
-{
-    /**
-     * basic input support for touch, mouse, and keyboard
-     *
-     * @param {object} [options]
-     * @param {HTMLElement} [options.div=document] object to attach listener to
-     * @param {boolean} [options.noPointers] turns off mouse/touch/pen handlers
-     * @param {boolean} [options.keys] turn on key listener
-     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
-     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
-     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
-     *
-     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
-     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
-     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
-     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
-     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
-     *
-     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
-     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
-     */
-    constructor(options)
-    {
-        super()
-        options = options || {}
-        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
-        this.chromeDebug = options.chromeDebug
-        this.preventDefault = options.preventDefault
-
-        this.pointers = []
-        this.keys = {}
-        this.input = []
-
-        this.div = options.div || document
-        this.options = options
-        this.callbacks = [
-            this.mouseDown.bind(this),
-            this.mouseMove.bind(this),
-            this.mouseUp.bind(this), // 2
-            this.touchStart.bind(this),
-            this.touchMove.bind(this),
-            this.touchEnd.bind(this),
-            this.keydown.bind(this), // 6
-            this.keyup.bind(this),
-            this.wheel.bind(this) // 8
-        ]
-        if (!options.noPointers)
-        {
-            this.addPointers()
-        }
-        if (options.keys)
-        {
-            this.addKeyboard()
-        }
-    }
-
-    /**
-     * remove all listeners
-     */
-    destroy()
-    {
-        this.removePointers()
-        this.removeKeyboard()
-    }
-
-    /**
-     * turns on pointer listeners (on by default); can be used after removePointers()
-     */
-    addPointers()
-    {
-        if (!this.listeningPointer)
-        {
-            const div = this.div
-            div.addEventListener('mousedown', this.callbacks[0])
-            div.addEventListener('mousemove', this.callbacks[1])
-            div.addEventListener('mouseup', this.callbacks[2])
-            div.addEventListener('mouseout', this.callbacks[2])
-            div.addEventListener('wheel', this.callbacks[8])
-
-            div.addEventListener('touchstart', this.callbacks[3])
-            div.addEventListener('touchmove', this.callbacks[4])
-            div.addEventListener('touchend', this.callbacks[5])
-            div.addEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = true
-        }
-    }
-
-    /**
-     * remove pointers listener
-     */
-    removePointers()
-    {
-        if (this.listeningPointer)
-        {
-            const div = this.div
-            div.removeEventListener('mousedown', this.callbacks[0])
-            div.removeEventListener('mousemove', this.callbacks[1])
-            div.removeEventListener('mouseup', this.callbacks[2])
-            div.removeEventListener('mouseout', this.callbacks[2])
-            div.removeEventListener('wheel', this.callbacks[8])
-
-            div.removeEventListener('touchstart', this.callbacks[3])
-            div.removeEventListener('touchmove', this.callbacks[4])
-            div.removeEventListener('touchend', this.callbacks[5])
-            div.removeEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = false
-        }
-    }
-
-    /**
-     * turns on keyboard listener (off by default); can be used after removeKeyboard()
-     */
-    addKeyboard()
-    {
-        if (!this.listeningKeyboard)
-        {
-            document.addEventListener('keydown', this.callbacks[6])
-            document.addEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = true
-        }
-    }
-
-    /**
-     * removes keyboard listener
-     */
-    removeKeyboard()
-    {
-        if (this.listeningKeyboard)
-        {
-            document.removeEventListener('keydown', this.callbacks[6])
-            document.removeEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = false
-        }
-    }
-
-    /**
-     * helper function to find touch from list based on id
-     * @private
-     * @param  {number} id for saved touch
-     * @return {object}
-     */
-    findTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                return this.pointers[i]
-            }
-        }
-        return null
-    }
-
-    /**
-     * helper function to remove touch from touch list
-     * @private
-     * @param  {object} touch object
-     */
-    removeTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                this.pointers.splice(i, 1)
-                return
-            }
-        }
-    }
-
-    /**
-     * Handle touch start
-     * @private
-     * @param  {object} e touch event
-     */
-    touchStart(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const touches = e.changedTouches
-        for (let i = 0; i < touches.length; i++)
-        {
-            const touch = touches[i]
-            const entry = {
-                identifier: touch.identifier,
-                x: touch.clientX,
-                y: touch.clientY
-            }
-            this.pointers.push(entry)
-            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch move
-     * @private
-     * @param  {object} e touch event
-     */
-    touchMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch end
-     * @private
-     * @param  {object} e touch event
-     */
-    touchEnd(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            const previous = this.findTouch(touch.identifier)
-            if (previous !== null)
-            {
-                this.removeTouch(touch.identifier)
-                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
-            }
-        }
-    }
-
-    /**
-     * Handle mouse down
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseDown(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        while (this.pointers.length)
-        {
-            this.pointers.pop()
-        }
-        this.pointers.push({id: 'mouse'})
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleDown(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse move
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleMove(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse up
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseUp(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.pointers.pop()
-        this.handleUp(x, y, e, 'mouse')
-    }
-
-    handleDown(x, y, e, id)
-    {
-        this.emit('down', x, y, { event: e, input: this, id })
-        if (!this.threshold || this.pointers > 1)
-        {
-            this.start = null
-        }
-        else
-        {
-            this.start = { x, y }
-        }
-    }
-
-    handleUp(x, y, e, id)
-    {
-        if (this.start)
-        {
-            this.emit('click', x, y, { event: e, input: this, id })
-        }
-        this.emit('up', x, y, { event: e, input: this, id })
-    }
-
-    handleMove(x, y, e, id)
-    {
-        if (this.start)
-        {
-            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
-            {
-                this.start = null
-            }
-        }
-        this.emit('move', x, y, { event: e, input: this, id })
-    }
-
-    wheel(e)
-    {
-        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
-    }
-
-    /**
-     * Sets event listener for keyboard
-     * @private
-     */
-    keysListener()
-    {
-    }
-
-    /**
-     * @private
-     * @param  {object} e
-     */
-    keydown(e)
-    {
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        if (this.chromeDebug)
-        {
-            // allow chrome to open developer console
-            if (this.keys.meta && code === 73)
-            {
-                return
-            }
-
-            // reload page with meta + r
-            if (code === 82 && this.keys.meta)
-            {
-                window.location.reload()
-                return
-            }
-        }
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.emit('keydown', code, this.keys, { event: e, input: this })
-    }
-
-    /**
-     * Handle key up
-     * @private
-     * @param  {object}
-     */
-    keyup(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        this.emit('keyup', code, this.keys, { event: e, input: this })
-    }
-}
-},{"eventemitter3":12}],229:[function(require,module,exports){
+},{"yy-random":224}],221:[function(require,module,exports){
 module.exports = require('./src/loop')
-},{"./src/loop":231}],230:[function(require,module,exports){
+},{"./src/loop":223}],222:[function(require,module,exports){
 const Events = require('eventemitter3')
 
 /** Entry class for Loop */
@@ -45843,7 +44452,7 @@ class Entry extends Events
 }
 
 module.exports = Entry
-},{"eventemitter3":12}],231:[function(require,module,exports){
+},{"eventemitter3":4}],223:[function(require,module,exports){
 /* Copyright (c) 2017 YOPEY YOPEY LLC */
 
 const Events = require('eventemitter3')
@@ -46042,7 +44651,7 @@ const Entry = require('./entry')
 
 Loop.entry = Entry
 module.exports = Loop
-},{"./entry":230,"eventemitter3":12}],232:[function(require,module,exports){
+},{"./entry":222,"eventemitter3":4}],224:[function(require,module,exports){
 // yy-random
 // by David Figatner
 // MIT license
@@ -46468,372 +45077,1888 @@ class Random
 }
 
 module.exports = new Random()
-},{"seedrandom":218}],233:[function(require,module,exports){
-require('pixi.js')
-const Viewport = require('pixi-viewport')
-// Prevents error from pixi-keyboard and pivi-particles
-window.PIXI = PIXI
-window.PIXI['default'] = PIXI
-// const Keyboard = require('pixi-keyboard')
-require('pixi-particles')
-require('pixi-keyboard')
+},{"seedrandom":211}],225:[function(require,module,exports){
 
-function updateKeyboard() {
-    /*
-    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
-        console.log('Down key is pressed')
-    }*/
+},{}],226:[function(require,module,exports){
+(function (process){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    shift = PIXI.keyboardManager.isDown(Key.SHIFT)
+// resolves . and .. elements in a path array with directory names there
+// must be no slashes, empty elements, or device names (c:\) in the array
+// (so also no leading and trailing slashes - it does not distinguish
+// relative and absolute paths)
+function normalizeArray(parts, allowAboveRoot) {
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = parts.length - 1; i >= 0; i--) {
+    var last = parts[i];
+    if (last === '.') {
+      parts.splice(i, 1);
+    } else if (last === '..') {
+      parts.splice(i, 1);
+      up++;
+    } else if (up) {
+      parts.splice(i, 1);
+      up--;
+    }
+  }
 
-    if (PIXI.keyboardManager.isPressed(Key.UP)) {
-        stopSnap()
-        //viewport.plugins['decelerate'].reset()
-        stopFollow()
-        viewport.snap(0, 0, {
-            time: 1000,
-            removeOnComplete: true,
-            center: true,
-            ease: 'easeOutQuart'
-        })
+  // if the path is allowed to go above the root, restore leading ..s
+  if (allowAboveRoot) {
+    for (; up--; up) {
+      parts.unshift('..');
+    }
+  }
+
+  return parts;
+}
+
+// Split a filename into [root, dir, basename, ext], unix version
+// 'root' is just a slash, or nothing.
+var splitPathRe =
+    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+var splitPath = function(filename) {
+  return splitPathRe.exec(filename).slice(1);
+};
+
+// path.resolve([from ...], to)
+// posix version
+exports.resolve = function() {
+  var resolvedPath = '',
+      resolvedAbsolute = false;
+
+  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+    var path = (i >= 0) ? arguments[i] : process.cwd();
+
+    // Skip empty and invalid entries
+    if (typeof path !== 'string') {
+      throw new TypeError('Arguments to path.resolve must be strings');
+    } else if (!path) {
+      continue;
     }
 
-    if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
+    resolvedPath = path + '/' + resolvedPath;
+    resolvedAbsolute = path.charAt(0) === '/';
+  }
 
-        viewport.snapZoom({
-            height: 200,
-            time: 5000,
-            removeOnComplete: true,
-            ease: 'easeOutExpo',
-            center: {
-                x: 0,
-                y: 0
-            }
-        })
+  // At this point the path should be resolved to a full absolute path, but
+  // handle relative paths to be safe (might happen when process.cwd() fails)
+
+  // Normalize the path
+  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+    return !!p;
+  }), !resolvedAbsolute).join('/');
+
+  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+};
+
+// path.normalize(path)
+// posix version
+exports.normalize = function(path) {
+  var isAbsolute = exports.isAbsolute(path),
+      trailingSlash = substr(path, -1) === '/';
+
+  // Normalize the path
+  path = normalizeArray(filter(path.split('/'), function(p) {
+    return !!p;
+  }), !isAbsolute).join('/');
+
+  if (!path && !isAbsolute) {
+    path = '.';
+  }
+  if (path && trailingSlash) {
+    path += '/';
+  }
+
+  return (isAbsolute ? '/' : '') + path;
+};
+
+// posix version
+exports.isAbsolute = function(path) {
+  return path.charAt(0) === '/';
+};
+
+// posix version
+exports.join = function() {
+  var paths = Array.prototype.slice.call(arguments, 0);
+  return exports.normalize(filter(paths, function(p, index) {
+    if (typeof p !== 'string') {
+      throw new TypeError('Arguments to path.join must be strings');
+    }
+    return p;
+  }).join('/'));
+};
+
+
+// path.relative(from, to)
+// posix version
+exports.relative = function(from, to) {
+  from = exports.resolve(from).substr(1);
+  to = exports.resolve(to).substr(1);
+
+  function trim(arr) {
+    var start = 0;
+    for (; start < arr.length; start++) {
+      if (arr[start] !== '') break;
     }
 
-    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
-        viewport.removePlugin('snap')
+    var end = arr.length - 1;
+    for (; end >= 0; end--) {
+      if (arr[end] !== '') break;
     }
 
-    PIXI.keyboardManager.update()
+    if (start > end) return [];
+    return arr.slice(start, end - start + 1);
+  }
+
+  var fromParts = trim(from.split('/'));
+  var toParts = trim(to.split('/'));
+
+  var length = Math.min(fromParts.length, toParts.length);
+  var samePartsLength = length;
+  for (var i = 0; i < length; i++) {
+    if (fromParts[i] !== toParts[i]) {
+      samePartsLength = i;
+      break;
+    }
+  }
+
+  var outputParts = [];
+  for (var i = samePartsLength; i < fromParts.length; i++) {
+    outputParts.push('..');
+  }
+
+  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+
+  return outputParts.join('/');
+};
+
+exports.sep = '/';
+exports.delimiter = ':';
+
+exports.dirname = function(path) {
+  var result = splitPath(path),
+      root = result[0],
+      dir = result[1];
+
+  if (!root && !dir) {
+    // No dirname whatsoever
+    return '.';
+  }
+
+  if (dir) {
+    // It has a dirname, strip trailing slash
+    dir = dir.substr(0, dir.length - 1);
+  }
+
+  return root + dir;
+};
+
+
+exports.basename = function(path, ext) {
+  var f = splitPath(path)[2];
+  // TODO: make this comparison case-insensitive on windows?
+  if (ext && f.substr(-1 * ext.length) === ext) {
+    f = f.substr(0, f.length - ext.length);
+  }
+  return f;
+};
+
+
+exports.extname = function(path) {
+  return splitPath(path)[3];
+};
+
+function filter (xs, f) {
+    if (xs.filter) return xs.filter(f);
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        if (f(xs[i], i, xs)) res.push(xs[i]);
+    }
+    return res;
 }
 
-//document.addEventListener('mousewheel', mouseWheelHandler, false)
+// String.prototype.substr - negative index don't work in IE8
+var substr = 'ab'.substr(-1) === 'b'
+    ? function (str, start, len) { return str.substr(start, len) }
+    : function (str, start, len) {
+        if (start < 0) start = str.length + start;
+        return str.substr(start, len);
+    }
+;
 
-const maxHeight = 1000
-const minHeight = 100
+}).call(this,require('_process'))
+},{"_process":227}],227:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
 
-window.addEventListener('resize', resize)
-window.onorientationchange = resize
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
 
-// h is the constant height of the viewport.
-const h = 600
-// w is less important because the width can change. Mostly just used for initializing other objects
-const w = 600
+var cachedSetTimeout;
+var cachedClearTimeout;
 
-// Creates the PIXI application
-var game = new PIXI.Application(w, h, {
-    antialias: true,
-    transparent: false
-})
-
-// Sets up the element
-game.view.style.position = 'absolute'
-game.view.style.display = 'block'
-document.body.appendChild(game.view)
-game.renderer.autoResize = true
-game.renderer.backgroundColor = Colour.background
-
-// Adds the keyboard update loop to the ticker
-game.ticker.add(updateKeyboard)
-
-// Viewport options. Not very important because it can vary (see resize() )
-// These are mostly just used for initialization so that no errors occur
-var options = {
-    pauseOnBlur: false,
-    screenWidth: w,
-    screenHeight: h,
-    worldWidth: w,
-    worldHeight: h,
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
 }
-
-var viewport = new Viewport(game.stage, options)
-
-var clampOptions = {
-    minWidth: 1,
-    minHeight: minHeight,
-    maxWidth: 1000 * w,
-    maxHeight: maxHeight
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
 }
-
-viewport
-    .drag()
-    .wheel()
-    .pinch({
-        percent: 4.5
-    })
-    .clampZoom(clampOptions)
-    .decelerate()
-    .start()
-
-var snappingToPlanet = false
-
-function stopSnap() {
-    viewport.removePlugin('snap')
-    viewport.removePlugin('snap-zoom')
-    this.snappingToPlanet = false
-}
-
-function stopFollow() {
-    viewport.removePlugin('follow')
-}
-
-viewport.on('drag-start', function (e) {
-    stopSnap()
-
-    viewport.removePlugin('follow')
-})
-viewport.on('pinch-start', stopSnap)
-viewport.on('wheel', stopSnap)
-viewport.on('click', function (e) {
-    stopSnap()
-
-    var planet = getPlanet(e.world.x, e.world.y)
-    if (planet) {
-
-        // If the viewport is already following the planet that was clicked on, then don't do anything
-        var follow = viewport.plugins['follow']
-        if (follow && (follow.target == planet)) {
-            return
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
         }
-
-        this.snappingToPlanet = planet
-
-        // The calculated future positions of the planet
-        var pos = calcPlanetPosition(planet, (animTime / 1000))
-
-        // Snap to that position
-        viewport.snap(pos.x, pos.y, {
-            time: animTime,
-            removeOnComplete: true,
-            center: true,
-            ease: 'easeOutQuart'
-        })
-
-        // Do the zoom if not holding shift
-        if (!shift) {
-            viewport.snapZoom({
-                height: 150,
-                time: animTime,
-                removeOnComplete: true,
-                ease: 'easeOutSine'
-            })
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
         }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
 
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
     } else {
-        // If no planet was clicked on, remove the follow plugin
-        viewport.removePlugin('follow')
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
 
-        const sunRadiusSqr = 100 * 100
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
 
-        if (distSqr(e.world.x, e.world.y, 0, 0) < sunRadiusSqr) {
-            centerView()
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
         }
     }
-})
-// Upon ending of the snap, if it was just snapping to a planet, begin to follow it. If the user was holding shift then doTheZoom!
-viewport.on('snap-end', function () {
-    if (this.snappingToPlanet) {
-        viewport.follow(this.snappingToPlanet)
-        this.snappingToPlanet = false
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
     }
-})
-const animTime = 400
+};
 
-function centerView() {
-    stopSnap()
-    stopFollow()
-    viewport.snap(0, 0, {
-        time: animTime,
-        removeOnComplete: true,
-        center: true,
-        ease: 'easeOutQuart'
-    })
-    viewport.snapZoom({
-        height: h,
-        time: animTime,
-        removeOnComplete: true,
-        center: true,
-        ease: 'easeInOutCubic'
-    })
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) { return [] }
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],228:[function(require,module,exports){
+(function (global){
+/*! https://mths.be/punycode v1.4.1 by @mathias */
+;(function(root) {
+
+	/** Detect free variables */
+	var freeExports = typeof exports == 'object' && exports &&
+		!exports.nodeType && exports;
+	var freeModule = typeof module == 'object' && module &&
+		!module.nodeType && module;
+	var freeGlobal = typeof global == 'object' && global;
+	if (
+		freeGlobal.global === freeGlobal ||
+		freeGlobal.window === freeGlobal ||
+		freeGlobal.self === freeGlobal
+	) {
+		root = freeGlobal;
+	}
+
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
+	var punycode,
+
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	base = 36,
+	tMin = 1,
+	tMax = 26,
+	skew = 38,
+	damp = 700,
+	initialBias = 72,
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
+
+	/** Regular expressions */
+	regexPunycode = /^xn--/,
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+
+	/** Error messages */
+	errors = {
+		'overflow': 'Overflow: input needs wider integers to process',
+		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+		'invalid-input': 'Invalid input'
+	},
+
+	/** Convenience shortcuts */
+	baseMinusTMin = base - tMin,
+	floor = Math.floor,
+	stringFromCharCode = String.fromCharCode,
+
+	/** Temporary variable */
+	key;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+		throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+		var length = array.length;
+		var result = [];
+		while (length--) {
+			result[length] = fn(array[length]);
+		}
+		return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+		var parts = string.split('@');
+		var result = '';
+		if (parts.length > 1) {
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
+			result = parts[0] + '@';
+			string = parts[1];
+		}
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
+		string = string.replace(regexSeparators, '\x2E');
+		var labels = string.split('.');
+		var encoded = map(labels, fn).join('.');
+		return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+		var output = [],
+		    counter = 0,
+		    length = string.length,
+		    value,
+		    extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
+	function ucs2encode(array) {
+		return map(array, function(value) {
+			var output = '';
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+			return output;
+		}).join('');
+	}
+
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
+	function basicToDigit(codePoint) {
+		if (codePoint - 48 < 10) {
+			return codePoint - 22;
+		}
+		if (codePoint - 65 < 26) {
+			return codePoint - 65;
+		}
+		if (codePoint - 97 < 26) {
+			return codePoint - 97;
+		}
+		return base;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
+		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+		var k = 0;
+		delta = firstTime ? floor(delta / damp) : delta >> 1;
+		delta += floor(delta / numPoints);
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+			delta = floor(delta / baseMinusTMin);
+		}
+		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
+	function decode(input) {
+		// Don't use UCS-2
+		var output = [],
+		    inputLength = input.length,
+		    out,
+		    i = 0,
+		    n = initialN,
+		    bias = initialBias,
+		    basic,
+		    j,
+		    index,
+		    oldi,
+		    w,
+		    k,
+		    digit,
+		    t,
+		    /** Cached calculation results */
+		    baseMinusT;
+
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
+
+		basic = input.lastIndexOf(delimiter);
+		if (basic < 0) {
+			basic = 0;
+		}
+
+		for (j = 0; j < basic; ++j) {
+			// if it's not a basic code point
+			if (input.charCodeAt(j) >= 0x80) {
+				error('not-basic');
+			}
+			output.push(input.charCodeAt(j));
+		}
+
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
+
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+
+				if (index >= inputLength) {
+					error('invalid-input');
+				}
+
+				digit = basicToDigit(input.charCodeAt(index++));
+
+				if (digit >= base || digit > floor((maxInt - i) / w)) {
+					error('overflow');
+				}
+
+				i += digit * w;
+				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+
+				if (digit < t) {
+					break;
+				}
+
+				baseMinusT = base - t;
+				if (w > floor(maxInt / baseMinusT)) {
+					error('overflow');
+				}
+
+				w *= baseMinusT;
+
+			}
+
+			out = output.length + 1;
+			bias = adapt(i - oldi, out, oldi == 0);
+
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
+			if (floor(i / out) > maxInt - n) {
+				error('overflow');
+			}
+
+			n += floor(i / out);
+			i %= out;
+
+			// Insert `n` at position `i` of the output
+			output.splice(i++, 0, n);
+
+		}
+
+		return ucs2encode(output);
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+		var n,
+		    delta,
+		    handledCPCount,
+		    basicLength,
+		    bias,
+		    j,
+		    m,
+		    q,
+		    k,
+		    t,
+		    currentValue,
+		    output = [],
+		    /** `inputLength` will hold the number of code points in `input`. */
+		    inputLength,
+		    /** Cached calculation results */
+		    handledCPCountPlusOne,
+		    baseMinusT,
+		    qMinusT;
+
+		// Convert the input in UCS-2 to Unicode
+		input = ucs2decode(input);
+
+		// Cache the length
+		inputLength = input.length;
+
+		// Initialize the state
+		n = initialN;
+		delta = 0;
+		bias = initialBias;
+
+		// Handle the basic code points
+		for (j = 0; j < inputLength; ++j) {
+			currentValue = input[j];
+			if (currentValue < 0x80) {
+				output.push(stringFromCharCode(currentValue));
+			}
+		}
+
+		handledCPCount = basicLength = output.length;
+
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
+
+		// Finish the basic string - if it is not empty - with a delimiter
+		if (basicLength) {
+			output.push(delimiter);
+		}
+
+		// Main encoding loop:
+		while (handledCPCount < inputLength) {
+
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
+			for (m = maxInt, j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+				if (currentValue >= n && currentValue < m) {
+					m = currentValue;
+				}
+			}
+
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
+			handledCPCountPlusOne = handledCPCount + 1;
+			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+				error('overflow');
+			}
+
+			delta += (m - n) * handledCPCountPlusOne;
+			n = m;
+
+			for (j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+
+				if (currentValue < n && ++delta > maxInt) {
+					error('overflow');
+				}
+
+				if (currentValue == n) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
+						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+						if (q < t) {
+							break;
+						}
+						qMinusT = q - t;
+						baseMinusT = base - t;
+						output.push(
+							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+						);
+						q = floor(qMinusT / baseMinusT);
+					}
+
+					output.push(stringFromCharCode(digitToBasic(q, 0)));
+					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+					delta = 0;
+					++handledCPCount;
+				}
+			}
+
+			++delta;
+			++n;
+
+		}
+		return output.join('');
+	}
+
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
+	function toUnicode(input) {
+		return mapDomain(input, function(string) {
+			return regexPunycode.test(string)
+				? decode(string.slice(4).toLowerCase())
+				: string;
+		});
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+		return mapDomain(input, function(string) {
+			return regexNonASCII.test(string)
+				? 'xn--' + encode(string)
+				: string;
+		});
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	/** Define the public API */
+	punycode = {
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
+		'version': '1.4.1',
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
+		'ucs2': {
+			'decode': ucs2decode,
+			'encode': ucs2encode
+		},
+		'decode': decode,
+		'encode': encode,
+		'toASCII': toASCII,
+		'toUnicode': toUnicode
+	};
+
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define('punycode', function() {
+			return punycode;
+		});
+	} else if (freeExports && freeModule) {
+		if (module.exports == freeExports) {
+			// in Node.js, io.js, or RingoJS v0.8.0+
+			freeModule.exports = punycode;
+		} else {
+			// in Narwhal or RingoJS v0.7.0-
+			for (key in punycode) {
+				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+			}
+		}
+	} else {
+		// in Rhino or a web browser
+		root.punycode = punycode;
+	}
+
+}(this));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],229:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+// If obj.hasOwnProperty has been overridden, then calling
+// obj.hasOwnProperty(prop) will break.
+// See: https://github.com/joyent/node/issues/1707
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
-var planets
+module.exports = function(qs, sep, eq, options) {
+  sep = sep || '&';
+  eq = eq || '=';
+  var obj = {};
 
-// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
-const clickThreshold = 40
+  if (typeof qs !== 'string' || qs.length === 0) {
+    return obj;
+  }
 
-function distSqr(x1, y1, x2, y2) {
-    return ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2))
+  var regexp = /\+/g;
+  qs = qs.split(sep);
+
+  var maxKeys = 1000;
+  if (options && typeof options.maxKeys === 'number') {
+    maxKeys = options.maxKeys;
+  }
+
+  var len = qs.length;
+  // maxKeys <= 0 means that we should not limit keys count
+  if (maxKeys > 0 && len > maxKeys) {
+    len = maxKeys;
+  }
+
+  for (var i = 0; i < len; ++i) {
+    var x = qs[i].replace(regexp, '%20'),
+        idx = x.indexOf(eq),
+        kstr, vstr, k, v;
+
+    if (idx >= 0) {
+      kstr = x.substr(0, idx);
+      vstr = x.substr(idx + 1);
+    } else {
+      kstr = x;
+      vstr = '';
+    }
+
+    k = decodeURIComponent(kstr);
+    v = decodeURIComponent(vstr);
+
+    if (!hasOwnProperty(obj, k)) {
+      obj[k] = v;
+    } else if (isArray(obj[k])) {
+      obj[k].push(v);
+    } else {
+      obj[k] = [obj[k], v];
+    }
+  }
+
+  return obj;
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+},{}],230:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+module.exports = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (typeof obj === 'object') {
+    return map(objectKeys(obj), function(k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+      if (isArray(obj[k])) {
+        return map(obj[k], function(v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).join(sep);
+
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+         encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+function map (xs, f) {
+  if (xs.map) return xs.map(f);
+  var res = [];
+  for (var i = 0; i < xs.length; i++) {
+    res.push(f(xs[i], i));
+  }
+  return res;
 }
 
-function getPlanet(x, y) {
-    for (var i in planets) {
-        if (distSqr(x, y, planets[i].x, planets[i].y) < ((planets[i].radius + clickThreshold) * (planets[i].radius + clickThreshold))) {
-            return planets[i]
+var objectKeys = Object.keys || function (obj) {
+  var res = [];
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+  }
+  return res;
+};
+
+},{}],231:[function(require,module,exports){
+'use strict';
+
+exports.decode = exports.parse = require('./decode');
+exports.encode = exports.stringify = require('./encode');
+
+},{"./decode":229,"./encode":230}],232:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+var punycode = require('punycode');
+var util = require('./util');
+
+exports.parse = urlParse;
+exports.resolve = urlResolve;
+exports.resolveObject = urlResolveObject;
+exports.format = urlFormat;
+
+exports.Url = Url;
+
+function Url() {
+  this.protocol = null;
+  this.slashes = null;
+  this.auth = null;
+  this.host = null;
+  this.port = null;
+  this.hostname = null;
+  this.hash = null;
+  this.search = null;
+  this.query = null;
+  this.pathname = null;
+  this.path = null;
+  this.href = null;
+}
+
+// Reference: RFC 3986, RFC 1808, RFC 2396
+
+// define these here so at least they only have to be
+// compiled once on the first module load.
+var protocolPattern = /^([a-z0-9.+-]+:)/i,
+    portPattern = /:[0-9]*$/,
+
+    // Special case for a simple path URL
+    simplePathPattern = /^(\/\/?(?!\/)[^\?\s]*)(\?[^\s]*)?$/,
+
+    // RFC 2396: characters reserved for delimiting URLs.
+    // We actually just auto-escape these.
+    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+
+    // RFC 2396: characters not allowed for various reasons.
+    unwise = ['{', '}', '|', '\\', '^', '`'].concat(delims),
+
+    // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
+    autoEscape = ['\''].concat(unwise),
+    // Characters that are never ever allowed in a hostname.
+    // Note that any invalid chars are also handled, but these
+    // are the ones that are *expected* to be seen, so we fast-path
+    // them.
+    nonHostChars = ['%', '/', '?', ';', '#'].concat(autoEscape),
+    hostEndingChars = ['/', '?', '#'],
+    hostnameMaxLen = 255,
+    hostnamePartPattern = /^[+a-z0-9A-Z_-]{0,63}$/,
+    hostnamePartStart = /^([+a-z0-9A-Z_-]{0,63})(.*)$/,
+    // protocols that can allow "unsafe" and "unwise" chars.
+    unsafeProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that never have a hostname.
+    hostlessProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that always contain a // bit.
+    slashedProtocol = {
+      'http': true,
+      'https': true,
+      'ftp': true,
+      'gopher': true,
+      'file': true,
+      'http:': true,
+      'https:': true,
+      'ftp:': true,
+      'gopher:': true,
+      'file:': true
+    },
+    querystring = require('querystring');
+
+function urlParse(url, parseQueryString, slashesDenoteHost) {
+  if (url && util.isObject(url) && url instanceof Url) return url;
+
+  var u = new Url;
+  u.parse(url, parseQueryString, slashesDenoteHost);
+  return u;
+}
+
+Url.prototype.parse = function(url, parseQueryString, slashesDenoteHost) {
+  if (!util.isString(url)) {
+    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
+  }
+
+  // Copy chrome, IE, opera backslash-handling behavior.
+  // Back slashes before the query string get converted to forward slashes
+  // See: https://code.google.com/p/chromium/issues/detail?id=25916
+  var queryIndex = url.indexOf('?'),
+      splitter =
+          (queryIndex !== -1 && queryIndex < url.indexOf('#')) ? '?' : '#',
+      uSplit = url.split(splitter),
+      slashRegex = /\\/g;
+  uSplit[0] = uSplit[0].replace(slashRegex, '/');
+  url = uSplit.join(splitter);
+
+  var rest = url;
+
+  // trim before proceeding.
+  // This is to support parse stuff like "  http://foo.com  \n"
+  rest = rest.trim();
+
+  if (!slashesDenoteHost && url.split('#').length === 1) {
+    // Try fast path regexp
+    var simplePath = simplePathPattern.exec(rest);
+    if (simplePath) {
+      this.path = rest;
+      this.href = rest;
+      this.pathname = simplePath[1];
+      if (simplePath[2]) {
+        this.search = simplePath[2];
+        if (parseQueryString) {
+          this.query = querystring.parse(this.search.substr(1));
+        } else {
+          this.query = this.search.substr(1);
         }
+      } else if (parseQueryString) {
+        this.search = '';
+        this.query = {};
+      }
+      return this;
+    }
+  }
+
+  var proto = protocolPattern.exec(rest);
+  if (proto) {
+    proto = proto[0];
+    var lowerProto = proto.toLowerCase();
+    this.protocol = lowerProto;
+    rest = rest.substr(proto.length);
+  }
+
+  // figure out if it's got a host
+  // user@server is *always* interpreted as a hostname, and url
+  // resolution will treat //foo/bar as host=foo,path=bar because that's
+  // how the browser resolves relative URLs.
+  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
+    var slashes = rest.substr(0, 2) === '//';
+    if (slashes && !(proto && hostlessProtocol[proto])) {
+      rest = rest.substr(2);
+      this.slashes = true;
+    }
+  }
+
+  if (!hostlessProtocol[proto] &&
+      (slashes || (proto && !slashedProtocol[proto]))) {
+
+    // there's a hostname.
+    // the first instance of /, ?, ;, or # ends the host.
+    //
+    // If there is an @ in the hostname, then non-host chars *are* allowed
+    // to the left of the last @ sign, unless some host-ending character
+    // comes *before* the @-sign.
+    // URLs are obnoxious.
+    //
+    // ex:
+    // http://a@b@c/ => user:a@b host:c
+    // http://a@b?@c => user:a host:c path:/?@c
+
+    // v0.12 TODO(isaacs): This is not quite how Chrome does things.
+    // Review our test case against browsers more comprehensively.
+
+    // find the first instance of any hostEndingChars
+    var hostEnd = -1;
+    for (var i = 0; i < hostEndingChars.length; i++) {
+      var hec = rest.indexOf(hostEndingChars[i]);
+      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+        hostEnd = hec;
     }
 
-    return null
-}
+    // at this point, either we have an explicit point where the
+    // auth portion cannot go past, or the last @ char is the decider.
+    var auth, atSign;
+    if (hostEnd === -1) {
+      // atSign can be anywhere.
+      atSign = rest.lastIndexOf('@');
+    } else {
+      // atSign must be in auth portion.
+      // http://a@b/c@d => host:b auth:a path:/c@d
+      atSign = rest.lastIndexOf('@', hostEnd);
+    }
 
-PIXI.loader
-    .add('sunTexture', 'game/sun.png')
-    .add('planet1', 'game/planet1.png')
-    .add('planet2', 'game/planet2.png')
-    .load(onLoad)
+    // Now we have a portion which is definitely the auth.
+    // Pull that off.
+    if (atSign !== -1) {
+      auth = rest.slice(0, atSign);
+      rest = rest.slice(atSign + 1);
+      this.auth = decodeURIComponent(auth);
+    }
 
-const G = 6.67 * 0.00000000001 // Gravitational constant
-const ppm = 0.0004 // pixels per meter
-const starMass = 2188000000000000000000000000000 // kg
+    // the host is the remaining to the left of the first non-host char
+    hostEnd = -1;
+    for (var i = 0; i < nonHostChars.length; i++) {
+      var hec = rest.indexOf(nonHostChars[i]);
+      if (hec !== -1 && (hostEnd === -1 || hec < hostEnd))
+        hostEnd = hec;
+    }
+    // if we still have not hit it, then the entire thing is a host.
+    if (hostEnd === -1)
+      hostEnd = rest.length;
 
-function createPlanet(texture, orbit, scale, mass, rotationConstant) {
-    var planet = new PIXI.Sprite(texture)
-    planet.radius = 0.5 * planet.width
-    planet.orbit = orbit
-    planet.pivot.set(planet.radius, planet.radius)
-    planet.scale.set(scale)
-    planet.radius = planet.radius * planet.scale.x
-    planet.age = 0
-    planet.position.set(orbit.radius, 0)
-    planet.mass = mass
-    planet.speed = Math.sqrt((G * planet.mass) / (planet.radius / ppm)) * ppm
-    planet.rotationConstant = rotationConstant
-    return planet
-}
+    this.host = rest.slice(0, hostEnd);
+    rest = rest.slice(hostEnd);
 
-function onLoad(loader, resources) {
+    // pull out port.
+    this.parseHost();
 
-    var orbit1 = game.stage.addChild(dottedCircle(0, 0, 150, 25))
-    var orbit2 = game.stage.addChild(dottedCircle(0, 0, 220, 25))
-    var orbit3 = game.stage.addChild(dottedCircle(0, 0, 270, 25))
-    var orbit4 = game.stage.addChild(dottedCircle(0, 0, 350, 25))
+    // we've indicated that there is a hostname,
+    // so even if it's empty, it has to be present.
+    this.hostname = this.hostname || '';
 
-    var sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle)
-    sun.emit = true
+    // if hostname begins with [ and ends with ]
+    // assume that it's an IPv6 address.
+    var ipv6Hostname = this.hostname[0] === '[' &&
+        this.hostname[this.hostname.length - 1] === ']';
 
-    var planet1 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
-    var planet2 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
-    var planet3 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
-    var planet4 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
-
-    planets = [planet1, planet2, planet3, planet4]
-
-    this.lastElapsed = Date.now()
-    game.ticker.add(function () {
-
-        //viewport.update()
-
-        var now = Date.now()
-        var elasped = now - lastElapsed
-        lastElapsed = now
-        let eTime = (elasped * 0.001)
-
-        sun.update(eTime)
-
-        // Rotate the orbits (purely for visual effects)
-        orbit1.rotation += eTime / 50
-        orbit2.rotation += eTime / 80
-        orbit3.rotation += eTime / 140
-        orbit4.rotation += eTime / 200
-
-        for (i in planets) {
-            planets[i].age += eTime;
-            var pos = calcPlanetPosition(planets[i])
-            planets[i].position.set(pos.x, pos.y)
-            planet1.rotation = planets[i].age * planets[i].rotationConstant
+    // validate a little.
+    if (!ipv6Hostname) {
+      var hostparts = this.hostname.split(/\./);
+      for (var i = 0, l = hostparts.length; i < l; i++) {
+        var part = hostparts[i];
+        if (!part) continue;
+        if (!part.match(hostnamePartPattern)) {
+          var newpart = '';
+          for (var j = 0, k = part.length; j < k; j++) {
+            if (part.charCodeAt(j) > 127) {
+              // we replace non-ASCII char with a temporary placeholder
+              // we need this to make sure size of hostname is not
+              // broken by replacing non-ASCII by nothing
+              newpart += 'x';
+            } else {
+              newpart += part[j];
+            }
+          }
+          // we test again with ASCII char only
+          if (!newpart.match(hostnamePartPattern)) {
+            var validParts = hostparts.slice(0, i);
+            var notHost = hostparts.slice(i + 1);
+            var bit = part.match(hostnamePartStart);
+            if (bit) {
+              validParts.push(bit[1]);
+              notHost.unshift(bit[2]);
+            }
+            if (notHost.length) {
+              rest = '/' + notHost.join('.') + rest;
+            }
+            this.hostname = validParts.join('.');
+            break;
+          }
         }
-    })
-
-    viewport.moveCenter(0, 0)
-
-    resize()
-}
-
-function calcPlanetPosition(planet, additionalAge) {
-    if (!additionalAge)
-        additionalAge = 0
-
-    let radius = planet.orbit.radius
-    let age = planet.age + additionalAge
-    let x = Math.cos((age * planet.speed) / radius) * radius
-    let y = Math.sin((age * planet.speed) / radius) * radius
-    return {
-        x: x,
-        y: y
-    }
-}
-
-function resize() {
-    window.scrollTo(0, 0)
-
-    var oldCenter
-    if (viewport.center) {
-        oldCenter = viewport.center
+      }
     }
 
-    var prevHeight = viewport.worldScreenHeight
-
-    var width = window.innerWidth
-    var height = window.innerHeight
-    var ratio = height / h
-
-    game.renderer.resize(width, height)
-    viewport.resize(width, height)
-    viewport.fitHeight(prevHeight, false)
-
-    // Must maintain the center manually instad of using fitHeight's built in one because the
-    // center value will change upon resizing the viewport and game window
-    if (oldCenter) {
-        viewport.moveCenter(oldCenter)
+    if (this.hostname.length > hostnameMaxLen) {
+      this.hostname = '';
+    } else {
+      // hostnames are always lower case.
+      this.hostname = this.hostname.toLowerCase();
     }
 
-    //stopSnap()
-}
-
-const minDashes = 2
-const dashThickness = 1.4
-
-function dottedCircle(x, y, radius, dashLength) {
-
-    var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
-    var dashRadians = dashLength / radius
-    var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
-
-    var pixiCircle = new PIXI.Graphics()
-    pixiCircle.radius = radius
-
-    // If it's a full circle, draw it full (more optimised)
-    if (spacingRadians <= 0) {
-        pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
-        pixiCircle.arc(x, y, radius, 0, 2 * Math.PI)
-    } else { // Else, draw it dashed
-        for (i = 0; i < numOfDashes; i++) {
-            var start = i * (dashRadians + spacingRadians)
-            var end1 = start + dashRadians
-            var end2 = end1 + spacingRadians
-            pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
-            pixiCircle.arc(x, y, radius, start, end1)
-            pixiCircle.lineStyle(dashThickness, Colour.background, 0)
-            pixiCircle.arc(x, y, radius, end1, end2)
-        }
+    if (!ipv6Hostname) {
+      // IDNA Support: Returns a punycoded representation of "domain".
+      // It only converts parts of the domain name that
+      // have non-ASCII characters, i.e. it doesn't matter if
+      // you call it with a domain that already is ASCII-only.
+      this.hostname = punycode.toASCII(this.hostname);
     }
 
-    // disgusting
-    // pixiCircle.cacheAsBitmap = true
+    var p = this.port ? ':' + this.port : '';
+    var h = this.hostname || '';
+    this.host = h + p;
+    this.href += this.host;
 
-    return pixiCircle
+    // strip [ and ] from the hostname
+    // the host field still retains them, though
+    if (ipv6Hostname) {
+      this.hostname = this.hostname.substr(1, this.hostname.length - 2);
+      if (rest[0] !== '/') {
+        rest = '/' + rest;
+      }
+    }
+  }
+
+  // now rest is set to the post-host stuff.
+  // chop off any delim chars.
+  if (!unsafeProtocol[lowerProto]) {
+
+    // First, make 100% sure that any "autoEscape" chars get
+    // escaped, even if encodeURIComponent doesn't think they
+    // need to be.
+    for (var i = 0, l = autoEscape.length; i < l; i++) {
+      var ae = autoEscape[i];
+      if (rest.indexOf(ae) === -1)
+        continue;
+      var esc = encodeURIComponent(ae);
+      if (esc === ae) {
+        esc = escape(ae);
+      }
+      rest = rest.split(ae).join(esc);
+    }
+  }
+
+
+  // chop off from the tail first.
+  var hash = rest.indexOf('#');
+  if (hash !== -1) {
+    // got a fragment string.
+    this.hash = rest.substr(hash);
+    rest = rest.slice(0, hash);
+  }
+  var qm = rest.indexOf('?');
+  if (qm !== -1) {
+    this.search = rest.substr(qm);
+    this.query = rest.substr(qm + 1);
+    if (parseQueryString) {
+      this.query = querystring.parse(this.query);
+    }
+    rest = rest.slice(0, qm);
+  } else if (parseQueryString) {
+    // no query string, but parseQueryString still requested
+    this.search = '';
+    this.query = {};
+  }
+  if (rest) this.pathname = rest;
+  if (slashedProtocol[lowerProto] &&
+      this.hostname && !this.pathname) {
+    this.pathname = '/';
+  }
+
+  //to support http.request
+  if (this.pathname || this.search) {
+    var p = this.pathname || '';
+    var s = this.search || '';
+    this.path = p + s;
+  }
+
+  // finally, reconstruct the href based on what has been validated.
+  this.href = this.format();
+  return this;
+};
+
+// format a parsed object into a url string
+function urlFormat(obj) {
+  // ensure it's an object, and not a string url.
+  // If it's an obj, this is a no-op.
+  // this way, you can call url_format() on strings
+  // to clean up potentially wonky urls.
+  if (util.isString(obj)) obj = urlParse(obj);
+  if (!(obj instanceof Url)) return Url.prototype.format.call(obj);
+  return obj.format();
 }
 
-},{"pixi-keyboard":47,"pixi-particles":48,"pixi-viewport":49,"pixi.js":177}]},{},[233]);
+Url.prototype.format = function() {
+  var auth = this.auth || '';
+  if (auth) {
+    auth = encodeURIComponent(auth);
+    auth = auth.replace(/%3A/i, ':');
+    auth += '@';
+  }
+
+  var protocol = this.protocol || '',
+      pathname = this.pathname || '',
+      hash = this.hash || '',
+      host = false,
+      query = '';
+
+  if (this.host) {
+    host = auth + this.host;
+  } else if (this.hostname) {
+    host = auth + (this.hostname.indexOf(':') === -1 ?
+        this.hostname :
+        '[' + this.hostname + ']');
+    if (this.port) {
+      host += ':' + this.port;
+    }
+  }
+
+  if (this.query &&
+      util.isObject(this.query) &&
+      Object.keys(this.query).length) {
+    query = querystring.stringify(this.query);
+  }
+
+  var search = this.search || (query && ('?' + query)) || '';
+
+  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
+
+  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
+  // unless they had them to begin with.
+  if (this.slashes ||
+      (!protocol || slashedProtocol[protocol]) && host !== false) {
+    host = '//' + (host || '');
+    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
+  } else if (!host) {
+    host = '';
+  }
+
+  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
+  if (search && search.charAt(0) !== '?') search = '?' + search;
+
+  pathname = pathname.replace(/[?#]/g, function(match) {
+    return encodeURIComponent(match);
+  });
+  search = search.replace('#', '%23');
+
+  return protocol + host + pathname + search + hash;
+};
+
+function urlResolve(source, relative) {
+  return urlParse(source, false, true).resolve(relative);
+}
+
+Url.prototype.resolve = function(relative) {
+  return this.resolveObject(urlParse(relative, false, true)).format();
+};
+
+function urlResolveObject(source, relative) {
+  if (!source) return relative;
+  return urlParse(source, false, true).resolveObject(relative);
+}
+
+Url.prototype.resolveObject = function(relative) {
+  if (util.isString(relative)) {
+    var rel = new Url();
+    rel.parse(relative, false, true);
+    relative = rel;
+  }
+
+  var result = new Url();
+  var tkeys = Object.keys(this);
+  for (var tk = 0; tk < tkeys.length; tk++) {
+    var tkey = tkeys[tk];
+    result[tkey] = this[tkey];
+  }
+
+  // hash is always overridden, no matter what.
+  // even href="" will remove it.
+  result.hash = relative.hash;
+
+  // if the relative url is empty, then there's nothing left to do here.
+  if (relative.href === '') {
+    result.href = result.format();
+    return result;
+  }
+
+  // hrefs like //foo/bar always cut to the protocol.
+  if (relative.slashes && !relative.protocol) {
+    // take everything except the protocol from relative
+    var rkeys = Object.keys(relative);
+    for (var rk = 0; rk < rkeys.length; rk++) {
+      var rkey = rkeys[rk];
+      if (rkey !== 'protocol')
+        result[rkey] = relative[rkey];
+    }
+
+    //urlParse appends trailing / to urls like http://www.example.com
+    if (slashedProtocol[result.protocol] &&
+        result.hostname && !result.pathname) {
+      result.path = result.pathname = '/';
+    }
+
+    result.href = result.format();
+    return result;
+  }
+
+  if (relative.protocol && relative.protocol !== result.protocol) {
+    // if it's a known url protocol, then changing
+    // the protocol does weird things
+    // first, if it's not file:, then we MUST have a host,
+    // and if there was a path
+    // to begin with, then we MUST have a path.
+    // if it is file:, then the host is dropped,
+    // because that's known to be hostless.
+    // anything else is assumed to be absolute.
+    if (!slashedProtocol[relative.protocol]) {
+      var keys = Object.keys(relative);
+      for (var v = 0; v < keys.length; v++) {
+        var k = keys[v];
+        result[k] = relative[k];
+      }
+      result.href = result.format();
+      return result;
+    }
+
+    result.protocol = relative.protocol;
+    if (!relative.host && !hostlessProtocol[relative.protocol]) {
+      var relPath = (relative.pathname || '').split('/');
+      while (relPath.length && !(relative.host = relPath.shift()));
+      if (!relative.host) relative.host = '';
+      if (!relative.hostname) relative.hostname = '';
+      if (relPath[0] !== '') relPath.unshift('');
+      if (relPath.length < 2) relPath.unshift('');
+      result.pathname = relPath.join('/');
+    } else {
+      result.pathname = relative.pathname;
+    }
+    result.search = relative.search;
+    result.query = relative.query;
+    result.host = relative.host || '';
+    result.auth = relative.auth;
+    result.hostname = relative.hostname || relative.host;
+    result.port = relative.port;
+    // to support http.request
+    if (result.pathname || result.search) {
+      var p = result.pathname || '';
+      var s = result.search || '';
+      result.path = p + s;
+    }
+    result.slashes = result.slashes || relative.slashes;
+    result.href = result.format();
+    return result;
+  }
+
+  var isSourceAbs = (result.pathname && result.pathname.charAt(0) === '/'),
+      isRelAbs = (
+          relative.host ||
+          relative.pathname && relative.pathname.charAt(0) === '/'
+      ),
+      mustEndAbs = (isRelAbs || isSourceAbs ||
+                    (result.host && relative.pathname)),
+      removeAllDots = mustEndAbs,
+      srcPath = result.pathname && result.pathname.split('/') || [],
+      relPath = relative.pathname && relative.pathname.split('/') || [],
+      psychotic = result.protocol && !slashedProtocol[result.protocol];
+
+  // if the url is a non-slashed url, then relative
+  // links like ../.. should be able
+  // to crawl up to the hostname, as well.  This is strange.
+  // result.protocol has already been set by now.
+  // Later on, put the first path part into the host field.
+  if (psychotic) {
+    result.hostname = '';
+    result.port = null;
+    if (result.host) {
+      if (srcPath[0] === '') srcPath[0] = result.host;
+      else srcPath.unshift(result.host);
+    }
+    result.host = '';
+    if (relative.protocol) {
+      relative.hostname = null;
+      relative.port = null;
+      if (relative.host) {
+        if (relPath[0] === '') relPath[0] = relative.host;
+        else relPath.unshift(relative.host);
+      }
+      relative.host = null;
+    }
+    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
+  }
+
+  if (isRelAbs) {
+    // it's absolute.
+    result.host = (relative.host || relative.host === '') ?
+                  relative.host : result.host;
+    result.hostname = (relative.hostname || relative.hostname === '') ?
+                      relative.hostname : result.hostname;
+    result.search = relative.search;
+    result.query = relative.query;
+    srcPath = relPath;
+    // fall through to the dot-handling below.
+  } else if (relPath.length) {
+    // it's relative
+    // throw away the existing file, and take the new path instead.
+    if (!srcPath) srcPath = [];
+    srcPath.pop();
+    srcPath = srcPath.concat(relPath);
+    result.search = relative.search;
+    result.query = relative.query;
+  } else if (!util.isNullOrUndefined(relative.search)) {
+    // just pull out the search.
+    // like href='?foo'.
+    // Put this after the other two cases because it simplifies the booleans
+    if (psychotic) {
+      result.hostname = result.host = srcPath.shift();
+      //occationaly the auth can get stuck only in host
+      //this especially happens in cases like
+      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+      var authInHost = result.host && result.host.indexOf('@') > 0 ?
+                       result.host.split('@') : false;
+      if (authInHost) {
+        result.auth = authInHost.shift();
+        result.host = result.hostname = authInHost.shift();
+      }
+    }
+    result.search = relative.search;
+    result.query = relative.query;
+    //to support http.request
+    if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
+      result.path = (result.pathname ? result.pathname : '') +
+                    (result.search ? result.search : '');
+    }
+    result.href = result.format();
+    return result;
+  }
+
+  if (!srcPath.length) {
+    // no path at all.  easy.
+    // we've already handled the other stuff above.
+    result.pathname = null;
+    //to support http.request
+    if (result.search) {
+      result.path = '/' + result.search;
+    } else {
+      result.path = null;
+    }
+    result.href = result.format();
+    return result;
+  }
+
+  // if a url ENDs in . or .., then it must get a trailing slash.
+  // however, if it ends in anything else non-slashy,
+  // then it must NOT get a trailing slash.
+  var last = srcPath.slice(-1)[0];
+  var hasTrailingSlash = (
+      (result.host || relative.host || srcPath.length > 1) &&
+      (last === '.' || last === '..') || last === '');
+
+  // strip single dots, resolve double dots to parent dir
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = srcPath.length; i >= 0; i--) {
+    last = srcPath[i];
+    if (last === '.') {
+      srcPath.splice(i, 1);
+    } else if (last === '..') {
+      srcPath.splice(i, 1);
+      up++;
+    } else if (up) {
+      srcPath.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (!mustEndAbs && !removeAllDots) {
+    for (; up--; up) {
+      srcPath.unshift('..');
+    }
+  }
+
+  if (mustEndAbs && srcPath[0] !== '' &&
+      (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
+    srcPath.unshift('');
+  }
+
+  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
+    srcPath.push('');
+  }
+
+  var isAbsolute = srcPath[0] === '' ||
+      (srcPath[0] && srcPath[0].charAt(0) === '/');
+
+  // put the host back
+  if (psychotic) {
+    result.hostname = result.host = isAbsolute ? '' :
+                                    srcPath.length ? srcPath.shift() : '';
+    //occationaly the auth can get stuck only in host
+    //this especially happens in cases like
+    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+    var authInHost = result.host && result.host.indexOf('@') > 0 ?
+                     result.host.split('@') : false;
+    if (authInHost) {
+      result.auth = authInHost.shift();
+      result.host = result.hostname = authInHost.shift();
+    }
+  }
+
+  mustEndAbs = mustEndAbs || (result.host && srcPath.length);
+
+  if (mustEndAbs && !isAbsolute) {
+    srcPath.unshift('');
+  }
+
+  if (!srcPath.length) {
+    result.pathname = null;
+    result.path = null;
+  } else {
+    result.pathname = srcPath.join('/');
+  }
+
+  //to support request.http
+  if (!util.isNull(result.pathname) || !util.isNull(result.search)) {
+    result.path = (result.pathname ? result.pathname : '') +
+                  (result.search ? result.search : '');
+  }
+  result.auth = relative.auth || result.auth;
+  result.slashes = result.slashes || relative.slashes;
+  result.href = result.format();
+  return result;
+};
+
+Url.prototype.parseHost = function() {
+  var host = this.host;
+  var port = portPattern.exec(host);
+  if (port) {
+    port = port[0];
+    if (port !== ':') {
+      this.port = port.substr(1);
+    }
+    host = host.substr(0, host.length - port.length);
+  }
+  if (host) this.hostname = host;
+};
+
+},{"./util":233,"punycode":228,"querystring":231}],233:[function(require,module,exports){
+'use strict';
+
+module.exports = {
+  isString: function(arg) {
+    return typeof(arg) === 'string';
+  },
+  isObject: function(arg) {
+    return typeof(arg) === 'object' && arg !== null;
+  },
+  isNull: function(arg) {
+    return arg === null;
+  },
+  isNullOrUndefined: function(arg) {
+    return arg == null;
+  }
+};
+
+},{}]},{},[1]);

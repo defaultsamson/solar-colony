@@ -22,7 +22,6 @@ function updateKeyboard() {
         viewport.snap(0, 0, {
             time: 1000,
             removeOnComplete: true,
-            center: true,
             ease: 'easeOutQuart'
         })
     }
@@ -137,6 +136,10 @@ viewport.on('click', function (e) {
             return
         }
 
+        /*viewport.follow(planet, {
+            speed: 2
+        })*/
+
         this.snappingToPlanet = planet
 
         // The calculated future positions of the planet
@@ -146,7 +149,6 @@ viewport.on('click', function (e) {
         viewport.snap(pos.x, pos.y, {
             time: animTime,
             removeOnComplete: true,
-            center: true,
             ease: 'easeOutQuart'
         })
 
@@ -178,7 +180,7 @@ viewport.on('snap-end', function () {
         this.snappingToPlanet = false
     }
 })
-const animTime = 400
+const animTime = 600
 
 function centerView() {
     stopSnap()
@@ -186,7 +188,6 @@ function centerView() {
     viewport.snap(0, 0, {
         time: animTime,
         removeOnComplete: true,
-        center: true,
         ease: 'easeOutQuart'
     })
     viewport.snapZoom({
