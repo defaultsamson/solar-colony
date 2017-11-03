@@ -11,5 +11,5 @@ const Colour = {
     dark7: 0x6C6D70,
     dark8: 0x7E8084,
     dark9: 0xA9AAAC,
-    dark10: 0xFFFFFF,
+    dark10: 0xFFFFFF
 }
