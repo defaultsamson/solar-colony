@@ -65,9 +65,11 @@ const hudMargin = 20
 const textSize = 30
 
 var planets
-var pixelText
 var sun
+
 var hud
+var pixelText
+var shipsText
 
 function onLoad(loader, resources) {
 
@@ -91,28 +93,42 @@ function onLoad(loader, resources) {
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
 
+    viewport.fitHeight(centerHeight)
     viewport.moveCenter(0, 0)
 
     hud = new PIXI.Container()
     game.stage.addChild(hud)
 
     var style = {
-        fontFamily: 'Arial',
+        fontFamily: 'Verdana',
         fontSize: textSize,
-        fontStyle: 'bold',
         fill: Colour.dark10
     };
 
-    pixelText = new PIXI.Text('Pixels', style)
+    pixelText = new PIXI.Text('Pixels: 0', style)
     hud.addChild(pixelText)
+    
+    shipsText = new PIXI.Text('Ships: 0', style)
+    hud.addChild(shipsText)
+
+    buyShipText = new PIXI.Text('Ship (10 pixels)', style)
+    hud.addChild(buyShipText)
 
     resize()
+
+    // Setup for testing the game
+    myPlanet = planet1
+    planet1.tint = 0xFFCCCC
+    planet2.tint = 0xCCFFCC
+    planet3.tint = 0xCCCCFF
+    planet4.tint = 0xFAFACC
 }
 
 /*********************** INPUT ***********************/
 
 const animTime = 300
-const zoomHeight = 150
+const zoomHeight = 250
+const centerHeight = 800
 var snappingToPlanet = false
 var snappingToCenter = false
 
@@ -125,6 +141,7 @@ function stopSnap() {
 
 function stopFollow() {
     viewport.removePlugin('follow')
+    focusPlanet = null
 }
 
 function centerView() {
@@ -140,7 +157,7 @@ function centerView() {
 
         if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
             viewport.snapZoom({
-                height: h,
+                height: centerHeight,
                 time: animTime,
                 removeOnComplete: true,
                 center: true,
@@ -177,6 +194,10 @@ function updateKeyboard() {
         })
     }
 
+    if (PIXI.keyboardManager.isPressed(Key.P)) {
+        pixels++
+    }
+
     // This is a test
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
         viewport.removePlugin('snap')
@@ -197,6 +218,15 @@ viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
 viewport.on('click', function (e) {
     stopSnap()
+
+    if (buyShipText.visible && buyShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+        if (pixels >= 10) {
+            pixels -= 10
+            ships++
+        }
+        
+        return
+    }
 
     var planet = getPlanet(e.world.x, e.world.y)
     if (planet) {
@@ -230,7 +260,7 @@ viewport.on('click', function (e) {
         }
 
     } else {
-        // If no planet was clicked on, remove the follow plugin
+        // If nothing was clicked on, remove the follow plugin
         stopFollow()
 
         const sunRadiusSqr = 100 * 100
@@ -244,6 +274,7 @@ viewport.on('click', function (e) {
 viewport.on('snap-end', function () {
     if (snappingToPlanet) {
         viewport.follow(snappingToPlanet)
+        focusPlanet = snappingToPlanet
         snappingToPlanet = false
     }
     snappingToCenter = false
@@ -372,12 +403,21 @@ function updateHud() {
 }
 
 function resizeHud(width, height) {
-    pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
+    pixelText.position.set(hudMargin, hudMargin)
+    buyShipText.position.set(width / 2 - buyShipText.width - 100, (height - buyShipText.height) / 2)
+    shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
+    // pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
 }
 
 /*********************** GAME ***********************/
 
+var lastPixels = 1
+var pixels = 0
+var lastShips = 1
+var ships = 0
 var planets
+var myPlanet
+var focusPlanet
 
 function gameLoop() {
 
@@ -403,6 +443,22 @@ function gameLoop() {
     }
 
     viewport.update()
+
+    if (pixels != lastPixels) {
+        lastPixels = pixels
+        pixelText.text = 'Pixels: ' + pixels
+    }
+    if (ships != lastShips) {
+        lastShips = ships
+        shipsText.text = 'Ships: ' + ships
+    }
+
+    if (focusPlanet && focusPlanet == myPlanet) {
+        buyShipText.visible = true
+    } else {
+        buyShipText.visible = false
+    }
+
 
     updateHud()
 }
