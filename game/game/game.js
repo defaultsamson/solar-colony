@@ -61,66 +61,66 @@ PIXI.loader
 
 /*********************** INITIALIZATION ***********************/
 
+const hudMargin = 20
+const textSize = 30
+
 var planets
+var pixelText
+var sun
+var hud
 
 function onLoad(loader, resources) {
+
+    const stage = game.stage
 
     const orbit1 = game.stage.addChild(createOrbit(0, 0, 150, 25))
     const orbit2 = game.stage.addChild(createOrbit(0, 0, 220, 25))
     const orbit3 = game.stage.addChild(createOrbit(0, 0, 270, 25))
     const orbit4 = game.stage.addChild(createOrbit(0, 0, 350, 25))
 
-    const sun = new PIXI.particles.Emitter(game.stage, resources.sunTexture.texture, sunParticle)
+    sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    const planet1 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
-    const planet2 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
-    const planet3 = game.stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
-    const planet4 = game.stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
+    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
+    const planet2 = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
+    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
+    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
 
     planets = [planet1, planet2, planet3, planet4]
 
-    this.lastElapsed = Date.now()
-    game.ticker.add(function () {
-
-        updateKeyboard();
-
-        let now = Date.now()
-        let elasped = now - lastElapsed
-        lastElapsed = now
-        let eTime = (elasped * 0.001)
-
-        // Update the particle emitter
-        sun.update(eTime)
-
-        for (i in planets) {
-            // Age the planet
-            planets[i].age += eTime;
-            var pos = calcPlanetPosition(planets[i])
-            planets[i].position.set(pos.x, pos.y)
-            // Rotate the planet (purely for visual effects)
-            planets[i].rotation = planets[i].age * planets[i].rotationConstant
-            // Rotate the orbits (purely for visual effects)
-            planets[i].orbit.rotation = planets[i].age / planets[i].speed / 4
-        }
-
-        viewport.update()
-    })
+    lastElapsed = Date.now()
+    game.ticker.add(gameLoop)
 
     viewport.moveCenter(0, 0)
+
+    hud = new PIXI.Container()
+    game.stage.addChild(hud)
+
+    var style = {
+        fontFamily: 'Arial',
+        fontSize: textSize,
+        fontStyle: 'bold',
+        fill: Colour.dark10
+    };
+
+    pixelText = new PIXI.Text('Pixels', style)
+    hud.addChild(pixelText)
 
     resize()
 }
 
 /*********************** INPUT ***********************/
 
-const animTime = 600
+const animTime = 300
+const zoomHeight = 150
 var snappingToPlanet = false
+var snappingToCenter = false
 
 function stopSnap() {
+    snappingToPlanet = false
+    snappingToCenter = false
     viewport.removePlugin('snap')
     viewport.removePlugin('snap-zoom')
-    this.snappingToPlanet = false
 }
 
 function stopFollow() {
@@ -128,20 +128,26 @@ function stopFollow() {
 }
 
 function centerView() {
-    stopSnap()
-    stopFollow()
-    viewport.snap(0, 0, {
-        time: animTime,
-        removeOnComplete: true,
-        ease: 'easeOutQuart'
-    })
-    viewport.snapZoom({
-        height: h,
-        time: animTime,
-        removeOnComplete: true,
-        center: true,
-        ease: 'easeOutQuart'
-    })
+    if (!snappingToCenter) {
+        stopSnap()
+        snappingToCenter = true
+        stopFollow()
+        viewport.snap(0, 0, {
+            time: animTime,
+            removeOnComplete: true,
+            ease: 'easeInOutSine'
+        })
+
+        if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
+            viewport.snapZoom({
+                height: h,
+                time: animTime,
+                removeOnComplete: true,
+                center: true,
+                ease: 'easeOutQuart'
+            })
+        }
+    }
 }
 
 function updateKeyboard() {
@@ -177,8 +183,6 @@ function updateKeyboard() {
     }
 
     if (PIXI.keyboardManager.isPressed(Key.ESCAPE)) {
-        stopSnap()
-        stopFollow()
         centerView()
     }
 
@@ -203,7 +207,7 @@ viewport.on('click', function (e) {
             return
         }
 
-        this.snappingToPlanet = planet
+        snappingToPlanet = planet
 
         // The calculated future positions of the planet
         var pos = calcPlanetPosition(planet, (animTime / 1000))
@@ -218,7 +222,7 @@ viewport.on('click', function (e) {
         // Do the zoom if not holding shift
         if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
             viewport.snapZoom({
-                height: 150,
+                height: zoomHeight,
                 time: animTime,
                 removeOnComplete: true,
                 ease: 'easeInOutSine'
@@ -238,10 +242,11 @@ viewport.on('click', function (e) {
 })
 // Upon ending of the snap, if it was just snapping to a planet, begin to follow it
 viewport.on('snap-end', function () {
-    if (this.snappingToPlanet) {
-        viewport.follow(this.snappingToPlanet)
-        this.snappingToPlanet = false
+    if (snappingToPlanet) {
+        viewport.follow(snappingToPlanet)
+        snappingToPlanet = false
     }
+    snappingToCenter = false
 })
 
 /*********************** CREATE ***********************/
@@ -358,8 +363,46 @@ function resize() {
     }
 
     stopSnap()
+    resizeHud(width, height)
+}
+
+function updateHud() {
+    hud.position.copy(viewport.toWorld(0, 0))
+    hud.scale.set(1 / game.stage.scale.x)
+}
+
+function resizeHud(width, height) {
+    pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
 }
 
 /*********************** GAME ***********************/
 
 var planets
+
+function gameLoop() {
+
+    updateKeyboard()
+
+    let now = Date.now()
+    let elasped = now - lastElapsed
+    lastElapsed = now
+    let eTime = (elasped * 0.001)
+
+    // Update the particle emitter
+    sun.update(eTime)
+
+    for (i in planets) {
+        // Age the planet
+        planets[i].age += eTime;
+        var pos = calcPlanetPosition(planets[i])
+        planets[i].position.set(pos.x, pos.y)
+        // Rotate the planet (purely for visual effects)
+        planets[i].rotation = planets[i].age * planets[i].rotationConstant
+        // Rotate the orbits (purely for visual effects)
+        planets[i].orbit.rotation = planets[i].age / planets[i].speed / 4
+    }
+
+    viewport.update()
+
+    updateHud()
+}
