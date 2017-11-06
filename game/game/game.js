@@ -1,5 +1,7 @@
 /*********************** SETUP ***********************/
 
+const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
+
 const maxHeight = 1000
 const minHeight = 100
 
@@ -22,6 +24,7 @@ game.view.style.display = 'block'
 document.body.appendChild(game.view)
 game.renderer.autoResize = true
 game.renderer.backgroundColor = Colour.background
+document.addEventListener('contextmenu', event => event.preventDefault());
 
 // Viewport options. Not very important because it can vary (see resize() )
 // These are mostly just used for initialization so that no errors occur
@@ -57,6 +60,7 @@ PIXI.loader
     .add('sunTexture', 'game/assets/sun.png')
     .add('planet1', 'game/assets/planet1.png')
     .add('planet2', 'game/assets/planet2.png')
+    .add('ship', 'game/assets/ship.png')
     .load(onLoad)
 
 /*********************** INITIALIZATION ***********************/
@@ -68,8 +72,8 @@ var planets
 var sun
 
 var hud
-var pixelText
-var shipsText
+
+var shipTexture
 
 function onLoad(loader, resources) {
 
@@ -97,7 +101,7 @@ function onLoad(loader, resources) {
     viewport.moveCenter(0, 0)
 
     hud = new PIXI.Container()
-    game.stage.addChild(hud)
+    stage.addChild(hud)
 
     var style = {
         fontFamily: 'Verdana',
@@ -107,12 +111,18 @@ function onLoad(loader, resources) {
 
     pixelText = new PIXI.Text('Pixels: 0', style)
     hud.addChild(pixelText)
-    
+
     shipsText = new PIXI.Text('Ships: 0', style)
     hud.addChild(shipsText)
 
-    buyShipText = new PIXI.Text('Ship (10 pixels)', style)
-    hud.addChild(buyShipText)
+    buy1ShipText = new PIXI.Text('1 Ship (10 pixels)', style)
+    hud.addChild(buy1ShipText)
+    buy10ShipText = new PIXI.Text('10 Ship (90 pixels)', style)
+    hud.addChild(buy10ShipText)
+    buy100ShipText = new PIXI.Text('100 Ship (800 pixels)', style)
+    hud.addChild(buy100ShipText)
+
+    shipTexture = resources.ship.texture
 
     resize()
 
@@ -155,15 +165,13 @@ function centerView() {
             ease: 'easeInOutSine'
         })
 
-        if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-            viewport.snapZoom({
-                height: centerHeight,
-                time: animTime,
-                removeOnComplete: true,
-                center: true,
-                ease: 'easeOutQuart'
-            })
-        }
+        viewport.snapZoom({
+            height: centerHeight,
+            time: animTime,
+            removeOnComplete: true,
+            center: true,
+            ease: 'easeOutQuart'
+        })
     }
 }
 
@@ -195,7 +203,10 @@ function updateKeyboard() {
     }
 
     if (PIXI.keyboardManager.isPressed(Key.P)) {
-        pixels++
+        pixels += 5000
+    }
+    if (PIXI.keyboardManager.isPressed(Key.O)) {
+        removeShips(myPlanet, 1)
     }
 
     // This is a test
@@ -219,12 +230,18 @@ viewport.on('wheel', stopSnap)
 viewport.on('click', function (e) {
     stopSnap()
 
-    if (buyShipText.visible && buyShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
-        if (pixels >= 10) {
-            pixels -= 10
-            ships++
-        }
-        
+    if (buy1ShipText.visible && buy1ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+        createShips(myPlanet, 1, 10)
+        return
+    }
+
+    if (buy10ShipText.visible && buy10ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+        createShips(myPlanet, 10, 90)
+        return
+    }
+
+    if (buy100ShipText.visible && buy100ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+        createShips(myPlanet, 100, 800)
         return
     }
 
@@ -234,6 +251,23 @@ viewport.on('click', function (e) {
         // If the viewport is already following the planet that was clicked on, then don't do anything
         var follow = viewport.plugins['follow']
         if (follow && (follow.target == planet)) {
+            // Do the zoom if holding shift
+            if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
+                viewport.snapZoom({
+                    height: centerHeight,
+                    time: animTime,
+                    removeOnComplete: true,
+                    ease: 'easeInOutSine'
+                })
+            } else {
+                viewport.snapZoom({
+                    height: zoomHeight,
+                    time: animTime,
+                    removeOnComplete: true,
+                    ease: 'easeInOutSine'
+                })
+            }
+
             return
         }
 
@@ -262,6 +296,11 @@ viewport.on('click', function (e) {
     } else {
         // If nothing was clicked on, remove the follow plugin
         stopFollow()
+
+        if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
+            centerView()
+            return
+        }
 
         const sunRadiusSqr = 100 * 100
 
@@ -332,7 +371,51 @@ function createPlanet(texture, orbit, scale, mass, rotationConstant) {
     planet.mass = mass
     planet.speed = Math.sqrt((G * planet.mass) / (planet.radius / ppm)) * ppm
     planet.rotationConstant = rotationConstant
+    planet.ships = []
     return planet
+}
+
+function createShips(planet, n, cost) {
+    if (pixels >= cost) {
+        pixels -= cost
+        for (var i = 0; i < n; i++) {
+            ships++
+
+            var ship = new PIXI.Sprite(shipTexture)
+
+            // The position on the planet's surface to place the ship (the angle)
+            // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+            let angle = Math.PI * 2 * Math.random()
+
+            let distFromPlanet = 60
+
+            // hypotenuse, opposite, adjacent
+            let h = planet.radius / planet.scale.x + distFromPlanet
+            let o = h * Math.sin(angle)
+            let a = h * Math.cos(angle)
+            let x = a + planet.radius / planet.scale.x
+            let y = o + planet.radius / planet.scale.x
+
+            ship.tint = planet.tint
+            ship.pivot.set(0.5, 0.5)
+            ship.position.set(x, y)
+            ship.rotation = angle + (Math.PI / 2)
+            planet.addChild(ship)
+            planet.ships.push(ship)
+        }
+    }
+}
+
+function removeShips(planet, n) {
+    // Removes the ships from the world
+    for (var i = 0; i < n && i < planet.ships.length; i++) {
+        planet.removeChild(planet.ships[i])
+    }
+
+    // Removes the ships from the array
+    planet.ships.splice(0, n)
+
+    ships = Math.max(0, ships - n)
 }
 
 /*********************** UTIL ***********************/
@@ -404,8 +487,10 @@ function updateHud() {
 
 function resizeHud(width, height) {
     pixelText.position.set(hudMargin, hudMargin)
-    buyShipText.position.set(width / 2 - buyShipText.width - 100, (height - buyShipText.height) / 2)
     shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
+    buy1ShipText.position.set(width / 2 - buy1ShipText.width - 100, (height - buy1ShipText.height) / 2 + buy10ShipText.height + 2)
+    buy10ShipText.position.set(width / 2 - buy10ShipText.width - 100, (height - buy10ShipText.height) / 2)
+    buy100ShipText.position.set(width / 2 - buy100ShipText.width - 100, (height - buy100ShipText.height) / 2 - buy10ShipText.height - 2)
     // pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
 }
 
@@ -454,9 +539,13 @@ function gameLoop() {
     }
 
     if (focusPlanet && focusPlanet == myPlanet) {
-        buyShipText.visible = true
+        buy1ShipText.visible = true
+        buy10ShipText.visible = true
+        buy100ShipText.visible = true
     } else {
-        buyShipText.visible = false
+        buy1ShipText.visible = false
+        buy10ShipText.visible = false
+        buy100ShipText.visible = false
     }
 
 
