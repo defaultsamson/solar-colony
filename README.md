@@ -13,11 +13,11 @@ npm i -g browserify
 npm i pixi.js pixi-viewport pixi-keyboard pixi-particles
 ```
 
-### 3. Build
+### (Optional) 3. Build Libraries
 ```
-build.bat
+build_libraries.bat
 -- or --
-build.sh
+build_libraries.sh
 ```
 
-The build process builds `./work-game.js` to `./game/game.js` using Browserify
+The build process builds `./libraries.js` to `./game/lib/libraries.js` using Browserify

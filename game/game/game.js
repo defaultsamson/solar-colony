@@ -82,17 +82,19 @@ function onLoad(loader, resources) {
     const orbit1 = game.stage.addChild(createOrbit(0, 0, 150, 25))
     const orbit2 = game.stage.addChild(createOrbit(0, 0, 220, 25))
     const orbit3 = game.stage.addChild(createOrbit(0, 0, 270, 25))
-    const orbit4 = game.stage.addChild(createOrbit(0, 0, 350, 25))
+    const orbit4 = game.stage.addChild(createOrbit(0, 0, 360, 25))
 
     sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4))
-    const planet2 = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6))
-    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3))
-    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 7568300000000000000000000, -1.2))
+    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4, Math.PI / 2))
+    const planet2a = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6, 0))
+    const planet2b = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6, Math.PI))
+    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3, Math.PI / 4))
+    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 2639000000000000000000000, -1.2, 3 * Math.PI / 4))
+    //7568300000000000000000000
 
-    planets = [planet1, planet2, planet3, planet4]
+    planets = [planet1, planet2a, planet2b, planet3, planet4]
 
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
@@ -127,11 +129,12 @@ function onLoad(loader, resources) {
     resize()
 
     // Setup for testing the game
-    myPlanet = planet1
-    planet1.tint = 0xFFCCCC
-    planet2.tint = 0xCCFFCC
-    planet3.tint = 0xCCCCFF
-    planet4.tint = 0xFAFACC
+    myPlanet = planet2a
+    //planet1.tint = 0xFFCCCC
+    planet2a.tint = 0xFFAAAA
+    planet2b.tint = 0xAAAAFF
+    //planet3.tint = 0xCCCCFF
+    //planet4.tint = 0xFAFACC
 }
 
 /*********************** INPUT ***********************/
@@ -206,7 +209,7 @@ function updateKeyboard() {
         pixels += 5000
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
-        removeShips(myPlanet, 1)
+        removeShips(myPlanet, 10)
     }
 
     // This is a test
@@ -324,6 +327,9 @@ viewport.on('snap-end', function () {
 const minDashes = 2
 const dashThickness = 1.4
 
+// The max number of ships to display in storage per planet
+const maxShips = 100
+
 function createOrbit(x, y, radius, dashLength) {
 
     var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
@@ -356,22 +362,25 @@ function createOrbit(x, y, radius, dashLength) {
 }
 
 const G = 6.67 * 0.00000000001 // Gravitational constant
-const ppm = 0.0004 // pixels per meter
+const ppm = 0.001 // pixels per meter
 const starMass = 2188000000000000000000000000000 // kg
 
-function createPlanet(texture, orbit, scale, mass, rotationConstant) {
+function createPlanet(texture, orbit, scale, mass, rotationConstant, startAngle) {
     var planet = new PIXI.Sprite(texture)
     planet.radius = 0.5 * planet.width
     planet.orbit = orbit
     planet.pivot.set(planet.radius, planet.radius)
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
-    planet.age = 0
     planet.position.set(orbit.radius, 0)
     planet.mass = mass
-    planet.speed = Math.sqrt((G * planet.mass) / (planet.radius / ppm)) * ppm
+    planet.speed = Math.sqrt((G * planet.mass) / (orbit.radius / ppm)) * ppm
     planet.rotationConstant = rotationConstant
     planet.ships = []
+    planet.age = (startAngle * orbit.radius) / planet.speed
+
+    // let x = Math.cos((planet.age * planet.speed) / orbit.radius) * orbit.radius
+
     return planet
 }
 
@@ -381,39 +390,46 @@ function createShips(planet, n, cost) {
         for (var i = 0; i < n; i++) {
             ships++
 
-            var ship = new PIXI.Sprite(shipTexture)
+            if (ships < maxShips) {
+                var ship = new PIXI.Sprite(shipTexture)
 
-            // The position on the planet's surface to place the ship (the angle)
-            // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
-            let angle = Math.PI * 2 * Math.random()
+                // The position on the planet's surface to place the ship (the angle)
+                // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+                let angle = Math.PI * 2 * Math.random()
 
-            let distFromPlanet = 60
+                let distFromPlanet = 60
 
-            // hypotenuse, opposite, adjacent
-            let h = planet.radius / planet.scale.x + distFromPlanet
-            let o = h * Math.sin(angle)
-            let a = h * Math.cos(angle)
-            let x = a + planet.radius / planet.scale.x
-            let y = o + planet.radius / planet.scale.x
+                // hypotenuse, opposite, adjacent
+                let h = planet.radius / planet.scale.x + distFromPlanet
+                let o = h * Math.sin(angle)
+                let a = h * Math.cos(angle)
+                let x = a + planet.radius / planet.scale.x
+                let y = o + planet.radius / planet.scale.x
 
-            ship.tint = planet.tint
-            ship.pivot.set(0.5, 0.5)
-            ship.position.set(x, y)
-            ship.rotation = angle + (Math.PI / 2)
-            planet.addChild(ship)
-            planet.ships.push(ship)
+                ship.tint = planet.tint
+                ship.pivot.set(0.5, 0.5)
+                ship.position.set(x, y)
+                ship.rotation = angle + (Math.PI / 2)
+                planet.addChild(ship)
+                planet.ships.push(ship)
+            }
         }
     }
 }
 
 function removeShips(planet, n) {
-    // Removes the ships from the world
-    for (var i = 0; i < n && i < planet.ships.length; i++) {
-        planet.removeChild(planet.ships[i])
-    }
 
-    // Removes the ships from the array
-    planet.ships.splice(0, n)
+    var visualsToRemove = Math.max(0, maxShips - ships + n)
+
+    if (visualsToRemove > 0) {
+        // Removes the ships from the world
+        for (var i = 0; i < visualsToRemove && i < planet.ships.length; i++) {
+            planet.removeChild(planet.ships[i])
+        }
+
+        // Removes the ships from the array
+        planet.ships.splice(0, visualsToRemove)
+    }
 
     ships = Math.max(0, ships - n)
 }
