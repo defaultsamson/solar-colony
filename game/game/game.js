@@ -233,17 +233,19 @@ viewport.on('wheel', stopSnap)
 viewport.on('click', function (e) {
     stopSnap()
 
-    if (buy1ShipText.visible && buy1ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+    var point = new PIXI.Point(e.screen.x, e.screen.y)
+    
+    if (buy1ShipText.visible && buy1ShipText.containsPoint(point)) {
         createShips(myPlanet, 1, 10)
         return
     }
-
-    if (buy10ShipText.visible && buy10ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+    
+    if (buy10ShipText.visible && buy10ShipText.containsPoint(point)) {
         createShips(myPlanet, 10, 90)
         return
     }
 
-    if (buy100ShipText.visible && buy100ShipText.containsPoint(new PIXI.Point(e.screen.x, e.screen.y))) {
+    if (buy100ShipText.visible && buy100ShipText.containsPoint(point)) {
         createShips(myPlanet, 100, 800)
         return
     }
@@ -388,8 +390,6 @@ function createShips(planet, n, cost) {
     if (pixels >= cost) {
         pixels -= cost
         for (var i = 0; i < n; i++) {
-            ships++
-
             if (ships < maxShips) {
                 var ship = new PIXI.Sprite(shipTexture)
 
@@ -413,13 +413,14 @@ function createShips(planet, n, cost) {
                 planet.addChild(ship)
                 planet.ships.push(ship)
             }
+            ships++
         }
     }
 }
 
 function removeShips(planet, n) {
 
-    var visualsToRemove = Math.max(0, maxShips - ships + n)
+    var visualsToRemove = Math.min(n, Math.max(0, maxShips - ships + n))
 
     if (visualsToRemove > 0) {
         // Removes the ships from the world
