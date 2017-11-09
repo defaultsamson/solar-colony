@@ -1,4 +1,11 @@
-/*********************** SETUP ***********************/
+//   _____      _               
+//  / ____|    | |              
+// | (___   ___| |_ _   _ _ __  
+//  \___ \ / _ \ __| | | | '_ \ 
+//  ____) |  __/ |_| |_| | |_) |
+// |_____/ \___|\__|\__,_| .__/ 
+//                       | |    
+//                       |_|   
 
 const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
 
@@ -63,7 +70,12 @@ PIXI.loader
     .add('ship', 'game/assets/ship.png')
     .load(onLoad)
 
-/*********************** INITIALIZATION ***********************/
+//  _____       _ _   
+// |_   _|     (_) |  
+//   | |  _ __  _| |_ 
+//   | | | '_ \| | __|
+//  _| |_| | | | | |_ 
+// |_____|_| |_|_|\__|
 
 const hudMargin = 20
 const textSize = 30
@@ -137,7 +149,14 @@ function onLoad(loader, resources) {
     //planet4.tint = 0xFAFACC
 }
 
-/*********************** INPUT ***********************/
+//  _____                   _   
+// |_   _|                 | |  
+//   | |  _ __  _ __  _   _| |_ 
+//   | | | '_ \| '_ \| | | | __|
+//  _| |_| | | | |_) | |_| | |_ 
+// |_____|_| |_| .__/ \__,_|\__|
+//             | |              
+//             |_|              
 
 const animTime = 300
 const zoomHeight = 250
@@ -234,12 +253,12 @@ viewport.on('click', function (e) {
     stopSnap()
 
     var point = new PIXI.Point(e.screen.x, e.screen.y)
-    
+
     if (buy1ShipText.visible && buy1ShipText.containsPoint(point)) {
         createShips(myPlanet, 1, 10)
         return
     }
-    
+
     if (buy10ShipText.visible && buy10ShipText.containsPoint(point)) {
         createShips(myPlanet, 10, 90)
         return
@@ -324,7 +343,12 @@ viewport.on('snap-end', function () {
     snappingToCenter = false
 })
 
-/*********************** CREATE ***********************/
+//   _____                _       
+//  / ____|              | |      
+// | |     _ __ ___  __ _| |_ ___ 
+// | |    | '__/ _ \/ _` | __/ _ \
+// | |____| | |  __/ (_| | ||  __/
+//  \_____|_|  \___|\__,_|\__\___|
 
 const minDashes = 2
 const dashThickness = 1.4
@@ -386,6 +410,11 @@ function createPlanet(texture, orbit, scale, mass, rotationConstant, startAngle)
     return planet
 }
 
+var coolJSArray = [ohGod, "help me", 'what', 15, {
+    help: me,
+    please: god
+}]
+
 function createShips(planet, n, cost) {
     if (pixels >= cost) {
         pixels -= cost
@@ -435,7 +464,12 @@ function removeShips(planet, n) {
     ships = Math.max(0, ships - n)
 }
 
-/*********************** UTIL ***********************/
+//  _    _ _   _ _ 
+// | |  | | | (_) |
+// | |  | | |_ _| |
+// | |  | | __| | |
+// | |__| | |_| | |
+//  \____/ \__|_|_|
 
 // The extra pixels to add to the radius of a planet to determine whether to select it when clicked
 const clickThreshold = 40
@@ -511,7 +545,12 @@ function resizeHud(width, height) {
     // pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
 }
 
-/*********************** GAME ***********************/
+//   _____                      
+//  / ____|                     
+// | |  __  __ _ _ __ ___   ___ 
+// | | |_ |/ _` | '_ ` _ \ / _ \
+// | |__| | (_| | | | | | |  __/
+//  \_____|\__,_|_| |_| |_|\___|
 
 var lastPixels = 1
 var pixels = 0
