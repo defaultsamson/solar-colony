@@ -99,12 +99,11 @@ function onLoad(loader, resources) {
     sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, 4867000000000000000000000, -1 / 4, Math.PI / 2))
-    const planet2a = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6, 0))
-    const planet2b = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, 5972000000000000000000000, -1 / 6, Math.PI))
-    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 3639000000000000000000000, 1 / 3, Math.PI / 4))
-    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, 2639000000000000000000000, -1.2, 3 * Math.PI / 4))
-    //7568300000000000000000000
+    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2))
+    const planet2a = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1))
+    const planet2b = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1))
+    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
+    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 
     planets = [planet1, planet2a, planet2b, planet3, planet4]
 
@@ -387,33 +386,21 @@ function createOrbit(x, y, radius, dashLength) {
     return pixiCircle
 }
 
-const G = 6.67 * 0.00000000001 // Gravitational constant
-const ppm = 0.001 // pixels per meter
-const starMass = 2188000000000000000000000000000 // kg
-
-function createPlanet(texture, orbit, scale, mass, rotationConstant, startAngle) {
+function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) {
     var planet = new PIXI.Sprite(texture)
     planet.radius = 0.5 * planet.width
     planet.orbit = orbit
     planet.pivot.set(planet.radius, planet.radius)
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
-    planet.position.set(orbit.radius, 0)
-    planet.mass = mass
-    planet.speed = Math.sqrt((G * planet.mass) / (orbit.radius / ppm)) * ppm
+    planet.opm = opm
+    // The rotation speed in radians/second
+    planet.speed = opm * (1 / 60) * 2 * Math.PI
     planet.rotationConstant = rotationConstant
     planet.ships = []
-    planet.age = (startAngle * orbit.radius) / planet.speed
-
-    // let x = Math.cos((planet.age * planet.speed) / orbit.radius) * orbit.radius
-
+    planet.age = startAngle / planet.speed
     return planet
 }
-
-var coolJSArray = [ohGod, "help me", 'what', 15, {
-    help: me,
-    please: god
-}]
 
 function createShips(planet, n, cost) {
     if (pixels >= cost) {
@@ -495,8 +482,8 @@ function calcPlanetPosition(planet, additionalAge) {
 
     let radius = planet.orbit.radius
     let age = planet.age + additionalAge
-    let x = Math.cos((age * planet.speed) / radius) * radius
-    let y = Math.sin((age * planet.speed) / radius) * radius
+    let x = Math.cos(age * planet.speed) * radius
+    let y = Math.sin(age * planet.speed) * radius
     return {
         x: x,
         y: y
@@ -580,7 +567,7 @@ function gameLoop() {
         // Rotate the planet (purely for visual effects)
         planets[i].rotation = planets[i].age * planets[i].rotationConstant
         // Rotate the orbits (purely for visual effects)
-        planets[i].orbit.rotation = planets[i].age / planets[i].speed / 4
+        planets[i].orbit.rotation = -planets[i].age * planets[i].speed / 8
     }
 
     viewport.update()
