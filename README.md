@@ -1,7 +1,9 @@
 # space-territory
 Another space game (very different from the first)
 
-## To Build game.js
+## To Build ./game/lib/libraries.js
+
+This process builds `./libraries.js` to `./game/lib/libraries.js` using the tool Browserify
 
 ### 1. Setup Browserify
 ```
@@ -13,11 +15,9 @@ npm i -g browserify
 npm i pixi.js pixi-viewport pixi-keyboard pixi-particles
 ```
 
-### (Optional) 3. Build Libraries
+### 3. Build Libraries
 ```
 build_libraries.bat
 -- or --
 build_libraries.sh
 ```
-
-The build process builds `./libraries.js` to `./game/lib/libraries.js` using Browserify

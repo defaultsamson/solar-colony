@@ -7,6 +7,56 @@
 //                       | |    
 //                       |_|   
 
+/*class Line extends PIXI.Graphics {
+    constructor(points, lineSize, lineColor) {
+        super()
+
+        this.lineWidth = lineSize || 5
+        this.lineColor = lineColor || "0x000000"
+
+        //this.updatePoints(points)
+
+        this.lineStyle(this.lineWidth, this.lineColor)
+        this.moveTo(points[0], points[1])
+        this.lineTo(points[2], points[3])
+
+        this.delay = false
+    }
+
+    updatePoints(points) {
+
+        //this.position.set(points[0], points[1])
+        //this.scale.set()
+
+        
+        if (this.delay) {
+            this.clear()
+        }
+        this.delay = !this.delay
+
+        this.lineStyle(this.lineWidth, this.lineColor)
+        this.moveTo(points[0], points[1])
+        this.lineTo(points[2], points[3])
+    }
+}*/
+
+class Line extends PIXI.Graphics {
+    constructor(lineSize, lineColor) {
+        super()
+        
+        this.l_width = lineSize || 5
+        this.l_colour = lineColor || "0x000000"
+    }
+    
+    setPoints(points) {
+        this.clear()
+        this.lineStyle(this.l_width, this.l_colour)
+        
+        this.moveTo(points[0], points[1])
+        this.lineTo(points[2], points[3])
+    }
+}
+
 const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
 
 const maxHeight = 1000
@@ -135,9 +185,16 @@ function onLoad(loader, resources) {
     buy100ShipText = new PIXI.Text('100 Ship (800 pixels)', style)
     hud.addChild(buy100ShipText)
 
+    sendShipText = new PIXI.Text('Send Ships (100 ships)', style)
+    hud.addChild(sendShipText)
+
     shipTexture = resources.ship.texture
 
     resize()
+
+    for (i in planets) {
+        planets[i].tint = 0xFFFFFF
+    }
 
     // Setup for testing the game
     myPlanet = planet2a
@@ -232,7 +289,11 @@ function updateKeyboard() {
 
     // This is a test
     if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
-        viewport.removePlugin('snap')
+        //viewport.removePlugin('snap')
+
+        for (i in planets) {
+            drawLines[i].clear()
+        }
     }
 
     if (PIXI.keyboardManager.isPressed(Key.ESCAPE)) {
@@ -265,6 +326,11 @@ viewport.on('click', function (e) {
 
     if (buy100ShipText.visible && buy100ShipText.containsPoint(point)) {
         createShips(myPlanet, 100, 800)
+        return
+    }
+
+    if (sendShipText.visible && sendShipText.containsPoint(point)) {
+        goToSendShipsScreen(myPlanet)
         return
     }
 
@@ -526,10 +592,38 @@ function updateHud() {
 function resizeHud(width, height) {
     pixelText.position.set(hudMargin, hudMargin)
     shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
+
     buy1ShipText.position.set(width / 2 - buy1ShipText.width - 100, (height - buy1ShipText.height) / 2 + buy10ShipText.height + 2)
     buy10ShipText.position.set(width / 2 - buy10ShipText.width - 100, (height - buy10ShipText.height) / 2)
     buy100ShipText.position.set(width / 2 - buy100ShipText.width - 100, (height - buy100ShipText.height) / 2 - buy10ShipText.height - 2)
-    // pixelText.position.set(width - pixelText.width - hudMargin, hudMargin)
+
+    sendShipText.position.set(width / 2 + 100, (height - buy10ShipText.height) / 2)
+}
+
+var drawLinesFrom
+var drawLines
+
+function goToSendShipsScreen(fromPlanet) {
+    centerView()
+    drawLinesFrom = fromPlanet
+
+    if (!drawLines) {
+        drawLines = []
+
+        for (i in planets) {
+            drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
+        }
+    }
+}
+
+function cancelSendShips() {
+
+    for (i in drawLines) {
+        drawLines[i].visible = false
+    }
+
+    drawLinesFrom = null
+    drawLinesTo = null
 }
 
 //   _____                      
@@ -546,6 +640,8 @@ var ships = 0
 var planets
 var myPlanet
 var focusPlanet
+
+var mybool = false
 
 function gameLoop() {
 
@@ -585,12 +681,24 @@ function gameLoop() {
         buy1ShipText.visible = true
         buy10ShipText.visible = true
         buy100ShipText.visible = true
+        sendShipText.visible = true
     } else {
         buy1ShipText.visible = false
         buy10ShipText.visible = false
         buy100ShipText.visible = false
+        sendShipText.visible = false
     }
 
+    if (drawLinesFrom) {
+        for (i in planets) {
+            if (planets[i] != drawLinesFrom) {
+                drawLines[i].setPoints([planets[i].position.x,
+                                       planets[i].position.y,
+                                       drawLinesFrom.position.x,
+                                       drawLinesFrom.position.y])
+            }
+        }
+    }
 
     updateHud()
 }
