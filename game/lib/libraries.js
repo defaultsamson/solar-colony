@@ -1892,7 +1892,7 @@ window.PIXI['default'] = PIXI
 require('pixi-particles')
 require('pixi-keyboard')
 
-},{"pixi-keyboard":48,"pixi-particles":49,"pixi-viewport":50,"pixi.js":179}],11:[function(require,module,exports){
+},{"pixi-keyboard":48,"pixi-particles":49,"pixi-viewport":50,"pixi.js":180}],11:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -3926,7 +3926,7 @@ module.exports = class face extends wait
         }
     }
 }
-},{"./wait":30,"yy-angle":228}],23:[function(require,module,exports){
+},{"./wait":30,"yy-angle":229}],23:[function(require,module,exports){
 const Loop = require('yy-loop')
 
 const Angle = require('./angle')
@@ -4536,7 +4536,7 @@ module.exports = class tint extends wait
         }
     }
 }
-},{"./wait":30,"yy-color":229}],29:[function(require,module,exports){
+},{"./wait":30,"yy-color":230}],29:[function(require,module,exports){
 const wait = require('./wait')
 
 /** animate any numeric parameter of an object or array of objects */
@@ -6691,19 +6691,448 @@ module.exports = setPrecision;
 },{}],49:[function(require,module,exports){
 (function (global){
 /*!
- * pixi-particles - v2.1.8
- * Compiled Sun, 15 Oct 2017 16:42:39 UTC
+ * pixi-particles - v2.1.9
+ * Compiled Thu, 16 Nov 2017 01:52:39 UTC
  *
  * pixi-particles is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
-!function(t){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=t();else if("function"==typeof define&&define.amd)define([],t);else{var i;i="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this,i.pixiParticles=t()}}(function(){var define,module,exports;return function t(i,e,s){function a(n,o){if(!e[n]){if(!i[n]){var h="function"==typeof require&&require;if(!o&&h)return h(n,!0);if(r)return r(n,!0);var l=new Error("Cannot find module '"+n+"'");throw l.code="MODULE_NOT_FOUND",l}var p=e[n]={exports:{}};i[n][0].call(p.exports,function(t){var e=i[n][1][t];return a(e?e:t)},p,p.exports,t,i,e,s)}return e[n].exports}for(var r="function"==typeof require&&require,n=0;n<s.length;n++)a(s[n]);return a}({1:[function(t,i,e){"use strict";var s=t("./ParticleUtils"),a=t("./Particle"),r=PIXI.Texture,n=function(t){a.call(this,t),this.textures=null,this.duration=0,this.framerate=0,this.elapsed=0,this.loop=!1},o=a.prototype,h=n.prototype=Object.create(o);h.init=function(){this.Particle_init(),this.elapsed=0,this.framerate<0&&(this.duration=this.maxLife,this.framerate=this.textures.length/this.duration)},h.applyArt=function(t){this.textures=t.textures,this.framerate=t.framerate,this.duration=t.duration,this.loop=t.loop},h.update=function(t){if(this.Particle_update(t)>=0){this.elapsed+=t,this.elapsed>this.duration&&(this.loop?this.elapsed=this.elapsed%this.duration:this.elapsed=this.duration-1e-6);var i=this.elapsed*this.framerate+1e-7|0;this.texture=this.textures[i]||s.EMPTY_TEXTURE}},h.Particle_destroy=a.prototype.destroy,h.destroy=function(){this.Particle_destroy(),this.textures=null},n.parseArt=function(t){var i,e,s,a,n,o,h=[];for(i=0;i<t.length;++i){for(e=t[i],t[i]=h={},h.textures=o=[],a=e.textures,s=0;s<a.length;++s)if(n=a[s],"string"==typeof n)o.push(r.fromImage(n));else if(n instanceof r)o.push(n);else{var l=n.count||1;for(n="string"==typeof n.texture?r.fromImage(n.texture):n.texture;l>0;--l)o.push(n)}"matchLife"==e.framerate?(h.framerate=-1,h.duration=0,h.loop=!1):(h.loop=!!e.loop,h.framerate=e.framerate>0?e.framerate:60,h.duration=o.length/h.framerate)}return t},i.exports=n},{"./Particle":3,"./ParticleUtils":4}],2:[function(t,i,e){"use strict";var s=t("./ParticleUtils"),a=t("./Particle"),r=PIXI.particles.ParticleContainer||PIXI.ParticleContainer,n=PIXI.ticker.shared,o=function(t,i,e){this._particleConstructor=a,this.particleImages=null,this.startAlpha=1,this.endAlpha=1,this.startSpeed=0,this.endSpeed=0,this.minimumSpeedMultiplier=1,this.acceleration=null,this.maxSpeed=NaN,this.startScale=1,this.endScale=1,this.minimumScaleMultiplier=1,this.startColor=null,this.endColor=null,this.minLifetime=0,this.maxLifetime=0,this.minStartRotation=0,this.maxStartRotation=0,this.noRotation=!1,this.minRotationSpeed=0,this.maxRotationSpeed=0,this.particleBlendMode=0,this.customEase=null,this.extraData=null,this._frequency=1,this.maxParticles=1e3,this.emitterLifetime=-1,this.spawnPos=null,this.spawnType=null,this._spawnFunc=null,this.spawnRect=null,this.spawnCircle=null,this.particlesPerWave=1,this.particleSpacing=0,this.angleStart=0,this.rotation=0,this.ownerPos=null,this._prevEmitterPos=null,this._prevPosIsValid=!1,this._posChanged=!1,this._parentIsPC=!1,this._parent=null,this.addAtBack=!1,this.particleCount=0,this._emit=!1,this._spawnTimer=0,this._emitterLife=-1,this._activeParticlesFirst=null,this._activeParticlesLast=null,this._poolFirst=null,this._origConfig=null,this._origArt=null,this._autoUpdate=!1,this._destroyWhenComplete=!1,this._completeCallback=null,this.parent=t,i&&e&&this.init(i,e),this.recycle=this.recycle,this.update=this.update,this.rotate=this.rotate,this.updateSpawnPos=this.updateSpawnPos,this.updateOwnerPos=this.updateOwnerPos},h=o.prototype={},l=new PIXI.Point;Object.defineProperty(h,"frequency",{get:function(){return this._frequency},set:function(t){"number"==typeof t&&t>0?this._frequency=t:this._frequency=1}}),Object.defineProperty(h,"particleConstructor",{get:function(){return this._particleConstructor},set:function(t){if(t!=this._particleConstructor){this._particleConstructor=t,this.cleanup();for(var i=this._poolFirst;i;i=i.next)i.destroy();this._poolFirst=null,this._origConfig&&this._origArt&&this.init(this._origArt,this._origConfig)}}}),Object.defineProperty(h,"parent",{get:function(){return this._parent},set:function(t){if(this._parentIsPC)for(var i=this._poolFirst;i;i=i.next)i.parent&&i.parent.removeChild(i);this.cleanup(),this._parent=t,this._parentIsPC=r&&t&&t instanceof r}}),h.init=function(t,i){if(t&&i){this.cleanup(),this._origConfig=i,this._origArt=t,t=Array.isArray(t)?t.slice():[t];var e=this._particleConstructor;this.particleImages=e.parseArt?e.parseArt(t):t,i.alpha?(this.startAlpha=i.alpha.start,this.endAlpha=i.alpha.end):this.startAlpha=this.endAlpha=1,i.speed?(this.startSpeed=i.speed.start,this.endSpeed=i.speed.end,this.minimumSpeedMultiplier=i.speed.minimumSpeedMultiplier||1):(this.minimumSpeedMultiplier=1,this.startSpeed=this.endSpeed=0);var a=i.acceleration;a&&(a.x||a.y)?(this.endSpeed=this.startSpeed,this.acceleration=new PIXI.Point(a.x,a.y),this.maxSpeed=i.maxSpeed||NaN):this.acceleration=new PIXI.Point,i.scale?(this.startScale=i.scale.start,this.endScale=i.scale.end,this.minimumScaleMultiplier=i.scale.minimumScaleMultiplier||1):this.startScale=this.endScale=this.minimumScaleMultiplier=1,i.color&&(this.startColor=s.hexToRGB(i.color.start),i.color.start!=i.color.end?this.endColor=s.hexToRGB(i.color.end):this.endColor=null),i.startRotation?(this.minStartRotation=i.startRotation.min,this.maxStartRotation=i.startRotation.max):this.minStartRotation=this.maxStartRotation=0,i.noRotation&&(this.minStartRotation||this.maxStartRotation)?this.noRotation=!!i.noRotation:this.noRotation=!1,i.rotationSpeed?(this.minRotationSpeed=i.rotationSpeed.min,this.maxRotationSpeed=i.rotationSpeed.max):this.minRotationSpeed=this.maxRotationSpeed=0,this.minLifetime=i.lifetime.min,this.maxLifetime=i.lifetime.max,this.particleBlendMode=s.getBlendMode(i.blendMode),i.ease?this.customEase="function"==typeof i.ease?i.ease:s.generateEase(i.ease):this.customEase=null,e.parseData?this.extraData=e.parseData(i.extraData):this.extraData=i.extraData||null,this.spawnRect=this.spawnCircle=null,this.particlesPerWave=1,this.particleSpacing=0,this.angleStart=0;var r;switch(i.spawnType){case"rect":this.spawnType="rect",this._spawnFunc=this._spawnRect;var n=i.spawnRect;this.spawnRect=new PIXI.Rectangle(n.x,n.y,n.w,n.h);break;case"circle":this.spawnType="circle",this._spawnFunc=this._spawnCircle,r=i.spawnCircle,this.spawnCircle=new PIXI.Circle(r.x,r.y,r.r);break;case"ring":this.spawnType="ring",this._spawnFunc=this._spawnRing,r=i.spawnCircle,this.spawnCircle=new PIXI.Circle(r.x,r.y,r.r),this.spawnCircle.minRadius=r.minR;break;case"burst":this.spawnType="burst",this._spawnFunc=this._spawnBurst,this.particlesPerWave=i.particlesPerWave,this.particleSpacing=i.particleSpacing,this.angleStart=i.angleStart?i.angleStart:0;break;case"point":this.spawnType="point",this._spawnFunc=this._spawnPoint;break;default:this.spawnType="point",this._spawnFunc=this._spawnPoint}this.frequency=i.frequency,this.emitterLifetime=i.emitterLifetime||-1,this.maxParticles=i.maxParticles>0?i.maxParticles:1e3,this.addAtBack=!!i.addAtBack,this.rotation=0,this.ownerPos=new PIXI.Point,this.spawnPos=new PIXI.Point(i.pos.x,i.pos.y),this._prevEmitterPos=this.spawnPos.clone(),this._prevPosIsValid=!1,this._spawnTimer=0,this.emit=void 0===i.emit||!!i.emit,this.autoUpdate=void 0!==i.autoUpdate&&!!i.autoUpdate}},h.recycle=function(t){t.next&&(t.next.prev=t.prev),t.prev&&(t.prev.next=t.next),t==this._activeParticlesLast&&(this._activeParticlesLast=t.prev),t==this._activeParticlesFirst&&(this._activeParticlesFirst=t.next),t.prev=null,t.next=this._poolFirst,this._poolFirst=t,this._parentIsPC?(t.alpha=0,t.visible=!1):t.parent&&t.parent.removeChild(t),--this.particleCount},h.rotate=function(t){if(this.rotation!=t){var i=t-this.rotation;this.rotation=t,s.rotatePoint(i,this.spawnPos),this._posChanged=!0}},h.updateSpawnPos=function(t,i){this._posChanged=!0,this.spawnPos.x=t,this.spawnPos.y=i},h.updateOwnerPos=function(t,i){this._posChanged=!0,this.ownerPos.x=t,this.ownerPos.y=i},h.resetPositionTracking=function(){this._prevPosIsValid=!1},Object.defineProperty(h,"emit",{get:function(){return this._emit},set:function(t){this._emit=!!t,this._emitterLife=this.emitterLifetime}}),Object.defineProperty(h,"autoUpdate",{get:function(){return this._autoUpdate},set:function(t){this._autoUpdate&&!t?n.remove(this.update,this):!this._autoUpdate&&t&&n.add(this.update,this),this._autoUpdate=!!t}}),h.playOnceAndDestroy=function(t){this.autoUpdate=!0,this.emit=!0,this._destroyWhenComplete=!0,this._completeCallback=t},h.playOnce=function(t){this.autoUpdate=!0,this.emit=!0,this._completeCallback=t},h.update=function(t){if(this._autoUpdate&&(t=t/PIXI.settings.TARGET_FPMS/1e3),this._parent){var i,e,s;for(e=this._activeParticlesFirst;e;e=s)s=e.next,e.update(t);var a,r;this._prevPosIsValid&&(a=this._prevEmitterPos.x,r=this._prevEmitterPos.y);var n=this.ownerPos.x+this.spawnPos.x,o=this.ownerPos.y+this.spawnPos.y;if(this._emit)for(this._spawnTimer-=t;this._spawnTimer<=0;){if(this._emitterLife>0&&(this._emitterLife-=this._frequency,this._emitterLife<=0)){this._spawnTimer=0,this._emitterLife=0,this.emit=!1;break}if(this.particleCount>=this.maxParticles)this._spawnTimer+=this._frequency;else{var h;if(h=this.minLifetime==this.maxLifetime?this.minLifetime:Math.random()*(this.maxLifetime-this.minLifetime)+this.minLifetime,-this._spawnTimer<h){var l,p;if(this._prevPosIsValid&&this._posChanged){var c=1+this._spawnTimer/t;l=(n-a)*c+a,p=(o-r)*c+r}else l=n,p=o;i=0;for(var d=Math.min(this.particlesPerWave,this.maxParticles-this.particleCount);i<d;++i){var u,m;if(this._poolFirst?(u=this._poolFirst,this._poolFirst=this._poolFirst.next,u.next=null):u=new this.particleConstructor(this),this.particleImages.length>1?u.applyArt(this.particleImages[Math.floor(Math.random()*this.particleImages.length)]):u.applyArt(this.particleImages[0]),u.startAlpha=this.startAlpha,u.endAlpha=this.endAlpha,1!=this.minimumSpeedMultiplier?(m=Math.random()*(1-this.minimumSpeedMultiplier)+this.minimumSpeedMultiplier,u.startSpeed=this.startSpeed*m,u.endSpeed=this.endSpeed*m):(u.startSpeed=this.startSpeed,u.endSpeed=this.endSpeed),u.acceleration.x=this.acceleration.x,u.acceleration.y=this.acceleration.y,u.maxSpeed=this.maxSpeed,1!=this.minimumScaleMultiplier?(m=Math.random()*(1-this.minimumScaleMultiplier)+this.minimumScaleMultiplier,u.startScale=this.startScale*m,u.endScale=this.endScale*m):(u.startScale=this.startScale,u.endScale=this.endScale),u.startColor=this.startColor,u.endColor=this.endColor,this.minRotationSpeed==this.maxRotationSpeed?u.rotationSpeed=this.minRotationSpeed:u.rotationSpeed=Math.random()*(this.maxRotationSpeed-this.minRotationSpeed)+this.minRotationSpeed,u.noRotation=this.noRotation,u.maxLife=h,u.blendMode=this.particleBlendMode,u.ease=this.customEase,u.extraData=this.extraData,this._spawnFunc(u,l,p,i),u.init(),u.update(-this._spawnTimer),this._parentIsPC&&u.parent){var f=this._parent.children;if(f[0]==u)f.shift();else if(f[f.length-1]==u)f.pop();else{var _=f.indexOf(u);f.splice(_,1)}this.addAtBack?f.unshift(u):f.push(u)}else this.addAtBack?this._parent.addChildAt(u,0):this._parent.addChild(u);this._activeParticlesLast?(this._activeParticlesLast.next=u,u.prev=this._activeParticlesLast,this._activeParticlesLast=u):this._activeParticlesLast=this._activeParticlesFirst=u,++this.particleCount}}this._spawnTimer+=this._frequency}}this._posChanged&&(this._prevEmitterPos.x=n,this._prevEmitterPos.y=o,this._prevPosIsValid=!0,this._posChanged=!1),this._emit||this._activeParticlesFirst||(this._completeCallback&&this._completeCallback(),this._destroyWhenComplete&&this.destroy())}},h._spawnPoint=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,t.position.x=i,t.position.y=e},h._spawnRect=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,l.x=Math.random()*this.spawnRect.width+this.spawnRect.x,l.y=Math.random()*this.spawnRect.height+this.spawnRect.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnCircle=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,l.x=Math.random()*this.spawnCircle.radius,l.y=0,s.rotatePoint(360*Math.random(),l),l.x+=this.spawnCircle.x,l.y+=this.spawnCircle.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnRing=function(t,i,e){var a=this.spawnCircle;this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,a.minRadius==a.radius?l.x=Math.random()*(a.radius-a.minRadius)+a.minRadius:l.x=a.radius,l.y=0;var r=360*Math.random();t.rotation+=r,s.rotatePoint(r,l),l.x+=this.spawnCircle.x,l.y+=this.spawnCircle.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnBurst=function(t,i,e,s){0===this.particleSpacing?t.rotation=360*Math.random():t.rotation=this.angleStart+this.particleSpacing*s+this.rotation,t.position.x=i,t.position.y=e},h.cleanup=function(){var t,i;for(t=this._activeParticlesFirst;t;t=i)i=t.next,this.recycle(t),t.parent&&t.parent.removeChild(t);this._activeParticlesFirst=this._activeParticlesLast=null,this.particleCount=0},h.destroy=function(){this.autoUpdate=!1,this.cleanup();for(var t,i=this._poolFirst;i;i=t)t=i.next,i.destroy();this._poolFirst=this._parent=this.particleImages=this.spawnPos=this.ownerPos=this.startColor=this.endColor=this.customEase=this._completeCallback=null},i.exports=o},{"./Particle":3,"./ParticleUtils":4}],3:[function(t,i,e){var s=t("./ParticleUtils"),a=PIXI.Sprite,r=function(t){a.call(this),this.emitter=t,this.anchor.x=this.anchor.y=.5,this.velocity=new PIXI.Point,this.maxLife=0,this.age=0,this.ease=null,this.extraData=null,this.startAlpha=0,this.endAlpha=0,this.startSpeed=0,this.endSpeed=0,this.acceleration=new PIXI.Point,this.maxSpeed=NaN,this.startScale=0,this.endScale=0,this.startColor=null,this._sR=0,this._sG=0,this._sB=0,this.endColor=null,this._eR=0,this._eG=0,this._eB=0,this._doAlpha=!1,this._doScale=!1,this._doSpeed=!1,this._doAcceleration=!1,this._doColor=!1,this._doNormalMovement=!1,this._oneOverLife=0,this.next=null,this.prev=null,this.init=this.init,this.Particle_init=this.Particle_init,this.update=this.update,this.Particle_update=this.Particle_update,this.applyArt=this.applyArt,this.kill=this.kill},n=r.prototype=Object.create(a.prototype);n.init=n.Particle_init=function(){this.age=0,this.velocity.x=this.startSpeed,this.velocity.y=0,s.rotatePoint(this.rotation,this.velocity),this.noRotation?this.rotation=0:this.rotation*=s.DEG_TO_RADS,this.rotationSpeed*=s.DEG_TO_RADS,this.alpha=this.startAlpha,this.scale.x=this.scale.y=this.startScale,this.startColor&&(this._sR=this.startColor[0],this._sG=this.startColor[1],this._sB=this.startColor[2],this.endColor&&(this._eR=this.endColor[0],this._eG=this.endColor[1],this._eB=this.endColor[2])),this._doAlpha=this.startAlpha!=this.endAlpha,this._doSpeed=this.startSpeed!=this.endSpeed,this._doScale=this.startScale!=this.endScale,this._doColor=!!this.endColor,this._doAcceleration=0!==this.acceleration.x||0!==this.acceleration.y,this._doNormalMovement=this._doSpeed||0!==this.startSpeed||this._doAcceleration,this._oneOverLife=1/this.maxLife,this.tint=s.combineRGBComponents(this._sR,this._sG,this._sB),this.visible=!0},n.applyArt=function(t){this.texture=t||s.EMPTY_TEXTURE},n.update=n.Particle_update=function(t){if(this.age+=t,this.age>=this.maxLife)return this.kill(),-1;var i=this.age*this._oneOverLife;if(this.ease&&(i=4==this.ease.length?this.ease(i,0,1,1):this.ease(i)),this._doAlpha&&(this.alpha=(this.endAlpha-this.startAlpha)*i+this.startAlpha),this._doScale){var e=(this.endScale-this.startScale)*i+this.startScale;this.scale.x=this.scale.y=e}if(this._doNormalMovement){if(this._doSpeed){var a=(this.endSpeed-this.startSpeed)*i+this.startSpeed;s.normalize(this.velocity),s.scaleBy(this.velocity,a)}else if(this._doAcceleration&&(this.velocity.x+=this.acceleration.x*t,this.velocity.y+=this.acceleration.y*t,this.maxSpeed)){var r=s.length(this.velocity);r>this.maxSpeed&&s.scaleBy(this.velocity,this.maxSpeed/r)}this.position.x+=this.velocity.x*t,this.position.y+=this.velocity.y*t}if(this._doColor){var n=(this._eR-this._sR)*i+this._sR,o=(this._eG-this._sG)*i+this._sG,h=(this._eB-this._sB)*i+this._sB;this.tint=s.combineRGBComponents(n,o,h)}return 0!==this.rotationSpeed?this.rotation+=this.rotationSpeed*t:this.acceleration&&!this.noRotation&&(this.rotation=Math.atan2(this.velocity.y,this.velocity.x)),i},n.kill=function(){this.emitter.recycle(this)},n.Sprite_Destroy=a.prototype.destroy,n.destroy=function(){this.parent&&this.parent.removeChild(this),this.Sprite_Destroy&&this.Sprite_Destroy(),this.emitter=this.velocity=this.startColor=this.endColor=this.ease=this.next=this.prev=null},r.parseArt=function(t){var i;for(i=t.length;i>=0;--i)"string"==typeof t[i]&&(t[i]=PIXI.Texture.fromImage(t[i]));if(s.verbose)for(i=t.length-1;i>0;--i)if(t[i].baseTexture!=t[i-1].baseTexture){window.console&&console.warn("PixiParticles: using particle textures from different images may hinder performance in WebGL");break}return t},r.parseData=function(t){return t},i.exports=r},{"./ParticleUtils":4}],4:[function(t,i,e){"use strict";var s=PIXI.BLEND_MODES||PIXI.blendModes,a=PIXI.Texture,r={};r.verbose=!1;var n=r.DEG_TO_RADS=Math.PI/180,o=r.EMPTY_TEXTURE=a.EMPTY;o.on=o.destroy=o.once=o.emit=function(){},r.rotatePoint=function(t,i){if(t){t*=n;var e=Math.sin(t),s=Math.cos(t),a=i.x*s-i.y*e,r=i.x*e+i.y*s;i.x=a,i.y=r}},r.combineRGBComponents=function(t,i,e){return t<<16|i<<8|e},r.normalize=function(t){var i=1/r.length(t);t.x*=i,t.y*=i},r.scaleBy=function(t,i){t.x*=i,t.y*=i},r.length=function(t){return Math.sqrt(t.x*t.x+t.y*t.y)},r.hexToRGB=function(t,i){i?i.length=0:i=[],"#"==t.charAt(0)?t=t.substr(1):0===t.indexOf("0x")&&(t=t.substr(2));var e;return 8==t.length&&(e=t.substr(0,2),t=t.substr(2)),i.push(parseInt(t.substr(0,2),16)),i.push(parseInt(t.substr(2,2),16)),i.push(parseInt(t.substr(4,2),16)),e&&i.push(parseInt(e,16)),i},r.generateEase=function(t){var i=t.length,e=1/i,s=function(s){var a,r,n=i*s|0;return a=(s-n*e)*i,r=t[n]||t[i-1],r.s+a*(2*(1-a)*(r.cp-r.s)+a*(r.e-r.s))};return s},r.getBlendMode=function(t){if(!t)return s.NORMAL;for(t=t.toUpperCase();t.indexOf(" ")>=0;)t=t.replace(" ","_");return s[t]||s.NORMAL},i.exports=r},{}],5:[function(_dereq_,module,exports){"use strict";var ParticleUtils=_dereq_("./ParticleUtils"),Particle=_dereq_("./Particle"),PathParticle=function(t){Particle.call(this,t),this.path=null,this.initialRotation=0,this.initialPosition=new PIXI.Point,this.movement=0},s=Particle.prototype,p=PathParticle.prototype=Object.create(s),helperPoint=new PIXI.Point;p.init=function(){this.initialRotation=this.rotation,this.Particle_init(),this.path=this.extraData.path,this._doNormalMovement=!this.path,this.movement=0,this.initialPosition.x=this.position.x,this.initialPosition.y=this.position.y};for(var MATH_FUNCS=["pow","sqrt","abs","floor","round","ceil","E","PI","sin","cos","tan","asin","acos","atan","atan2","log"],WHITELISTER="[01234567890\\.\\*\\-\\+\\/\\(\\)x ,]",index=MATH_FUNCS.length-1;index>=0;--index)WHITELISTER+="|"+MATH_FUNCS[index];WHITELISTER=new RegExp(WHITELISTER,"g");var parsePath=function(pathString){for(var rtn,matches=pathString.match(WHITELISTER),i=matches.length-1;i>=0;--i)MATH_FUNCS.indexOf(matches[i])>=0&&(matches[i]="Math."+matches[i]);return pathString=matches.join(""),eval("rtn = function(x){ return "+pathString+"; };"),rtn};p.update=function(t){var i=this.Particle_update(t);if(i>=0&&this.path){var e=(this.endSpeed-this.startSpeed)*i+this.startSpeed;this.movement+=e*t,helperPoint.x=this.movement,helperPoint.y=this.path(this.movement),ParticleUtils.rotatePoint(this.initialRotation,helperPoint),this.position.x=this.initialPosition.x+helperPoint.x,this.position.y=this.initialPosition.y+helperPoint.y}},p.Particle_destroy=Particle.prototype.destroy,p.destroy=function(){this.Particle_destroy(),this.path=this.initialPosition=null},PathParticle.parseArt=function(t){return Particle.parseArt(t)},PathParticle.parseData=function(t){var i={};if(t&&t.path)try{i.path=parsePath(t.path)}catch(t){ParticleUtils.verbose&&console.error("PathParticle: error in parsing path expression"),i.path=null}else ParticleUtils.verbose&&console.error("PathParticle requires a path string in extraData!"),i.path=null;return i},module.exports=PathParticle},{"./Particle":3,"./ParticleUtils":4}],6:[function(t,i,e){},{}],7:[function(t,i,e){e.ParticleUtils=t("./ParticleUtils.js"),e.Particle=t("./Particle.js"),e.Emitter=t("./Emitter.js"),e.PathParticle=t("./PathParticle.js"),e.AnimatedParticle=t("./AnimatedParticle.js"),t("./deprecation.js")},{"./AnimatedParticle.js":1,"./Emitter.js":2,"./Particle.js":3,"./ParticleUtils.js":4,"./PathParticle.js":5,"./deprecation.js":6}],8:[function(t,i,e){"use strict";var s="undefined"!=typeof window?window:GLOBAL;if(s.PIXI.particles||(s.PIXI.particles={}),"undefined"!=typeof i&&i.exports)"undefined"==typeof PIXI&&t("pixi.js"),i.exports=s.PIXI.particles||a;else if("undefined"==typeof PIXI)throw"pixi-particles requires pixi.js to be loaded first";var a=t("./particles");for(var r in a)s.PIXI.particles[r]=a[r]},{"./particles":7,"pixi.js":void 0}]},{},[8])(8)});
+!function(t){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=t();else if("function"==typeof define&&define.amd)define([],t);else{var i;i="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this,i.pixiParticles=t()}}(function(){return function t(i,e,s){function a(n,o){if(!e[n]){if(!i[n]){var h="function"==typeof require&&require;if(!o&&h)return h(n,!0);if(r)return r(n,!0);var l=new Error("Cannot find module '"+n+"'");throw l.code="MODULE_NOT_FOUND",l}var p=e[n]={exports:{}};i[n][0].call(p.exports,function(t){var e=i[n][1][t];return a(e?e:t)},p,p.exports,t,i,e,s)}return e[n].exports}for(var r="function"==typeof require&&require,n=0;n<s.length;n++)a(s[n]);return a}({1:[function(t,i,e){"use strict";var s=t("./ParticleUtils"),a=t("./Particle"),r=PIXI.Texture,n=function(t){a.call(this,t),this.textures=null,this.duration=0,this.framerate=0,this.elapsed=0,this.loop=!1},o=a.prototype,h=n.prototype=Object.create(o);h.init=function(){this.Particle_init(),this.elapsed=0,this.framerate<0&&(this.duration=this.maxLife,this.framerate=this.textures.length/this.duration)},h.applyArt=function(t){this.textures=t.textures,this.framerate=t.framerate,this.duration=t.duration,this.loop=t.loop},h.update=function(t){if(this.Particle_update(t)>=0){this.elapsed+=t,this.elapsed>this.duration&&(this.loop?this.elapsed=this.elapsed%this.duration:this.elapsed=this.duration-1e-6);var i=this.elapsed*this.framerate+1e-7|0;this.texture=this.textures[i]||s.EMPTY_TEXTURE}},h.Particle_destroy=a.prototype.destroy,h.destroy=function(){this.Particle_destroy(),this.textures=null},n.parseArt=function(t){var i,e,s,a,n,o,h=[];for(i=0;i<t.length;++i){for(e=t[i],t[i]=h={},h.textures=o=[],a=e.textures,s=0;s<a.length;++s)if(n=a[s],"string"==typeof n)o.push(r.fromImage(n));else if(n instanceof r)o.push(n);else{var l=n.count||1;for(n="string"==typeof n.texture?r.fromImage(n.texture):n.texture;l>0;--l)o.push(n)}"matchLife"==e.framerate?(h.framerate=-1,h.duration=0,h.loop=!1):(h.loop=!!e.loop,h.framerate=e.framerate>0?e.framerate:60,h.duration=o.length/h.framerate)}return t},i.exports=n},{"./Particle":3,"./ParticleUtils":4}],2:[function(t,i,e){"use strict";var s=t("./ParticleUtils"),a=t("./Particle"),r=PIXI.particles.ParticleContainer||PIXI.ParticleContainer,n=PIXI.ticker.shared,o=function(t,i,e){this._particleConstructor=a,this.particleImages=null,this.startAlpha=1,this.endAlpha=1,this.startSpeed=0,this.endSpeed=0,this.minimumSpeedMultiplier=1,this.acceleration=null,this.maxSpeed=NaN,this.startScale=1,this.endScale=1,this.minimumScaleMultiplier=1,this.startColor=null,this.endColor=null,this.minLifetime=0,this.maxLifetime=0,this.minStartRotation=0,this.maxStartRotation=0,this.noRotation=!1,this.minRotationSpeed=0,this.maxRotationSpeed=0,this.particleBlendMode=0,this.customEase=null,this.extraData=null,this._frequency=1,this.maxParticles=1e3,this.emitterLifetime=-1,this.spawnPos=null,this.spawnType=null,this._spawnFunc=null,this.spawnRect=null,this.spawnCircle=null,this.particlesPerWave=1,this.particleSpacing=0,this.angleStart=0,this.rotation=0,this.ownerPos=null,this._prevEmitterPos=null,this._prevPosIsValid=!1,this._posChanged=!1,this._parentIsPC=!1,this._parent=null,this.addAtBack=!1,this.particleCount=0,this._emit=!1,this._spawnTimer=0,this._emitterLife=-1,this._activeParticlesFirst=null,this._activeParticlesLast=null,this._poolFirst=null,this._origConfig=null,this._origArt=null,this._autoUpdate=!1,this._destroyWhenComplete=!1,this._completeCallback=null,this.parent=t,i&&e&&this.init(i,e),this.recycle=this.recycle,this.update=this.update,this.rotate=this.rotate,this.updateSpawnPos=this.updateSpawnPos,this.updateOwnerPos=this.updateOwnerPos},h=o.prototype={},l=new PIXI.Point;Object.defineProperty(h,"frequency",{get:function(){return this._frequency},set:function(t){"number"==typeof t&&t>0?this._frequency=t:this._frequency=1}}),Object.defineProperty(h,"particleConstructor",{get:function(){return this._particleConstructor},set:function(t){if(t!=this._particleConstructor){this._particleConstructor=t,this.cleanup();for(var i=this._poolFirst;i;i=i.next)i.destroy();this._poolFirst=null,this._origConfig&&this._origArt&&this.init(this._origArt,this._origConfig)}}}),Object.defineProperty(h,"parent",{get:function(){return this._parent},set:function(t){if(this._parentIsPC)for(var i=this._poolFirst;i;i=i.next)i.parent&&i.parent.removeChild(i);this.cleanup(),this._parent=t,this._parentIsPC=r&&t&&t instanceof r}}),h.init=function(t,i){if(t&&i){this.cleanup(),this._origConfig=i,this._origArt=t,t=Array.isArray(t)?t.slice():[t];var e=this._particleConstructor;this.particleImages=e.parseArt?e.parseArt(t):t,i.alpha?(this.startAlpha=i.alpha.start,this.endAlpha=i.alpha.end):this.startAlpha=this.endAlpha=1,i.speed?(this.startSpeed=i.speed.start,this.endSpeed=i.speed.end,this.minimumSpeedMultiplier=i.speed.minimumSpeedMultiplier||1):(this.minimumSpeedMultiplier=1,this.startSpeed=this.endSpeed=0);var a=i.acceleration;a&&(a.x||a.y)?(this.endSpeed=this.startSpeed,this.acceleration=new PIXI.Point(a.x,a.y),this.maxSpeed=i.maxSpeed||NaN):this.acceleration=new PIXI.Point,i.scale?(this.startScale=i.scale.start,this.endScale=i.scale.end,this.minimumScaleMultiplier=i.scale.minimumScaleMultiplier||1):this.startScale=this.endScale=this.minimumScaleMultiplier=1,i.color&&(this.startColor=s.hexToRGB(i.color.start),i.color.start!=i.color.end?this.endColor=s.hexToRGB(i.color.end):this.endColor=null),i.startRotation?(this.minStartRotation=i.startRotation.min,this.maxStartRotation=i.startRotation.max):this.minStartRotation=this.maxStartRotation=0,i.noRotation&&(this.minStartRotation||this.maxStartRotation)?this.noRotation=!!i.noRotation:this.noRotation=!1,i.rotationSpeed?(this.minRotationSpeed=i.rotationSpeed.min,this.maxRotationSpeed=i.rotationSpeed.max):this.minRotationSpeed=this.maxRotationSpeed=0,this.minLifetime=i.lifetime.min,this.maxLifetime=i.lifetime.max,this.particleBlendMode=s.getBlendMode(i.blendMode),i.ease?this.customEase="function"==typeof i.ease?i.ease:s.generateEase(i.ease):this.customEase=null,e.parseData?this.extraData=e.parseData(i.extraData):this.extraData=i.extraData||null,this.spawnRect=this.spawnCircle=null,this.particlesPerWave=1,this.particleSpacing=0,this.angleStart=0;var r;switch(i.spawnType){case"rect":this.spawnType="rect",this._spawnFunc=this._spawnRect;var n=i.spawnRect;this.spawnRect=new PIXI.Rectangle(n.x,n.y,n.w,n.h);break;case"circle":this.spawnType="circle",this._spawnFunc=this._spawnCircle,r=i.spawnCircle,this.spawnCircle=new PIXI.Circle(r.x,r.y,r.r);break;case"ring":this.spawnType="ring",this._spawnFunc=this._spawnRing,r=i.spawnCircle,this.spawnCircle=new PIXI.Circle(r.x,r.y,r.r),this.spawnCircle.minRadius=r.minR;break;case"burst":this.spawnType="burst",this._spawnFunc=this._spawnBurst,this.particlesPerWave=i.particlesPerWave,this.particleSpacing=i.particleSpacing,this.angleStart=i.angleStart?i.angleStart:0;break;case"point":this.spawnType="point",this._spawnFunc=this._spawnPoint;break;default:this.spawnType="point",this._spawnFunc=this._spawnPoint}this.frequency=i.frequency,this.emitterLifetime=i.emitterLifetime||-1,this.maxParticles=i.maxParticles>0?i.maxParticles:1e3,this.addAtBack=!!i.addAtBack,this.rotation=0,this.ownerPos=new PIXI.Point,this.spawnPos=new PIXI.Point(i.pos.x,i.pos.y),this._prevEmitterPos=this.spawnPos.clone(),this._prevPosIsValid=!1,this._spawnTimer=0,this.emit=void 0===i.emit||!!i.emit,this.autoUpdate=void 0!==i.autoUpdate&&!!i.autoUpdate}},h.recycle=function(t){t.next&&(t.next.prev=t.prev),t.prev&&(t.prev.next=t.next),t==this._activeParticlesLast&&(this._activeParticlesLast=t.prev),t==this._activeParticlesFirst&&(this._activeParticlesFirst=t.next),t.prev=null,t.next=this._poolFirst,this._poolFirst=t,this._parentIsPC?(t.alpha=0,t.visible=!1):t.parent&&t.parent.removeChild(t),--this.particleCount},h.rotate=function(t){if(this.rotation!=t){var i=t-this.rotation;this.rotation=t,s.rotatePoint(i,this.spawnPos),this._posChanged=!0}},h.updateSpawnPos=function(t,i){this._posChanged=!0,this.spawnPos.x=t,this.spawnPos.y=i},h.updateOwnerPos=function(t,i){this._posChanged=!0,this.ownerPos.x=t,this.ownerPos.y=i},h.resetPositionTracking=function(){this._prevPosIsValid=!1},Object.defineProperty(h,"emit",{get:function(){return this._emit},set:function(t){this._emit=!!t,this._emitterLife=this.emitterLifetime}}),Object.defineProperty(h,"autoUpdate",{get:function(){return this._autoUpdate},set:function(t){this._autoUpdate&&!t?n.remove(this.update,this):!this._autoUpdate&&t&&n.add(this.update,this),this._autoUpdate=!!t}}),h.playOnceAndDestroy=function(t){this.autoUpdate=!0,this.emit=!0,this._destroyWhenComplete=!0,this._completeCallback=t},h.playOnce=function(t){this.autoUpdate=!0,this.emit=!0,this._completeCallback=t},h.update=function(t){if(this._autoUpdate&&(t=t/PIXI.settings.TARGET_FPMS/1e3),this._parent){var i,e,s;for(e=this._activeParticlesFirst;e;e=s)s=e.next,e.update(t);var a,r;this._prevPosIsValid&&(a=this._prevEmitterPos.x,r=this._prevEmitterPos.y);var n=this.ownerPos.x+this.spawnPos.x,o=this.ownerPos.y+this.spawnPos.y;if(this._emit)for(this._spawnTimer-=t;this._spawnTimer<=0;){if(this._emitterLife>0&&(this._emitterLife-=this._frequency,this._emitterLife<=0)){this._spawnTimer=0,this._emitterLife=0,this.emit=!1;break}if(this.particleCount>=this.maxParticles)this._spawnTimer+=this._frequency;else{var h;if(h=this.minLifetime==this.maxLifetime?this.minLifetime:Math.random()*(this.maxLifetime-this.minLifetime)+this.minLifetime,-this._spawnTimer<h){var l,p;if(this._prevPosIsValid&&this._posChanged){var c=1+this._spawnTimer/t;l=(n-a)*c+a,p=(o-r)*c+r}else l=n,p=o;i=0;for(var d=Math.min(this.particlesPerWave,this.maxParticles-this.particleCount);i<d;++i){var u,m;if(this._poolFirst?(u=this._poolFirst,this._poolFirst=this._poolFirst.next,u.next=null):u=new this.particleConstructor(this),this.particleImages.length>1?u.applyArt(this.particleImages[Math.floor(Math.random()*this.particleImages.length)]):u.applyArt(this.particleImages[0]),u.startAlpha=this.startAlpha,u.endAlpha=this.endAlpha,1!=this.minimumSpeedMultiplier?(m=Math.random()*(1-this.minimumSpeedMultiplier)+this.minimumSpeedMultiplier,u.startSpeed=this.startSpeed*m,u.endSpeed=this.endSpeed*m):(u.startSpeed=this.startSpeed,u.endSpeed=this.endSpeed),u.acceleration.x=this.acceleration.x,u.acceleration.y=this.acceleration.y,u.maxSpeed=this.maxSpeed,1!=this.minimumScaleMultiplier?(m=Math.random()*(1-this.minimumScaleMultiplier)+this.minimumScaleMultiplier,u.startScale=this.startScale*m,u.endScale=this.endScale*m):(u.startScale=this.startScale,u.endScale=this.endScale),u.startColor=this.startColor,u.endColor=this.endColor,this.minRotationSpeed==this.maxRotationSpeed?u.rotationSpeed=this.minRotationSpeed:u.rotationSpeed=Math.random()*(this.maxRotationSpeed-this.minRotationSpeed)+this.minRotationSpeed,u.noRotation=this.noRotation,u.maxLife=h,u.blendMode=this.particleBlendMode,u.ease=this.customEase,u.extraData=this.extraData,this._spawnFunc(u,l,p,i),u.init(),u.update(-this._spawnTimer),this._parentIsPC&&u.parent){var f=this._parent.children;if(f[0]==u)f.shift();else if(f[f.length-1]==u)f.pop();else{var _=f.indexOf(u);f.splice(_,1)}this.addAtBack?f.unshift(u):f.push(u)}else this.addAtBack?this._parent.addChildAt(u,0):this._parent.addChild(u);this._activeParticlesLast?(this._activeParticlesLast.next=u,u.prev=this._activeParticlesLast,this._activeParticlesLast=u):this._activeParticlesLast=this._activeParticlesFirst=u,++this.particleCount}}this._spawnTimer+=this._frequency}}this._posChanged&&(this._prevEmitterPos.x=n,this._prevEmitterPos.y=o,this._prevPosIsValid=!0,this._posChanged=!1),this._emit||this._activeParticlesFirst||(this._completeCallback&&this._completeCallback(),this._destroyWhenComplete&&this.destroy())}},h._spawnPoint=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,t.position.x=i,t.position.y=e},h._spawnRect=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,l.x=Math.random()*this.spawnRect.width+this.spawnRect.x,l.y=Math.random()*this.spawnRect.height+this.spawnRect.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnCircle=function(t,i,e){this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,l.x=Math.random()*this.spawnCircle.radius,l.y=0,s.rotatePoint(360*Math.random(),l),l.x+=this.spawnCircle.x,l.y+=this.spawnCircle.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnRing=function(t,i,e){var a=this.spawnCircle;this.minStartRotation==this.maxStartRotation?t.rotation=this.minStartRotation+this.rotation:t.rotation=Math.random()*(this.maxStartRotation-this.minStartRotation)+this.minStartRotation+this.rotation,a.minRadius==a.radius?l.x=Math.random()*(a.radius-a.minRadius)+a.minRadius:l.x=a.radius,l.y=0;var r=360*Math.random();t.rotation+=r,s.rotatePoint(r,l),l.x+=this.spawnCircle.x,l.y+=this.spawnCircle.y,0!==this.rotation&&s.rotatePoint(this.rotation,l),t.position.x=i+l.x,t.position.y=e+l.y},h._spawnBurst=function(t,i,e,s){0===this.particleSpacing?t.rotation=360*Math.random():t.rotation=this.angleStart+this.particleSpacing*s+this.rotation,t.position.x=i,t.position.y=e},h.cleanup=function(){var t,i;for(t=this._activeParticlesFirst;t;t=i)i=t.next,this.recycle(t),t.parent&&t.parent.removeChild(t);this._activeParticlesFirst=this._activeParticlesLast=null,this.particleCount=0},h.destroy=function(){this.autoUpdate=!1,this.cleanup();for(var t,i=this._poolFirst;i;i=t)t=i.next,i.destroy();this._poolFirst=this._parent=this.particleImages=this.spawnPos=this.ownerPos=this.startColor=this.endColor=this.customEase=this._completeCallback=null},i.exports=o},{"./Particle":3,"./ParticleUtils":4}],3:[function(t,i,e){var s=t("./ParticleUtils"),a=PIXI.Sprite,r=function(t){a.call(this),this.emitter=t,this.anchor.x=this.anchor.y=.5,this.velocity=new PIXI.Point,this.maxLife=0,this.age=0,this.ease=null,this.extraData=null,this.startAlpha=0,this.endAlpha=0,this.startSpeed=0,this.endSpeed=0,this.acceleration=new PIXI.Point,this.maxSpeed=NaN,this.startScale=0,this.endScale=0,this.startColor=null,this._sR=0,this._sG=0,this._sB=0,this.endColor=null,this._eR=0,this._eG=0,this._eB=0,this._doAlpha=!1,this._doScale=!1,this._doSpeed=!1,this._doAcceleration=!1,this._doColor=!1,this._doNormalMovement=!1,this._oneOverLife=0,this.next=null,this.prev=null,this.init=this.init,this.Particle_init=this.Particle_init,this.update=this.update,this.Particle_update=this.Particle_update,this.applyArt=this.applyArt,this.kill=this.kill},n=r.prototype=Object.create(a.prototype);n.init=n.Particle_init=function(){this.age=0,this.velocity.x=this.startSpeed,this.velocity.y=0,s.rotatePoint(this.rotation,this.velocity),this.noRotation?this.rotation=0:this.rotation*=s.DEG_TO_RADS,this.rotationSpeed*=s.DEG_TO_RADS,this.alpha=this.startAlpha,this.scale.x=this.scale.y=this.startScale,this.startColor&&(this._sR=this.startColor[0],this._sG=this.startColor[1],this._sB=this.startColor[2],this.endColor&&(this._eR=this.endColor[0],this._eG=this.endColor[1],this._eB=this.endColor[2])),this._doAlpha=this.startAlpha!=this.endAlpha,this._doSpeed=this.startSpeed!=this.endSpeed,this._doScale=this.startScale!=this.endScale,this._doColor=!!this.endColor,this._doAcceleration=0!==this.acceleration.x||0!==this.acceleration.y,this._doNormalMovement=this._doSpeed||0!==this.startSpeed||this._doAcceleration,this._oneOverLife=1/this.maxLife,this.tint=s.combineRGBComponents(this._sR,this._sG,this._sB),this.visible=!0},n.applyArt=function(t){this.texture=t||s.EMPTY_TEXTURE},n.update=n.Particle_update=function(t){if(this.age+=t,this.age>=this.maxLife)return this.kill(),-1;var i=this.age*this._oneOverLife;if(this.ease&&(i=4==this.ease.length?this.ease(i,0,1,1):this.ease(i)),this._doAlpha&&(this.alpha=(this.endAlpha-this.startAlpha)*i+this.startAlpha),this._doScale){var e=(this.endScale-this.startScale)*i+this.startScale;this.scale.x=this.scale.y=e}if(this._doNormalMovement){if(this._doSpeed){var a=(this.endSpeed-this.startSpeed)*i+this.startSpeed;s.normalize(this.velocity),s.scaleBy(this.velocity,a)}else if(this._doAcceleration&&(this.velocity.x+=this.acceleration.x*t,this.velocity.y+=this.acceleration.y*t,this.maxSpeed)){var r=s.length(this.velocity);r>this.maxSpeed&&s.scaleBy(this.velocity,this.maxSpeed/r)}this.position.x+=this.velocity.x*t,this.position.y+=this.velocity.y*t}if(this._doColor){var n=(this._eR-this._sR)*i+this._sR,o=(this._eG-this._sG)*i+this._sG,h=(this._eB-this._sB)*i+this._sB;this.tint=s.combineRGBComponents(n,o,h)}return 0!==this.rotationSpeed?this.rotation+=this.rotationSpeed*t:this.acceleration&&!this.noRotation&&(this.rotation=Math.atan2(this.velocity.y,this.velocity.x)),i},n.kill=function(){this.emitter.recycle(this)},n.Sprite_Destroy=a.prototype.destroy,n.destroy=function(){this.parent&&this.parent.removeChild(this),this.Sprite_Destroy&&this.Sprite_Destroy(),this.emitter=this.velocity=this.startColor=this.endColor=this.ease=this.next=this.prev=null},r.parseArt=function(t){var i;for(i=t.length;i>=0;--i)"string"==typeof t[i]&&(t[i]=PIXI.Texture.fromImage(t[i]));if(s.verbose)for(i=t.length-1;i>0;--i)if(t[i].baseTexture!=t[i-1].baseTexture){window.console&&console.warn("PixiParticles: using particle textures from different images may hinder performance in WebGL");break}return t},r.parseData=function(t){return t},i.exports=r},{"./ParticleUtils":4}],4:[function(t,i,e){"use strict";var s=PIXI.BLEND_MODES||PIXI.blendModes,a=PIXI.Texture,r={};r.verbose=!1;var n=r.DEG_TO_RADS=Math.PI/180,o=r.EMPTY_TEXTURE=a.EMPTY;o.on=o.destroy=o.once=o.emit=function(){},r.rotatePoint=function(t,i){if(t){t*=n;var e=Math.sin(t),s=Math.cos(t),a=i.x*s-i.y*e,r=i.x*e+i.y*s;i.x=a,i.y=r}},r.combineRGBComponents=function(t,i,e){return t<<16|i<<8|e},r.normalize=function(t){var i=1/r.length(t);t.x*=i,t.y*=i},r.scaleBy=function(t,i){t.x*=i,t.y*=i},r.length=function(t){return Math.sqrt(t.x*t.x+t.y*t.y)},r.hexToRGB=function(t,i){i?i.length=0:i=[],"#"==t.charAt(0)?t=t.substr(1):0===t.indexOf("0x")&&(t=t.substr(2));var e;return 8==t.length&&(e=t.substr(0,2),t=t.substr(2)),i.push(parseInt(t.substr(0,2),16)),i.push(parseInt(t.substr(2,2),16)),i.push(parseInt(t.substr(4,2),16)),e&&i.push(parseInt(e,16)),i},r.generateEase=function(t){var i=t.length,e=1/i,s=function(s){var a,r,n=i*s|0;return a=(s-n*e)*i,r=t[n]||t[i-1],r.s+a*(2*(1-a)*(r.cp-r.s)+a*(r.e-r.s))};return s},r.getBlendMode=function(t){if(!t)return s.NORMAL;for(t=t.toUpperCase();t.indexOf(" ")>=0;)t=t.replace(" ","_");return s[t]||s.NORMAL},i.exports=r},{}],5:[function(t,i,e){"use strict";var s=t("./ParticleUtils"),a=t("./Particle"),r=function(t){a.call(this,t),this.path=null,this.initialRotation=0,this.initialPosition=new PIXI.Point,this.movement=0},n=a.prototype,o=r.prototype=Object.create(n),h=new PIXI.Point;o.init=function(){this.initialRotation=this.rotation,this.Particle_init(),this.path=this.extraData.path,this._doNormalMovement=!this.path,this.movement=0,this.initialPosition.x=this.position.x,this.initialPosition.y=this.position.y};for(var l=["pow","sqrt","abs","floor","round","ceil","E","PI","sin","cos","tan","asin","acos","atan","atan2","log"],p="[01234567890\\.\\*\\-\\+\\/\\(\\)x ,]",c=l.length-1;c>=0;--c)p+="|"+l[c];p=new RegExp(p,"g");var d=function(t){for(var i=t.match(p),e=i.length-1;e>=0;--e)l.indexOf(i[e])>=0&&(i[e]="Math."+i[e]);return t=i.join(""),new Function("x","return "+t+";")};o.update=function(t){var i=this.Particle_update(t);if(i>=0&&this.path){var e=(this.endSpeed-this.startSpeed)*i+this.startSpeed;this.movement+=e*t,h.x=this.movement,h.y=this.path(this.movement),s.rotatePoint(this.initialRotation,h),this.position.x=this.initialPosition.x+h.x,this.position.y=this.initialPosition.y+h.y}},o.Particle_destroy=a.prototype.destroy,o.destroy=function(){this.Particle_destroy(),this.path=this.initialPosition=null},r.parseArt=function(t){return a.parseArt(t)},r.parseData=function(t){var i={};if(t&&t.path)try{i.path=d(t.path)}catch(t){s.verbose&&console.error("PathParticle: error in parsing path expression"),i.path=null}else s.verbose&&console.error("PathParticle requires a path string in extraData!"),i.path=null;return i},i.exports=r},{"./Particle":3,"./ParticleUtils":4}],6:[function(t,i,e){},{}],7:[function(t,i,e){e.ParticleUtils=t("./ParticleUtils.js"),e.Particle=t("./Particle.js"),e.Emitter=t("./Emitter.js"),e.PathParticle=t("./PathParticle.js"),e.AnimatedParticle=t("./AnimatedParticle.js"),t("./deprecation.js")},{"./AnimatedParticle.js":1,"./Emitter.js":2,"./Particle.js":3,"./ParticleUtils.js":4,"./PathParticle.js":5,"./deprecation.js":6}],8:[function(t,i,e){"use strict";var s="undefined"!=typeof window?window:GLOBAL;if(s.PIXI.particles||(s.PIXI.particles={}),"undefined"!=typeof i&&i.exports)"undefined"==typeof PIXI&&t("pixi.js"),i.exports=s.PIXI.particles||a;else if("undefined"==typeof PIXI)throw"pixi-particles requires pixi.js to be loaded first";var a=t("./particles");for(var r in a)s.PIXI.particles[r]=a[r]},{"./particles":7,"pixi.js":void 0}]},{},[8])(8)});
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],50:[function(require,module,exports){
 module.exports = require('./src/viewport')
-},{"./src/viewport":62}],51:[function(require,module,exports){
+},{"./src/viewport":63}],51:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const EventEmitter = require('eventemitter3')
+
+module.exports = class Input extends EventEmitter
+{
+    /**
+     * basic input support for touch, mouse, and keyboard
+     *
+     * @param {object} [options]
+     * @param {HTMLElement} [options.div=document] object to attach listener to
+     * @param {boolean} [options.noPointers] turns off mouse/touch/pen listeners
+     * @param {boolean} [options.noKeyboard] turns off key listener
+     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
+     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
+     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
+     *
+     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
+     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
+     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
+     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
+     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
+     *
+     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
+     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
+        this.chromeDebug = options.chromeDebug
+        this.preventDefault = options.preventDefault
+
+        this.pointers = []
+        this.keys = {}
+        this.input = []
+
+        this.div = options.div || document
+        this.options = options
+        this.callbacks = [
+            this.mouseDown.bind(this),
+            this.mouseMove.bind(this),
+            this.mouseUp.bind(this), // 2
+            this.touchStart.bind(this),
+            this.touchMove.bind(this),
+            this.touchEnd.bind(this),
+            this.keydown.bind(this), // 6
+            this.keyup.bind(this),
+            this.wheel.bind(this) // 8
+        ]
+        if (!options.noPointers)
+        {
+            this.addPointers()
+        }
+        if (!options.noKeyboard)
+        {
+            this.addKeyboard()
+        }
+    }
+
+    /**
+     * remove all listeners
+     */
+    destroy()
+    {
+        this.removePointers()
+        this.removeKeyboard()
+    }
+
+    /**
+     * turns on pointer listeners (on by default); can be used after removePointers()
+     */
+    addPointers()
+    {
+        if (!this.listeningPointer)
+        {
+            const div = this.div
+            div.addEventListener('mousedown', this.callbacks[0])
+            div.addEventListener('mousemove', this.callbacks[1])
+            div.addEventListener('mouseup', this.callbacks[2])
+            div.addEventListener('mouseout', this.callbacks[2])
+            div.addEventListener('wheel', this.callbacks[8])
+
+            div.addEventListener('touchstart', this.callbacks[3])
+            div.addEventListener('touchmove', this.callbacks[4])
+            div.addEventListener('touchend', this.callbacks[5])
+            div.addEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = true
+        }
+    }
+
+    /**
+     * remove pointers listener
+     */
+    removePointers()
+    {
+        if (this.listeningPointer)
+        {
+            const div = this.div
+            div.removeEventListener('mousedown', this.callbacks[0])
+            div.removeEventListener('mousemove', this.callbacks[1])
+            div.removeEventListener('mouseup', this.callbacks[2])
+            div.removeEventListener('mouseout', this.callbacks[2])
+            div.removeEventListener('wheel', this.callbacks[8])
+
+            div.removeEventListener('touchstart', this.callbacks[3])
+            div.removeEventListener('touchmove', this.callbacks[4])
+            div.removeEventListener('touchend', this.callbacks[5])
+            div.removeEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = false
+        }
+    }
+
+    /**
+     * turns on keyboard listener (off by default); can be used after removeKeyboard()
+     */
+    addKeyboard()
+    {
+        if (!this.listeningKeyboard)
+        {
+            document.addEventListener('keydown', this.callbacks[6])
+            document.addEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = true
+        }
+    }
+
+    /**
+     * removes keyboard listener
+     */
+    removeKeyboard()
+    {
+        if (this.listeningKeyboard)
+        {
+            document.removeEventListener('keydown', this.callbacks[6])
+            document.removeEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = false
+        }
+    }
+
+    /**
+     * helper function to find touch from list based on id
+     * @private
+     * @param  {number} id for saved touch
+     * @return {object}
+     */
+    findTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                return this.pointers[i]
+            }
+        }
+        return null
+    }
+
+    /**
+     * helper function to remove touch from touch list
+     * @private
+     * @param  {object} touch object
+     */
+    removeTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                this.pointers.splice(i, 1)
+                return
+            }
+        }
+    }
+
+    /**
+     * Handle touch start
+     * @private
+     * @param  {object} e touch event
+     */
+    touchStart(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const touches = e.changedTouches
+        for (let i = 0; i < touches.length; i++)
+        {
+            const touch = touches[i]
+            const x = touch.clientX
+            const y = touch.clientY
+            if (this.clamp)
+            {
+                if (this.outsideClamp(x, y))
+                {
+                    continue
+                }
+            }
+            const entry = {
+                identifier: touch.identifier,
+                x,
+                y
+            }
+            this.pointers.push(entry)
+            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch move
+     * @private
+     * @param  {object} e touch event
+     */
+    touchMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            if (this.clamp && !this.findTouch(touch.identifier))
+            {
+                continue
+            }
+            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch end
+     * @private
+     * @param  {object} e touch event
+     */
+    touchEnd(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            const previous = this.findTouch(touch.identifier)
+            if (previous !== null)
+            {
+                this.removeTouch(touch.identifier)
+                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
+            }
+        }
+    }
+
+    /**
+     * Handle mouse down
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseDown(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        while (this.pointers.length)
+        {
+            this.pointers.pop()
+        }
+        this.pointers.push({id: 'mouse'})
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        if (!this.clamp || !this.outsideClamp(x, y))
+        {
+            this.handleDown(x, y, e, 'mouse')
+        }
+    }
+
+    /**
+     * Handle mouse move
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleMove(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse up
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseUp(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.pointers.pop()
+        this.handleUp(x, y, e, 'mouse')
+    }
+
+    handleDown(x, y, e, id)
+    {
+        this.emit('down', x, y, { event: e, input: this, id })
+        if (!this.threshold || this.pointers > 1)
+        {
+            this.start = null
+        }
+        else
+        {
+            this.start = { x, y }
+        }
+    }
+
+    handleUp(x, y, e, id)
+    {
+        if (this.start)
+        {
+            this.start = null
+            this.emit('click', x, y, { event: e, input: this, id })
+        }
+        this.emit('up', x, y, { event: e, input: this, id })
+    }
+
+    handleMove(x, y, e, id)
+    {
+        if (this.start)
+        {
+            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
+            {
+                this.start = null
+            }
+        }
+        this.emit('move', x, y, { event: e, input: this, id })
+    }
+
+    wheel(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
+    }
+
+    /**
+     * Sets event listener for keyboard
+     * @private
+     */
+    keysListener()
+    {
+    }
+
+    /**
+     * @private
+     * @param  {object} e
+     */
+    keydown(e)
+    {
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        if (this.chromeDebug)
+        {
+            // allow chrome to open developer console
+            if (this.keys.shift && this.keys.ctrl && code === 73)
+            {
+                return
+            }
+
+            // reload page with meta + r
+            if (code === 82 && this.keys.ctrl)
+            {
+                window.location.reload()
+                return
+            }
+        }
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('keydown', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * Handle key up
+     * @private
+     * @param  {object}
+     */
+    keyup(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        this.emit('keyup', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * clamp screen to only accept pointers in rectangle in the down event
+     * @param {number} x
+     * @param {number} y
+     */
+    clampDown(x, y, width, height)
+    {
+        this.clamp = { x, y, width, height }
+    }
+
+    outsideClamp(x, y)
+    {
+        return x < this.clamp.x || x > this.clamp.x + this.clamp.width || y < this.clamp.y || y > this.clamp.y + this.clamp.height
+    }
+}
+},{"eventemitter3":13}],52:[function(require,module,exports){
 const Ease = require('pixi-ease')
 const exists = require('exists')
 
@@ -6819,16 +7248,6 @@ module.exports = class Bounce extends Plugin
             return
         }
 
-        // cache the values so you don't need to keep checking for bounce when there's no movement
-        if (this.last.x === this.parent.container.x && this.last.y === this.parent.container.y && this.last.scaleX === this.parent.container.scale.x && this.last.scaleY === this.parent.container.scale.y)
-        {
-            return
-        }
-        this.last.x = this.parent.container.x
-        this.last.y = this.parent.container.y
-        this.last.scaleX = this.parent.container.scale.x
-        this.last.scaleY = this.parent.container.scale.y
-
         let oob
         let decelerate = this.parent.plugins['decelerate']
         if (decelerate && (decelerate.x || decelerate.y))
@@ -6846,9 +7265,10 @@ module.exports = class Bounce extends Plugin
                 }
             }
         }
-        const pointers = this.parent.input.pointers
+        const drag = this.parent.plugins['drag'] || {}
+        const pinch = this.parent.plugins['pinch'] || {}
         decelerate = decelerate || {}
-        if (pointers.length === 0 && ((!this.toX || !this.toY) && (!decelerate.x || !decelerate.y)))
+        if (!drag.active && !pinch.active && ((!this.toX || !this.toY) && (!decelerate.x || !decelerate.y)))
         {
             oob = oob || this.parent.OOB()
             const point = oob.cornerPoint
@@ -6928,7 +7348,7 @@ module.exports = class Bounce extends Plugin
         this.toX = this.toY = null
     }
 }
-},{"./plugin":59,"exists":14,"pixi-ease":20}],52:[function(require,module,exports){
+},{"./plugin":60,"exists":14,"pixi-ease":20}],53:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class ClampZoom extends Plugin
@@ -6988,7 +7408,7 @@ module.exports = class ClampZoom extends Plugin
     }
 }
 
-},{"./plugin":59}],53:[function(require,module,exports){
+},{"./plugin":60}],54:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class clamp extends Plugin
@@ -7110,7 +7530,7 @@ module.exports = class clamp extends Plugin
         }
     }
 }
-},{"./plugin":59}],54:[function(require,module,exports){
+},{"./plugin":60}],55:[function(require,module,exports){
 const exists = require('exists')
 
 const Plugin = require('./plugin')
@@ -7140,14 +7560,14 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = false
     }
 
-    move(x, y, data)
+    move()
     {
         if (this.paused)
         {
             return
         }
 
-        const pointers = data.input.pointers
+        const pointers = this.parent.pointers
         if (pointers.length === 1 || (pointers.length > 1 && !this.parent.plugins['pinch']))
         {
             this.saved.push({ x: this.parent.container.x, y: this.parent.container.y, time: performance.now() })
@@ -7158,9 +7578,9 @@ module.exports = class Decelerate extends Plugin
         }
     }
 
-    up(x, y, data)
+    up()
     {
-        const pointers = data.input.pointers
+        const pointers = this.parent.pointers
         if (pointers.length === 0 && this.saved.length)
         {
             const now = performance.now()
@@ -7232,31 +7652,69 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = null
     }
 }
-},{"./plugin":59,"exists":14}],55:[function(require,module,exports){
-const Plugin = require('./plugin')
+},{"./plugin":60,"exists":14}],56:[function(require,module,exports){
+const exists = require('exists')
 
+const Plugin = require('./plugin')
 module.exports = class Drag extends Plugin
 {
-    constructor(parent)
+    /**
+     * enable one-finger touch to drag
+     * @param {Viewport} parent
+     * @param {object} [options]
+     * @param {boolean} [options.wheel=true] use wheel to scroll in y direction (unless wheel plugin is active)
+     * @param {number} [options.wheelScroll=1] number of pixels to scroll with each wheel spin
+     * @param {boolean} [options.reverse] reverse the direction of the wheel scroll
+     * @param {boolean|string} [options.clampWheel] (true, x, or y) clamp wheel (to avoid weird bounce with mouse wheel)
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
+     */
+    constructor(parent, options)
     {
+        options = options || {}
         super(parent)
         this.moved = false
+        this.wheelActive = exists(options.wheel) ? options.wheel : true
+        this.wheelScroll = options.wheelScroll || 1
+        this.reverse = options.reverse ? 1 : -1
+        this.clampWheel = options.clampWheel
+        this.parseUnderflow(options.underflow || 'center')
     }
 
-    down(x, y, data)
+    parseUnderflow(clamp)
+    {
+        clamp = clamp.toLowerCase()
+        if (clamp === 'center')
+        {
+            this.underflowX = 0
+            this.underflowY = 0
+        }
+        else
+        {
+            this.underflowX = (clamp.indexOf('left') !== -1) ? -1 : (clamp.indexOf('right') !== -1) ? 1 : 0
+            this.underflowY = (clamp.indexOf('top') !== -1) ? -1 : (clamp.indexOf('bottom') !== -1) ? 1 : 0
+        }
+    }
+
+    down(x, y)
     {
         if (this.paused)
         {
             return
         }
-        const pointers = data.input.pointers
+        const pointers = this.parent.pointers
         if (pointers.length === 1)
         {
             this.last = { x, y }
+            return true
         }
     }
 
-    move(x, y, data)
+    get active()
+    {
+        return this.last ? true : false
+    }
+
+    move(x, y)
     {
         if (this.paused)
         {
@@ -7265,7 +7723,7 @@ module.exports = class Drag extends Plugin
 
         if (this.last)
         {
-            const pointers = data.input.pointers
+            const pointers = this.parent.pointers
             if (pointers.length === 1 || (pointers.length > 1 && !this.parent.plugins['pinch']))
             {
                 const distX = x - this.last.x
@@ -7300,14 +7758,105 @@ module.exports = class Drag extends Plugin
         this.last = null
     }
 
+    wheel(dx, dy)
+    {
+        if (this.paused)
+        {
+            return
+        }
+
+        if (this.wheelActive)
+        {
+            const wheel = this.parent.plugins['wheel']
+            if (!wheel)
+            {
+                this.parent.container.x += dx * this.wheelScroll * this.reverse
+                this.parent.container.y += dy * this.wheelScroll * this.reverse
+                if (this.clampWheel)
+                {
+                    this.clamp()
+                }
+                this.parent.emit('wheel-scroll', this.parent)
+                this.parent.dirty = true
+                return true
+            }
+        }
+    }
+
     resume()
     {
         this.last = null
         this.paused = false
     }
-}
 
-},{"./plugin":59}],56:[function(require,module,exports){
+    clamp()
+    {
+        const oob = this.parent.OOB()
+        const point = oob.cornerPoint
+        const decelerate = this.parent.plugins['decelerate'] || {}
+        if (this.clampWheel !== 'y')
+        {
+            if (this.parent.screenWorldWidth < this.parent.screenWidth)
+            {
+                switch (this.underflowX)
+                {
+                    case -1:
+                        this.parent.container.x = 0
+                        break
+                    case 1:
+                        this.parent.container.x = (this.parent.screenWidth - this.parent.screenWorldWidth)
+                        break
+                    default:
+                        this.parent.container.x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2
+                }
+            }
+            else
+            {
+                if (oob.left)
+                {
+                    this.parent.container.x = 0
+                    decelerate.x = 0
+                }
+                else if (oob.right)
+                {
+                    this.parent.container.x = -point.x
+                    decelerate.x = 0
+                }
+            }
+        }
+        if (this.clampWheel !== 'x')
+        {
+            if (this.parent.screenWorldHeight < this.parent.screenHeight)
+            {
+                switch (this.underflowY)
+                {
+                    case -1:
+                        this.parent.container.y = 0
+                        break
+                    case 1:
+                        this.parent.container.y = (this.parent.screenHeight - this.parent.screenWorldHeight)
+                        break
+                    default:
+                        this.parent.container.y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2
+                }
+            }
+            else
+            {
+                if (oob.top)
+                {
+                    this.parent.container.y = 0
+                    decelerate.y = 0
+                }
+                else if (oob.bottom)
+                {
+                    this.parent.container.y = -point.y
+                    decelerate.y = 0
+                }
+            }
+        }
+    }
+}
+},{"./plugin":60,"exists":14}],57:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Follow extends Plugin
@@ -7371,7 +7920,7 @@ module.exports = class Follow extends Plugin
         }
     }
 }
-},{"./plugin":59}],57:[function(require,module,exports){
+},{"./plugin":60}],58:[function(require,module,exports){
 const exists = require('exists')
 const Angle = require('yy-angle')
 
@@ -7555,7 +8104,7 @@ module.exports = class MouseEdges extends Plugin
         }
     }
 }
-},{"./plugin":59,"exists":14,"yy-angle":228}],58:[function(require,module,exports){
+},{"./plugin":60,"exists":14,"yy-angle":229}],59:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Pinch extends Plugin
@@ -7566,10 +8115,6 @@ module.exports = class Pinch extends Plugin
      * @param {boolean} [options.noDrag] disable two-finger dragging
      * @param {number} [options.percent=1.0] percent to modify pinch speed
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of two fingers
-     * @param {number} [options.minWidth] clamp minimum width
-     * @param {number} [options.minHeight] clamp minimum height
-     * @param {number} [options.maxWidth] clamp maximum width
-     * @param {number} [options.maxHeight] clamp maximum height
      */
     constructor(parent, options)
     {
@@ -7578,10 +8123,15 @@ module.exports = class Pinch extends Plugin
         this.percent = options.percent || 1.0
         this.noDrag = options.noDrag
         this.center = options.center
-        this.minWidth = options.minWidth
-        this.maxWidth = options.maxWidth
-        this.minHeight = options.minHeight
-        this.maxHeight = options.maxHeight
+    }
+
+    down()
+    {
+        const pointers = this.parent.pointers
+        if (pointers.length >= 2)
+        {
+            this.active = true
+        }
     }
 
     move(x, y, data)
@@ -7591,8 +8141,8 @@ module.exports = class Pinch extends Plugin
             return
         }
 
-        const pointers = data.input.pointers
-        if (pointers.length >= 2)
+        const pointers = this.parent.pointers
+        if (this.active)
         {
             const first = pointers[0]
             const second = pointers[1]
@@ -7601,11 +8151,11 @@ module.exports = class Pinch extends Plugin
             {
                 last = Math.sqrt(Math.pow(second.last.x - first.last.x, 2) + Math.pow(second.last.y - first.last.y, 2))
             }
-            if (first.identifier === data.id)
+            if (first.id === data.id)
             {
                 first.last = { x, y }
             }
-            else if (second.identifier === data.id)
+            else if (second.id === data.id)
             {
                 second.last = { x, y }
             }
@@ -7656,13 +8206,14 @@ module.exports = class Pinch extends Plugin
         }
     }
 
-    up(x, y, data)
+    up()
     {
         if (this.pinching)
         {
-            const pointers = data.input.pointers
+            const pointers = this.parent.pointers
             if (pointers.length < 2)
             {
+                this.active = false
                 this.lastCenter = null
                 this.pinching = false
                 this.parent.emit('pinch-end', this.parent)
@@ -7670,7 +8221,7 @@ module.exports = class Pinch extends Plugin
         }
     }
 }
-},{"./plugin":59}],59:[function(require,module,exports){
+},{"./plugin":60}],60:[function(require,module,exports){
 module.exports = class Plugin
 {
     constructor(parent)
@@ -7697,7 +8248,7 @@ module.exports = class Plugin
         this.paused = false
     }
 }
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -7838,7 +8389,7 @@ module.exports = class SnapZoom extends Plugin
         super.resume()
     }
 }
-},{"./plugin":59,"exists":14,"pixi-ease":20}],61:[function(require,module,exports){
+},{"./plugin":60,"exists":14,"pixi-ease":20}],62:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -7951,7 +8502,7 @@ module.exports = class Snap extends Plugin
         }
     }
 }
-},{"./plugin":59,"exists":14,"pixi-ease":20}],62:[function(require,module,exports){
+},{"./plugin":60,"exists":14,"pixi-ease":20}],63:[function(require,module,exports){
 const Loop = require('yy-loop')
 const Input = require('yy-input')
 const exists = require('exists')
@@ -8000,6 +8551,7 @@ module.exports = class Viewport extends Loop
      * @emits bounce-start-y(viewport) emitted when a bounce on the y-axis starts
      * @emits bounce-end-y(viewport) emitted when a bounce on the y-axis ends
      * @emits wheel({wheel: {dx, dy, dz}, viewport})
+     * @emits wheel-scroll(viewport)
      */
     constructor(container, options)
     {
@@ -8013,6 +8565,7 @@ module.exports = class Viewport extends Loop
         this._worldHeight = options.worldHeight
         this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
         this.maxFrameTime = options.maxFrameTime || 1000 / 60
+        this.pointers = []
         if (!options.noListeners)
         {
             this.listeners(options.div || document.body, options.threshold, options.preventDefault)
@@ -8146,7 +8699,7 @@ module.exports = class Viewport extends Loop
      */
     listeners(div, threshold, preventDefault)
     {
-        this.input = new Input(div, { threshold, preventDefault })
+        this.input = new Input({ div, threshold, preventDefault })
         this.input.on('down', this.down, this)
         this.input.on('move', this.move, this)
         this.input.on('up', this.up, this)
@@ -8158,16 +8711,21 @@ module.exports = class Viewport extends Loop
      * handle down events
      * @private
      */
-    down()
+    down(x, y, data)
     {
+        let result
+        this.pointers.push({ id: data.id })
         for (let type of PLUGIN_ORDER)
         {
             if (this.plugins[type])
             {
-                this.plugins[type].down(...arguments)
+                if (this.plugins[type].down(...arguments))
+                {
+                    result = true
+                }
             }
         }
-
+        return result
     }
 
     /**
@@ -8188,29 +8746,66 @@ module.exports = class Viewport extends Loop
      * handle move events
      * @private
      */
-    move()
+    move(x, y, data)
     {
-        for (let type of PLUGIN_ORDER)
+        if (this.findPointerIndex(data.id) !== -1)
         {
-            if (this.plugins[type])
+            let result
+            for (let type of PLUGIN_ORDER)
             {
-                this.plugins[type].move(...arguments)
+                if (this.plugins[type])
+                {
+                    if (this.plugins[type].move(...arguments))
+                    {
+                        result = true
+                    }
+                }
+            }
+            return result
+        }
+    }
+
+    /**
+     * find pointer id
+     * @private
+     * @param {*} id
+     */
+    findPointerIndex(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            const pointer = this.pointers[i]
+            if (pointer.id === id)
+            {
+                return i
             }
         }
+        return -1
     }
 
     /**
      * handle up events
      * @private
      */
-    up()
+    up(x, y, data)
     {
-        for (let type of PLUGIN_ORDER)
+
+        const index = this.findPointerIndex(data.id)
+        if (index !== -1)
         {
-            if (this.plugins[type])
+            this.pointers.splice(index, 1)
+            let result
+            for (let type of PLUGIN_ORDER)
             {
-                this.plugins[type].up(...arguments)
+                if (this.plugins[type])
+                {
+                    if (this.plugins[type].up(...arguments))
+                    {
+                        result = true
+                    }
+                }
             }
+            return result
         }
     }
 
@@ -8218,15 +8813,20 @@ module.exports = class Viewport extends Loop
      * handle wheel events
      * @private
      */
-    handleWheel()
+    handleWheel(dx, dy, dz, data)
     {
+        let result
         for (let type of PLUGIN_ORDER)
         {
             if (this.plugins[type])
             {
-                this.plugins[type].wheel(...arguments)
+                if (this.plugins[type].wheel(dx, dy, dz, data))
+                {
+                    result = true
+                }
             }
         }
+        return result
     }
 
     /**
@@ -8634,11 +9234,15 @@ module.exports = class Viewport extends Loop
 
     /**
      * enable one-finger touch to drag
-     * @return {Viewport} this
+     * @param {object} [options]
+     * @param {boolean} [options.wheel=true] use wheel to scroll in y direction (unless wheel plugin is active)
+     * @param {number} [options.wheelScroll=10] number of pixels to scroll with each wheel spin
+     * @param {boolean} [options.reverse] reverse the direction of the wheel scroll
+     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
      */
-    drag()
+    drag(options)
     {
-        this.plugins['drag'] = new Drag(this)
+        this.plugins['drag'] = new Drag(this, options)
         return this
     }
 
@@ -8693,10 +9297,6 @@ module.exports = class Viewport extends Loop
      * @param {number} [options.percent=1.0] percent to modify pinch speed
      * @param {boolean} [options.noDrag] disable two-finger dragging
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of center of two fingers
-     * @param {number} [options.minWidth] clamp minimum width
-     * @param {number} [options.minHeight] clamp minimum height
-     * @param {number} [options.maxWidth] clamp maximum width
-     * @param {number} [options.maxHeight] clamp maximum height
      * @return {Viewport} this
      */
     pinch(options)
@@ -8744,10 +9344,6 @@ module.exports = class Viewport extends Loop
      * @param {number} [options.percent=0.1] percent to scroll with each spin
      * @param {boolean} [options.reverse] reverse the direction of the scroll
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of current mouse position
-     * @param {number} [options.minWidth] clamp minimum width
-     * @param {number} [options.minHeight] clamp minimum height
-     * @param {number} [options.maxWidth] clamp maximum width
-     * @param {number} [options.maxHeight] clamp maximum height
      * @return {Viewport} this
      */
     wheel(options)
@@ -8796,7 +9392,7 @@ module.exports = class Viewport extends Loop
     }
 }
 
-},{"./bounce":51,"./clamp":53,"./clamp-zoom":52,"./decelerate":54,"./drag":55,"./follow":56,"./mouse-edges":57,"./pinch":58,"./snap":61,"./snap-zoom":60,"./wheel":63,"exists":14,"yy-input":230,"yy-loop":231}],63:[function(require,module,exports){
+},{"./bounce":52,"./clamp":54,"./clamp-zoom":53,"./decelerate":55,"./drag":56,"./follow":57,"./mouse-edges":58,"./pinch":59,"./snap":62,"./snap-zoom":61,"./wheel":64,"exists":14,"yy-input":51,"yy-loop":231}],64:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Wheel extends Plugin
@@ -8807,10 +9403,6 @@ module.exports = class Wheel extends Plugin
      * @param {number} [options.percent=0.1] percent to scroll with each spin
      * @param {boolean} [options.reverse] reverse the direction of the scroll
      * @param {PIXI.Point} [options.center] place this point at center during zoom instead of current mouse position
-     * @param {number} [options.minWidth] clamp minimum width
-     * @param {number} [options.minHeight] clamp minimum height
-     * @param {number} [options.maxWidth] clamp maximum width
-     * @param {number} [options.maxHeight] clamp maximum height
      *
      * @event wheel({wheel: {dx, dy, dz}, viewport})
      */
@@ -8820,10 +9412,6 @@ module.exports = class Wheel extends Plugin
         options = options || {}
         this.percent = options.percent || 0.1
         this.center = options.center
-        this.minWidth = options.minWidth
-        this.maxWidth = options.maxWidth
-        this.minHeight = options.minHeight
-        this.maxHeight = options.maxHeight
         this.reverse = options.reverse
     }
 
@@ -8871,7 +9459,7 @@ module.exports = class Wheel extends Plugin
         this.parent.emit('wheel', { wheel: {dx, dy, dz}, viewport: this.parent})
     }
 }
-},{"./plugin":59}],64:[function(require,module,exports){
+},{"./plugin":60}],65:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9365,7 +9953,7 @@ exports.default = AccessibilityManager;
 core.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
 core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
 
-},{"../core":89,"./accessibleTarget":65,"ismobilejs":15}],65:[function(require,module,exports){
+},{"../core":90,"./accessibleTarget":66,"ismobilejs":15}],66:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -9423,7 +10011,7 @@ exports.default = {
   _accessibleDiv: false
 };
 
-},{}],66:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9448,7 +10036,7 @@ Object.defineProperty(exports, 'AccessibilityManager', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./AccessibilityManager":64,"./accessibleTarget":65}],67:[function(require,module,exports){
+},{"./AccessibilityManager":65,"./accessibleTarget":66}],68:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9671,7 +10259,7 @@ var Application = function () {
 
 exports.default = Application;
 
-},{"./autoDetectRenderer":69,"./const":70,"./display/Container":72,"./settings":125,"./ticker":145}],68:[function(require,module,exports){
+},{"./autoDetectRenderer":70,"./const":71,"./display/Container":73,"./settings":126,"./ticker":146}],69:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9735,7 +10323,7 @@ var Shader = function (_GLShader) {
 
 exports.default = Shader;
 
-},{"./settings":125,"pixi-gl-core":37}],69:[function(require,module,exports){
+},{"./settings":126,"pixi-gl-core":37}],70:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9804,7 +10392,7 @@ function autoDetectRenderer(options, arg1, arg2, arg3) {
     return new _CanvasRenderer2.default(options, arg1, arg2);
 }
 
-},{"./renderers/canvas/CanvasRenderer":101,"./renderers/webgl/WebGLRenderer":108,"./utils":149}],70:[function(require,module,exports){
+},{"./renderers/canvas/CanvasRenderer":102,"./renderers/webgl/WebGLRenderer":109,"./utils":150}],71:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9817,7 +10405,7 @@ exports.__esModule = true;
  * @name VERSION
  * @type {string}
  */
-var VERSION = exports.VERSION = '4.6.0';
+var VERSION = exports.VERSION = '4.6.1';
 
 /**
  * Two Pi.
@@ -10147,7 +10735,7 @@ var UPDATE_PRIORITY = exports.UPDATE_PRIORITY = {
   UTILITY: -50
 };
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10490,7 +11078,7 @@ var Bounds = function () {
 
 exports.default = Bounds;
 
-},{"../math":94}],72:[function(require,module,exports){
+},{"../math":95}],73:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11108,7 +11696,7 @@ var Container = function (_DisplayObject) {
 exports.default = Container;
 Container.prototype.containerUpdateTransform = Container.prototype.updateTransform;
 
-},{"../utils":149,"./DisplayObject":73}],73:[function(require,module,exports){
+},{"../utils":150,"./DisplayObject":74}],74:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11800,7 +12388,7 @@ var DisplayObject = function (_EventEmitter) {
 exports.default = DisplayObject;
 DisplayObject.prototype.displayObjectUpdateTransform = DisplayObject.prototype.updateTransform;
 
-},{"../const":70,"../math":94,"../settings":125,"./Bounds":71,"./Transform":74,"./TransformStatic":76,"eventemitter3":13}],74:[function(require,module,exports){
+},{"../const":71,"../math":95,"../settings":126,"./Bounds":72,"./Transform":75,"./TransformStatic":77,"eventemitter3":13}],75:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11981,7 +12569,7 @@ var Transform = function (_TransformBase) {
 
 exports.default = Transform;
 
-},{"../math":94,"./TransformBase":75}],75:[function(require,module,exports){
+},{"../math":95,"./TransformBase":76}],76:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12068,7 +12656,7 @@ TransformBase.prototype.updateWorldTransform = TransformBase.prototype.updateTra
 
 TransformBase.IDENTITY = new TransformBase();
 
-},{"../math":94}],76:[function(require,module,exports){
+},{"../math":95}],77:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12278,7 +12866,7 @@ var TransformStatic = function (_TransformBase) {
 
 exports.default = TransformStatic;
 
-},{"../math":94,"./TransformBase":75}],77:[function(require,module,exports){
+},{"../math":95,"./TransformBase":76}],78:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13450,7 +14038,7 @@ exports.default = Graphics;
 
 Graphics._SPRITE_TEXTURE = null;
 
-},{"../const":70,"../display/Bounds":71,"../display/Container":72,"../math":94,"../renderers/canvas/CanvasRenderer":101,"../sprites/Sprite":126,"../textures/RenderTexture":137,"../textures/Texture":139,"../utils":149,"./GraphicsData":78,"./utils/bezierCurveTo":80}],78:[function(require,module,exports){
+},{"../const":71,"../display/Bounds":72,"../display/Container":73,"../math":95,"../renderers/canvas/CanvasRenderer":102,"../sprites/Sprite":127,"../textures/RenderTexture":138,"../textures/Texture":140,"../utils":150,"./GraphicsData":79,"./utils/bezierCurveTo":81}],79:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13572,7 +14160,7 @@ var GraphicsData = function () {
 
 exports.default = GraphicsData;
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -13841,7 +14429,7 @@ exports.default = CanvasGraphicsRenderer;
 
 _CanvasRenderer2.default.registerPlugin('graphics', CanvasGraphicsRenderer);
 
-},{"../../const":70,"../../renderers/canvas/CanvasRenderer":101}],80:[function(require,module,exports){
+},{"../../const":71,"../../renderers/canvas/CanvasRenderer":102}],81:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -13891,7 +14479,7 @@ function bezierCurveTo(fromX, fromY, cpX, cpY, cpX2, cpY2, toX, toY) {
     return path;
 }
 
-},{}],81:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14156,7 +14744,7 @@ exports.default = GraphicsRenderer;
 
 _WebGLRenderer2.default.registerPlugin('graphics', GraphicsRenderer);
 
-},{"../../const":70,"../../renderers/webgl/WebGLRenderer":108,"../../renderers/webgl/utils/ObjectRenderer":118,"../../utils":149,"./WebGLGraphicsData":82,"./shaders/PrimitiveShader":83,"./utils/buildCircle":84,"./utils/buildPoly":86,"./utils/buildRectangle":87,"./utils/buildRoundedRectangle":88}],82:[function(require,module,exports){
+},{"../../const":71,"../../renderers/webgl/WebGLRenderer":109,"../../renderers/webgl/utils/ObjectRenderer":119,"../../utils":150,"./WebGLGraphicsData":83,"./shaders/PrimitiveShader":84,"./utils/buildCircle":85,"./utils/buildPoly":87,"./utils/buildRectangle":88,"./utils/buildRoundedRectangle":89}],83:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14299,7 +14887,7 @@ var WebGLGraphicsData = function () {
 
 exports.default = WebGLGraphicsData;
 
-},{"pixi-gl-core":37}],83:[function(require,module,exports){
+},{"pixi-gl-core":37}],84:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14344,7 +14932,7 @@ var PrimitiveShader = function (_Shader) {
 
 exports.default = PrimitiveShader;
 
-},{"../../../Shader":68}],84:[function(require,module,exports){
+},{"../../../Shader":69}],85:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14437,7 +15025,7 @@ function buildCircle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../const":70,"../../../utils":149,"./buildLine":85}],85:[function(require,module,exports){
+},{"../../../const":71,"../../../utils":150,"./buildLine":86}],86:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14707,7 +15295,7 @@ function buildNativeLine(graphicsData, webGLData) {
     }
 }
 
-},{"../../../math":94,"../../../utils":149}],86:[function(require,module,exports){
+},{"../../../math":95,"../../../utils":150}],87:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14793,7 +15381,7 @@ function buildPoly(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":149,"./buildLine":85,"earcut":12}],87:[function(require,module,exports){
+},{"../../../utils":150,"./buildLine":86,"earcut":12}],88:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14869,7 +15457,7 @@ function buildRectangle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":149,"./buildLine":85}],88:[function(require,module,exports){
+},{"../../../utils":150,"./buildLine":86}],89:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15025,7 +15613,7 @@ function quadraticBezierCurve(fromX, fromY, cpX, cpY, toX, toY) {
     return points;
 }
 
-},{"../../../utils":149,"./buildLine":85,"earcut":12}],89:[function(require,module,exports){
+},{"../../../utils":150,"./buildLine":86,"earcut":12}],90:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15411,7 +15999,7 @@ exports.WebGLRenderer = _WebGLRenderer2.default; /**
                                                   * @namespace PIXI
                                                   */
 
-},{"./Application":67,"./Shader":68,"./autoDetectRenderer":69,"./const":70,"./display/Bounds":71,"./display/Container":72,"./display/DisplayObject":73,"./display/Transform":74,"./display/TransformBase":75,"./display/TransformStatic":76,"./graphics/Graphics":77,"./graphics/GraphicsData":78,"./graphics/canvas/CanvasGraphicsRenderer":79,"./graphics/webgl/GraphicsRenderer":81,"./math":94,"./renderers/canvas/CanvasRenderer":101,"./renderers/canvas/utils/CanvasRenderTarget":103,"./renderers/webgl/WebGLRenderer":108,"./renderers/webgl/filters/Filter":110,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":113,"./renderers/webgl/managers/WebGLManager":117,"./renderers/webgl/utils/ObjectRenderer":118,"./renderers/webgl/utils/Quad":119,"./renderers/webgl/utils/RenderTarget":120,"./settings":125,"./sprites/Sprite":126,"./sprites/canvas/CanvasSpriteRenderer":127,"./sprites/canvas/CanvasTinter":128,"./sprites/webgl/SpriteRenderer":130,"./text/Text":132,"./text/TextMetrics":133,"./text/TextStyle":134,"./textures/BaseRenderTexture":135,"./textures/BaseTexture":136,"./textures/RenderTexture":137,"./textures/Spritesheet":138,"./textures/Texture":139,"./textures/TextureMatrix":140,"./textures/TextureUvs":141,"./textures/VideoBaseTexture":142,"./ticker":145,"./utils":149,"pixi-gl-core":37}],90:[function(require,module,exports){
+},{"./Application":68,"./Shader":69,"./autoDetectRenderer":70,"./const":71,"./display/Bounds":72,"./display/Container":73,"./display/DisplayObject":74,"./display/Transform":75,"./display/TransformBase":76,"./display/TransformStatic":77,"./graphics/Graphics":78,"./graphics/GraphicsData":79,"./graphics/canvas/CanvasGraphicsRenderer":80,"./graphics/webgl/GraphicsRenderer":82,"./math":95,"./renderers/canvas/CanvasRenderer":102,"./renderers/canvas/utils/CanvasRenderTarget":104,"./renderers/webgl/WebGLRenderer":109,"./renderers/webgl/filters/Filter":111,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":114,"./renderers/webgl/managers/WebGLManager":118,"./renderers/webgl/utils/ObjectRenderer":119,"./renderers/webgl/utils/Quad":120,"./renderers/webgl/utils/RenderTarget":121,"./settings":126,"./sprites/Sprite":127,"./sprites/canvas/CanvasSpriteRenderer":128,"./sprites/canvas/CanvasTinter":129,"./sprites/webgl/SpriteRenderer":131,"./text/Text":133,"./text/TextMetrics":134,"./text/TextStyle":135,"./textures/BaseRenderTexture":136,"./textures/BaseTexture":137,"./textures/RenderTexture":138,"./textures/Spritesheet":139,"./textures/Texture":140,"./textures/TextureMatrix":141,"./textures/TextureUvs":142,"./textures/VideoBaseTexture":143,"./ticker":146,"./utils":150,"pixi-gl-core":37}],91:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15604,7 +16192,7 @@ var GroupD8 = {
 
 exports.default = GroupD8;
 
-},{"./Matrix":91}],91:[function(require,module,exports){
+},{"./Matrix":92}],92:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16135,7 +16723,7 @@ var Matrix = function () {
 
 exports.default = Matrix;
 
-},{"./Point":93}],92:[function(require,module,exports){
+},{"./Point":94}],93:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16252,7 +16840,7 @@ var ObservablePoint = function () {
 
 exports.default = ObservablePoint;
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16343,7 +16931,7 @@ var Point = function () {
 
 exports.default = Point;
 
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16431,7 +17019,7 @@ Object.defineProperty(exports, 'RoundedRectangle', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./GroupD8":90,"./Matrix":91,"./ObservablePoint":92,"./Point":93,"./shapes/Circle":95,"./shapes/Ellipse":96,"./shapes/Polygon":97,"./shapes/Rectangle":98,"./shapes/RoundedRectangle":99}],95:[function(require,module,exports){
+},{"./GroupD8":91,"./Matrix":92,"./ObservablePoint":93,"./Point":94,"./shapes/Circle":96,"./shapes/Ellipse":97,"./shapes/Polygon":98,"./shapes/Rectangle":99,"./shapes/RoundedRectangle":100}],96:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16545,7 +17133,7 @@ var Circle = function () {
 
 exports.default = Circle;
 
-},{"../../const":70,"./Rectangle":98}],96:[function(require,module,exports){
+},{"../../const":71,"./Rectangle":99}],97:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16667,7 +17255,7 @@ var Ellipse = function () {
 
 exports.default = Ellipse;
 
-},{"../../const":70,"./Rectangle":98}],97:[function(require,module,exports){
+},{"../../const":71,"./Rectangle":99}],98:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16798,7 +17386,7 @@ var Polygon = function () {
 
 exports.default = Polygon;
 
-},{"../../const":70,"../Point":93}],98:[function(require,module,exports){
+},{"../../const":71,"../Point":94}],99:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17061,7 +17649,7 @@ var Rectangle = function () {
 
 exports.default = Rectangle;
 
-},{"../../const":70}],99:[function(require,module,exports){
+},{"../../const":71}],100:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17194,7 +17782,7 @@ var RoundedRectangle = function () {
 
 exports.default = RoundedRectangle;
 
-},{"../../const":70}],100:[function(require,module,exports){
+},{"../../const":71}],101:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17557,7 +18145,7 @@ var SystemRenderer = function (_EventEmitter) {
 
 exports.default = SystemRenderer;
 
-},{"../const":70,"../display/Container":72,"../math":94,"../settings":125,"../textures/RenderTexture":137,"../utils":149,"eventemitter3":13}],101:[function(require,module,exports){
+},{"../const":71,"../display/Container":73,"../math":95,"../settings":126,"../textures/RenderTexture":138,"../utils":150,"eventemitter3":13}],102:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17922,7 +18510,7 @@ var CanvasRenderer = function (_SystemRenderer) {
 exports.default = CanvasRenderer;
 _utils.pluginTarget.mixin(CanvasRenderer);
 
-},{"../../const":70,"../../settings":125,"../../utils":149,"../SystemRenderer":100,"./utils/CanvasMaskManager":102,"./utils/CanvasRenderTarget":103,"./utils/mapCanvasBlendModesToPixi":105}],102:[function(require,module,exports){
+},{"../../const":71,"../../settings":126,"../../utils":150,"../SystemRenderer":101,"./utils/CanvasMaskManager":103,"./utils/CanvasRenderTarget":104,"./utils/mapCanvasBlendModesToPixi":106}],103:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18091,7 +18679,7 @@ var CanvasMaskManager = function () {
 
 exports.default = CanvasMaskManager;
 
-},{"../../../const":70}],103:[function(require,module,exports){
+},{"../../../const":71}],104:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18215,7 +18803,7 @@ var CanvasRenderTarget = function () {
 
 exports.default = CanvasRenderTarget;
 
-},{"../../../settings":125}],104:[function(require,module,exports){
+},{"../../../settings":126}],105:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18276,7 +18864,7 @@ function canUseNewCanvasBlendModes() {
     return data[0] === 255 && data[1] === 0 && data[2] === 0;
 }
 
-},{}],105:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18348,7 +18936,7 @@ function mapCanvasBlendModesToPixi() {
     return array;
 }
 
-},{"../../../const":70,"./canUseNewCanvasBlendModes":104}],106:[function(require,module,exports){
+},{"../../../const":71,"./canUseNewCanvasBlendModes":105}],107:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18468,7 +19056,7 @@ var TextureGarbageCollector = function () {
 
 exports.default = TextureGarbageCollector;
 
-},{"../../const":70,"../../settings":125}],107:[function(require,module,exports){
+},{"../../const":71,"../../settings":126}],108:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18724,7 +19312,7 @@ var TextureManager = function () {
 
 exports.default = TextureManager;
 
-},{"../../const":70,"../../utils":149,"./utils/RenderTarget":120,"pixi-gl-core":37}],108:[function(require,module,exports){
+},{"../../const":71,"../../utils":150,"./utils/RenderTarget":121,"pixi-gl-core":37}],109:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19541,7 +20129,7 @@ var WebGLRenderer = function (_SystemRenderer) {
 exports.default = WebGLRenderer;
 _utils.pluginTarget.mixin(WebGLRenderer);
 
-},{"../../const":70,"../../textures/BaseTexture":136,"../../utils":149,"../SystemRenderer":100,"./TextureGarbageCollector":106,"./TextureManager":107,"./WebGLState":109,"./managers/FilterManager":114,"./managers/MaskManager":115,"./managers/StencilManager":116,"./utils/ObjectRenderer":118,"./utils/RenderTarget":120,"./utils/mapWebGLDrawModesToPixi":123,"./utils/validateContext":124,"pixi-gl-core":37}],109:[function(require,module,exports){
+},{"../../const":71,"../../textures/BaseTexture":137,"../../utils":150,"../SystemRenderer":101,"./TextureGarbageCollector":107,"./TextureManager":108,"./WebGLState":110,"./managers/FilterManager":115,"./managers/MaskManager":116,"./managers/StencilManager":117,"./utils/ObjectRenderer":119,"./utils/RenderTarget":121,"./utils/mapWebGLDrawModesToPixi":124,"./utils/validateContext":125,"pixi-gl-core":37}],110:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19821,7 +20409,7 @@ var WebGLState = function () {
 
 exports.default = WebGLState;
 
-},{"./utils/mapWebGLBlendModesToPixi":122}],110:[function(require,module,exports){
+},{"./utils/mapWebGLBlendModesToPixi":123}],111:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20017,7 +20605,7 @@ var Filter = function () {
 
 exports.default = Filter;
 
-},{"../../../const":70,"../../../settings":125,"../../../utils":149,"./extractUniformsFromSrc":111}],111:[function(require,module,exports){
+},{"../../../const":71,"../../../settings":126,"../../../utils":150,"./extractUniformsFromSrc":112}],112:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20079,7 +20667,7 @@ function extractUniformsFromString(string) {
     return uniforms;
 }
 
-},{"pixi-gl-core":37}],112:[function(require,module,exports){
+},{"pixi-gl-core":37}],113:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20138,7 +20726,7 @@ function calculateSpriteMatrix(outputMatrix, filterArea, textureSize, sprite) {
     return mappedMatrix;
 }
 
-},{"../../../math":94}],113:[function(require,module,exports){
+},{"../../../math":95}],114:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20226,7 +20814,7 @@ var SpriteMaskFilter = function (_Filter) {
 
 exports.default = SpriteMaskFilter;
 
-},{"../../../../math":94,"../../../../textures/TextureMatrix":140,"../Filter":110,"path":2}],114:[function(require,module,exports){
+},{"../../../../math":95,"../../../../textures/TextureMatrix":141,"../Filter":111,"path":2}],115:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20477,12 +21065,12 @@ var FilterManager = function (_WebGLManager) {
                     shader = new _Shader2.default(this.gl, filter.vertexSrc, filter.fragmentSrc);
 
                     filter.glShaders[renderer.CONTEXT_UID] = this.shaderCache[filter.glShaderKey] = shader;
+                    this.managedFilters.push(filter);
                 }
             } else {
                 shader = filter.glShaders[renderer.CONTEXT_UID] = new _Shader2.default(this.gl, filter.vertexSrc, filter.fragmentSrc);
+                this.managedFilters.push(filter);
             }
-
-            this.managedFilters.push(filter);
 
             // TODO - this only needs to be done once?
             renderer.bindVao(null);
@@ -20820,7 +21408,7 @@ var FilterManager = function (_WebGLManager) {
 
 exports.default = FilterManager;
 
-},{"../../../Shader":68,"../../../math":94,"../filters/filterTransforms":112,"../utils/Quad":119,"../utils/RenderTarget":120,"./WebGLManager":117,"bit-twiddle":11}],115:[function(require,module,exports){
+},{"../../../Shader":69,"../../../math":95,"../filters/filterTransforms":113,"../utils/Quad":120,"../utils/RenderTarget":121,"./WebGLManager":118,"bit-twiddle":11}],116:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21030,7 +21618,7 @@ var MaskManager = function (_WebGLManager) {
 
 exports.default = MaskManager;
 
-},{"../filters/spriteMask/SpriteMaskFilter":113,"./WebGLManager":117}],116:[function(require,module,exports){
+},{"../filters/spriteMask/SpriteMaskFilter":114,"./WebGLManager":118}],117:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21183,7 +21771,7 @@ var StencilManager = function (_WebGLManager) {
 
 exports.default = StencilManager;
 
-},{"./WebGLManager":117}],117:[function(require,module,exports){
+},{"./WebGLManager":118}],118:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21238,7 +21826,7 @@ var WebGLManager = function () {
 
 exports.default = WebGLManager;
 
-},{}],118:[function(require,module,exports){
+},{}],119:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21316,7 +21904,7 @@ var ObjectRenderer = function (_WebGLManager) {
 
 exports.default = ObjectRenderer;
 
-},{"../managers/WebGLManager":117}],119:[function(require,module,exports){
+},{"../managers/WebGLManager":118}],120:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21497,7 +22085,7 @@ var Quad = function () {
 
 exports.default = Quad;
 
-},{"../../../utils/createIndicesForQuads":147,"pixi-gl-core":37}],120:[function(require,module,exports){
+},{"../../../utils/createIndicesForQuads":148,"pixi-gl-core":37}],121:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21824,7 +22412,7 @@ var RenderTarget = function () {
 
 exports.default = RenderTarget;
 
-},{"../../../const":70,"../../../math":94,"../../../settings":125,"pixi-gl-core":37}],121:[function(require,module,exports){
+},{"../../../const":71,"../../../math":95,"../../../settings":126,"pixi-gl-core":37}],122:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21899,7 +22487,7 @@ function generateIfTestSrc(maxIfs) {
     return src;
 }
 
-},{"pixi-gl-core":37}],122:[function(require,module,exports){
+},{"pixi-gl-core":37}],123:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21948,7 +22536,7 @@ function mapWebGLBlendModesToPixi(gl) {
     return array;
 }
 
-},{"../../../const":70}],123:[function(require,module,exports){
+},{"../../../const":71}],124:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21980,7 +22568,7 @@ function mapWebGLDrawModesToPixi(gl) {
   return object;
 }
 
-},{"../../../const":70}],124:[function(require,module,exports){
+},{"../../../const":71}],125:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21996,7 +22584,7 @@ function validateContext(gl) {
     }
 }
 
-},{}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22231,7 +22819,7 @@ exports.default = {
 
 };
 
-},{"./utils/canUploadSameBuffer":146,"./utils/maxRecommendedTextures":151}],126:[function(require,module,exports){
+},{"./utils/canUploadSameBuffer":147,"./utils/maxRecommendedTextures":152}],127:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22854,7 +23442,7 @@ var Sprite = function (_Container) {
 
 exports.default = Sprite;
 
-},{"../const":70,"../display/Container":72,"../math":94,"../textures/Texture":139,"../utils":149}],127:[function(require,module,exports){
+},{"../const":71,"../display/Container":73,"../math":95,"../textures/Texture":140,"../utils":150}],128:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23007,7 +23595,7 @@ exports.default = CanvasSpriteRenderer;
 
 _CanvasRenderer2.default.registerPlugin('sprite', CanvasSpriteRenderer);
 
-},{"../../const":70,"../../math":94,"../../renderers/canvas/CanvasRenderer":101,"./CanvasTinter":128}],128:[function(require,module,exports){
+},{"../../const":71,"../../math":95,"../../renderers/canvas/CanvasRenderer":102,"./CanvasTinter":129}],129:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23258,7 +23846,7 @@ CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMul
 
 exports.default = CanvasTinter;
 
-},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":104,"../../utils":149}],129:[function(require,module,exports){
+},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":105,"../../utils":150}],130:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -23311,7 +23899,7 @@ var Buffer = function () {
 
 exports.default = Buffer;
 
-},{}],130:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23586,9 +24174,18 @@ var SpriteRenderer = function (_ObjectRenderer) {
 
         // copy textures..
         for (i = 0; i < MAX_TEXTURES; ++i) {
-            boundTextures[i] = rendererBoundTextures[i];
-            boundTextures[i]._virtalBoundId = i;
+            var bt = rendererBoundTextures[i];
+
+            if (bt._enabled === TICK) {
+                boundTextures[i] = this.renderer.emptyTextures[i];
+                continue;
+            }
+
+            boundTextures[i] = bt;
+            bt._virtalBoundId = i;
+            bt._enabled = TICK;
         }
+        TICK++;
 
         for (i = 0; i < this.currentIndex; ++i) {
             // upload the sprite elemetns...
@@ -23853,7 +24450,7 @@ exports.default = SpriteRenderer;
 
 _WebGLRenderer2.default.registerPlugin('sprite', SpriteRenderer);
 
-},{"../../renderers/webgl/WebGLRenderer":108,"../../renderers/webgl/utils/ObjectRenderer":118,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":121,"../../settings":125,"../../utils":149,"../../utils/createIndicesForQuads":147,"./BatchBuffer":129,"./generateMultiTextureShader":131,"bit-twiddle":11,"pixi-gl-core":37}],131:[function(require,module,exports){
+},{"../../renderers/webgl/WebGLRenderer":109,"../../renderers/webgl/utils/ObjectRenderer":119,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":122,"../../settings":126,"../../utils":150,"../../utils/createIndicesForQuads":148,"./BatchBuffer":130,"./generateMultiTextureShader":132,"bit-twiddle":11,"pixi-gl-core":37}],132:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23916,7 +24513,7 @@ function generateSampleSrc(maxTextures) {
     return src;
 }
 
-},{"../../Shader":68,"path":2}],132:[function(require,module,exports){
+},{"../../Shader":69,"path":2}],133:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24571,7 +25168,7 @@ var Text = function (_Sprite) {
 
 exports.default = Text;
 
-},{"../const":70,"../math":94,"../settings":125,"../sprites/Sprite":126,"../textures/Texture":139,"../utils":149,"../utils/trimCanvas":154,"./TextMetrics":133,"./TextStyle":134}],133:[function(require,module,exports){
+},{"../const":71,"../math":95,"../settings":126,"../sprites/Sprite":127,"../textures/Texture":140,"../utils":150,"../utils/trimCanvas":155,"./TextMetrics":134,"./TextStyle":135}],134:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24678,6 +25275,7 @@ var TextMetrics = function () {
         // Greedy wrapping algorithm that will wrap words as the line grows longer
         // than its horizontal bounds.
         var result = '';
+        var firstChar = text.charAt(0);
         var lines = text.split('\n');
         var wordWrapWidth = style.wordWrapWidth;
         var characterCache = {};
@@ -24706,7 +25304,7 @@ var TextMetrics = function () {
                             result += '\n' + character;
                             spaceLeft = wordWrapWidth - characterWidth;
                         } else {
-                            if (c === 0) {
+                            if (c === 0 && (j > 0 || firstChar === ' ')) {
                                 result += ' ';
                             }
 
@@ -24873,7 +25471,7 @@ TextMetrics._context = canvas.getContext('2d');
  */
 TextMetrics._fonts = {};
 
-},{}],134:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24958,7 +25556,8 @@ var TextStyle = function () {
      * @param {number} [style.letterSpacing=0] - The amount of spacing between letters, default is 0
      * @param {number} [style.lineHeight] - The line height, a number that represents the vertical space that a letter uses
      * @param {string} [style.lineJoin='miter'] - The lineJoin property sets the type of corner created, it can resolve
-     *      spiked text issues. Default is 'miter' (creates a sharp corner).
+     *      spiked text issues. Possible values "miter" (creates a sharp corner), "round" (creates a round corner) or "bevel"
+     *      (creates a squared corner).
      * @param {number} [style.miterLimit=10] - The miter limit to use when using the 'miter' lineJoin mode. This can reduce
      *      or increase the spikiness of rendered text.
      * @param {number} [style.padding=0] - Occasionally some fonts are cropped. Adding some padding will prevent this from
@@ -24977,7 +25576,9 @@ var TextStyle = function () {
 
         this.styleID = 0;
 
-        Object.assign(this, defaultStyle, style);
+        this.reset();
+
+        deepCopyProperties(this, style, style);
     }
 
     /**
@@ -24991,9 +25592,7 @@ var TextStyle = function () {
     TextStyle.prototype.clone = function clone() {
         var clonedProperties = {};
 
-        for (var key in defaultStyle) {
-            clonedProperties[key] = this[key];
-        }
+        deepCopyProperties(clonedProperties, this, defaultStyle);
 
         return new TextStyle(clonedProperties);
     };
@@ -25004,7 +25603,7 @@ var TextStyle = function () {
 
 
     TextStyle.prototype.reset = function reset() {
-        Object.assign(this, defaultStyle);
+        deepCopyProperties(this, defaultStyle, defaultStyle);
     };
 
     /**
@@ -25657,7 +26256,24 @@ function areArraysEqual(array1, array2) {
     return true;
 }
 
-},{"../const":70,"../utils":149}],135:[function(require,module,exports){
+/**
+ * Utility function to ensure that object properties are copied by value, and not by reference
+ *
+ * @param {Object} target Target object to copy properties into
+ * @param {Object} source Source object for the proporties to copy
+ * @param {string} propertyObj Object containing properties names we want to loop over
+ */
+function deepCopyProperties(target, source, propertyObj) {
+    for (var prop in propertyObj) {
+        if (Array.isArray(source[prop])) {
+            target[prop] = source[prop].slice();
+        } else {
+            target[prop] = source[prop];
+        }
+    }
+}
+
+},{"../const":71,"../utils":150}],136:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25819,7 +26435,7 @@ var BaseRenderTexture = function (_BaseTexture) {
 
 exports.default = BaseRenderTexture;
 
-},{"../settings":125,"./BaseTexture":136}],136:[function(require,module,exports){
+},{"../settings":126,"./BaseTexture":137}],137:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26554,7 +27170,9 @@ var BaseTexture = function (_EventEmitter) {
 
     /**
      * Helper function that creates a base texture based on the source you provide.
-     * The source can be - image url, image element, canvas element.
+     * The source can be - image url, image element, canvas element. If the
+     * source is an image url or an image element and not in the base texture
+     * cache, it will be created and loaded.
      *
      * @static
      * @param {string|HTMLImageElement|HTMLCanvasElement} source - The source to create base texture from.
@@ -26663,7 +27281,7 @@ var BaseTexture = function (_EventEmitter) {
 
 exports.default = BaseTexture;
 
-},{"../settings":125,"../utils":149,"../utils/determineCrossOrigin":148,"bit-twiddle":11,"eventemitter3":13}],137:[function(require,module,exports){
+},{"../settings":126,"../utils":150,"../utils/determineCrossOrigin":149,"bit-twiddle":11,"eventemitter3":13}],138:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26817,7 +27435,7 @@ var RenderTexture = function (_Texture) {
 
 exports.default = RenderTexture;
 
-},{"./BaseRenderTexture":135,"./Texture":139}],138:[function(require,module,exports){
+},{"./BaseRenderTexture":136,"./Texture":140}],139:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27079,7 +27697,7 @@ var Spritesheet = function () {
 
 exports.default = Spritesheet;
 
-},{"../":89,"../utils":149}],139:[function(require,module,exports){
+},{"../":90,"../utils":150}],140:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27771,7 +28389,7 @@ Texture.WHITE = createWhiteTexture();
 removeAllHandlers(Texture.WHITE);
 removeAllHandlers(Texture.WHITE.baseTexture);
 
-},{"../math":94,"../settings":125,"../utils":149,"./BaseTexture":136,"./TextureUvs":141,"./VideoBaseTexture":142,"eventemitter3":13}],140:[function(require,module,exports){
+},{"../math":95,"../settings":126,"../utils":150,"./BaseTexture":137,"./TextureUvs":142,"./VideoBaseTexture":143,"eventemitter3":13}],141:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27935,7 +28553,7 @@ var TextureMatrix = function () {
 
 exports.default = TextureMatrix;
 
-},{"../math/Matrix":91}],141:[function(require,module,exports){
+},{"../math/Matrix":92}],142:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28040,7 +28658,7 @@ var TextureUvs = function () {
 
 exports.default = TextureUvs;
 
-},{"../math/GroupD8":90}],142:[function(require,module,exports){
+},{"../math/GroupD8":91}],143:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28254,6 +28872,10 @@ var VideoBaseTexture = function (_BaseTexture) {
         if (this.source && this.source._pixiId) {
             _BaseTexture3.default.removeFromCache(this.source._pixiId);
             delete this.source._pixiId;
+
+            this.source.pause();
+            this.source.src = '';
+            this.source.load();
         }
 
         _BaseTexture.prototype.destroy.call(this);
@@ -28378,7 +29000,7 @@ function createSource(path, type) {
     return source;
 }
 
-},{"../const":70,"../ticker":145,"../utils":149,"../utils/determineCrossOrigin":148,"./BaseTexture":136}],143:[function(require,module,exports){
+},{"../const":71,"../ticker":146,"../utils":150,"../utils/determineCrossOrigin":149,"./BaseTexture":137}],144:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28851,7 +29473,7 @@ var Ticker = function () {
 
 exports.default = Ticker;
 
-},{"../const":70,"../settings":125,"./TickerListener":144}],144:[function(require,module,exports){
+},{"../const":71,"../settings":126,"./TickerListener":145}],145:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29025,7 +29647,7 @@ var TickerListener = function () {
 
 exports.default = TickerListener;
 
-},{}],145:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29105,7 +29727,7 @@ shared.destroy = function () {
 exports.shared = shared;
 exports.Ticker = _Ticker2.default;
 
-},{"./Ticker":143}],146:[function(require,module,exports){
+},{"./Ticker":144}],147:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29119,7 +29741,7 @@ function canUploadSameBuffer() {
 	return !ios;
 }
 
-},{}],147:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29153,7 +29775,7 @@ function createIndicesForQuads(size) {
     return indices;
 }
 
-},{}],148:[function(require,module,exports){
+},{}],149:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29209,7 +29831,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":8}],149:[function(require,module,exports){
+},{"url":8}],150:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29683,7 +30305,7 @@ function premultiplyTintToRgba(tint, alpha, out, premultiply) {
     return out;
 }
 
-},{"../const":70,"../settings":125,"./mapPremultipliedBlendModes":150,"./mixin":152,"./pluginTarget":153,"eventemitter3":13,"ismobilejs":15,"remove-array-items":213}],150:[function(require,module,exports){
+},{"../const":71,"../settings":126,"./mapPremultipliedBlendModes":151,"./mixin":153,"./pluginTarget":154,"eventemitter3":13,"ismobilejs":15,"remove-array-items":214}],151:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29726,7 +30348,7 @@ function mapPremultipliedBlendModes() {
     return array;
 }
 
-},{"../const":70}],151:[function(require,module,exports){
+},{"../const":71}],152:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29748,7 +30370,7 @@ function maxRecommendedTextures(max) {
     return max;
 }
 
-},{"ismobilejs":15}],152:[function(require,module,exports){
+},{"ismobilejs":15}],153:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29810,7 +30432,7 @@ function performMixins() {
     mixins.length = 0;
 }
 
-},{}],153:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29876,7 +30498,7 @@ exports.default = {
     }
 };
 
-},{}],154:[function(require,module,exports){
+},{}],155:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29952,7 +30574,7 @@ function trimCanvas(canvas) {
     };
 }
 
-},{}],155:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31096,7 +31718,7 @@ function deprecation(core) {
     }
 }
 
-},{}],156:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31276,7 +31898,7 @@ exports.default = CanvasExtract;
 
 core.CanvasRenderer.registerPlugin('extract', CanvasExtract);
 
-},{"../../core":89}],157:[function(require,module,exports){
+},{"../../core":90}],158:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31301,7 +31923,7 @@ Object.defineProperty(exports, 'canvas', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./canvas/CanvasExtract":156,"./webgl/WebGLExtract":158}],158:[function(require,module,exports){
+},{"./canvas/CanvasExtract":157,"./webgl/WebGLExtract":159}],159:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31524,7 +32146,7 @@ exports.default = WebGLExtract;
 
 core.WebGLRenderer.registerPlugin('extract', WebGLExtract);
 
-},{"../../core":89}],159:[function(require,module,exports){
+},{"../../core":90}],160:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31933,7 +32555,7 @@ var AnimatedSprite = function (_core$Sprite) {
 
 exports.default = AnimatedSprite;
 
-},{"../core":89}],160:[function(require,module,exports){
+},{"../core":90}],161:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32524,7 +33146,7 @@ exports.default = BitmapText;
 
 BitmapText.fonts = {};
 
-},{"../core":89,"../core/math/ObservablePoint":92,"../core/settings":125,"../core/utils":149}],161:[function(require,module,exports){
+},{"../core":90,"../core/math/ObservablePoint":93,"../core/settings":126,"../core/utils":150}],162:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32970,7 +33592,7 @@ var TilingSprite = function (_core$Sprite) {
 
 exports.default = TilingSprite;
 
-},{"../core":89,"../core/sprites/canvas/CanvasTinter":128}],162:[function(require,module,exports){
+},{"../core":90,"../core/sprites/canvas/CanvasTinter":129}],163:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33374,7 +33996,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy(o
     this.destroy(options);
 };
 
-},{"../core":89,"../core/textures/BaseTexture":136,"../core/textures/Texture":139,"../core/utils":149}],163:[function(require,module,exports){
+},{"../core":90,"../core/textures/BaseTexture":137,"../core/textures/Texture":140,"../core/utils":150}],164:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33408,7 +34030,7 @@ core.Container.prototype.getChildByName = function getChildByName(name) {
     return null;
 };
 
-},{"../core":89}],164:[function(require,module,exports){
+},{"../core":90}],165:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33441,7 +34063,7 @@ core.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition() {
     return point;
 };
 
-},{"../core":89}],165:[function(require,module,exports){
+},{"../core":90}],166:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33493,7 +34115,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // imported for side effect of extending the prototype only, contains no exports
 
-},{"./AnimatedSprite":159,"./BitmapText":160,"./TilingSprite":161,"./cacheAsBitmap":162,"./getChildByName":163,"./getGlobalPosition":164,"./webgl/TilingSpriteRenderer":166}],166:[function(require,module,exports){
+},{"./AnimatedSprite":160,"./BitmapText":161,"./TilingSprite":162,"./cacheAsBitmap":163,"./getChildByName":164,"./getGlobalPosition":165,"./webgl/TilingSpriteRenderer":167}],167:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33655,7 +34277,7 @@ exports.default = TilingSpriteRenderer;
 
 core.WebGLRenderer.registerPlugin('tilingSprite', TilingSpriteRenderer);
 
-},{"../../core":89,"../../core/const":70,"path":2}],167:[function(require,module,exports){
+},{"../../core":90,"../../core/const":71,"path":2}],168:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33697,9 +34319,11 @@ var AlphaFilter = function (_core$Filter) {
     _inherits(AlphaFilter, _core$Filter);
 
     /**
-     *
+     * @param {number} [alpha=1] Amount of alpha from 0 to 1, where 0 is transparent
      */
     function AlphaFilter() {
+        var alpha = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1.0;
+
         _classCallCheck(this, AlphaFilter);
 
         var _this = _possibleConstructorReturn(this, _core$Filter.call(this,
@@ -33708,7 +34332,7 @@ var AlphaFilter = function (_core$Filter) {
         // fragment shader
         'varying vec2 vTextureCoord;\n\nuniform sampler2D uSampler;\nuniform float uAlpha;\n\nvoid main(void)\n{\n   gl_FragColor = texture2D(uSampler, vTextureCoord) * uAlpha;\n}\n'));
 
-        _this.alpha = 1.0;
+        _this.alpha = alpha;
         _this.glShaderKey = 'alpha';
         return _this;
     }
@@ -33737,7 +34361,7 @@ var AlphaFilter = function (_core$Filter) {
 
 exports.default = AlphaFilter;
 
-},{"../../core":89,"path":2}],168:[function(require,module,exports){
+},{"../../core":90,"path":2}],169:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33911,7 +34535,7 @@ var BlurFilter = function (_core$Filter) {
 
 exports.default = BlurFilter;
 
-},{"../../core":89,"./BlurXFilter":169,"./BlurYFilter":170}],169:[function(require,module,exports){
+},{"../../core":90,"./BlurXFilter":170,"./BlurYFilter":171}],170:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34077,7 +34701,7 @@ var BlurXFilter = function (_core$Filter) {
 
 exports.default = BlurXFilter;
 
-},{"../../core":89,"./generateBlurFragSource":171,"./generateBlurVertSource":172,"./getMaxBlurKernelSize":173}],170:[function(require,module,exports){
+},{"../../core":90,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],171:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34242,7 +34866,7 @@ var BlurYFilter = function (_core$Filter) {
 
 exports.default = BlurYFilter;
 
-},{"../../core":89,"./generateBlurFragSource":171,"./generateBlurVertSource":172,"./getMaxBlurKernelSize":173}],171:[function(require,module,exports){
+},{"../../core":90,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],172:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34289,7 +34913,7 @@ function generateFragBlurSource(kernelSize) {
     return fragSource;
 }
 
-},{}],172:[function(require,module,exports){
+},{}],173:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34333,7 +34957,7 @@ function generateVertBlurSource(kernelSize, x) {
     return vertSource;
 }
 
-},{}],173:[function(require,module,exports){
+},{}],174:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -34349,7 +34973,7 @@ function getMaxKernelSize(gl) {
     return kernelSize;
 }
 
-},{}],174:[function(require,module,exports){
+},{}],175:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34376,7 +35000,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
  * with a new set of RGBA color and alpha values. It's pretty powerful!
  *
  * ```js
- *  let colorMatrix = new PIXI.ColorMatrixFilter();
+ *  let colorMatrix = new PIXI.filters.ColorMatrixFilter();
  *  container.filters = [colorMatrix];
  *  colorMatrix.contrast(2);
  * ```
@@ -34900,7 +35524,7 @@ var ColorMatrixFilter = function (_core$Filter) {
 exports.default = ColorMatrixFilter;
 ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 
-},{"../../core":89,"path":2}],175:[function(require,module,exports){
+},{"../../core":90,"path":2}],176:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35010,7 +35634,7 @@ var DisplacementFilter = function (_core$Filter) {
 
 exports.default = DisplacementFilter;
 
-},{"../../core":89,"path":2}],176:[function(require,module,exports){
+},{"../../core":90,"path":2}],177:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35064,7 +35688,7 @@ var FXAAFilter = function (_core$Filter) {
 
 exports.default = FXAAFilter;
 
-},{"../../core":89,"path":2}],177:[function(require,module,exports){
+},{"../../core":90,"path":2}],178:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35143,7 +35767,7 @@ Object.defineProperty(exports, 'AlphaFilter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./alpha/AlphaFilter":167,"./blur/BlurFilter":168,"./blur/BlurXFilter":169,"./blur/BlurYFilter":170,"./colormatrix/ColorMatrixFilter":174,"./displacement/DisplacementFilter":175,"./fxaa/FXAAFilter":176,"./noise/NoiseFilter":178}],178:[function(require,module,exports){
+},{"./alpha/AlphaFilter":168,"./blur/BlurFilter":169,"./blur/BlurXFilter":170,"./blur/BlurYFilter":171,"./colormatrix/ColorMatrixFilter":175,"./displacement/DisplacementFilter":176,"./fxaa/FXAAFilter":177,"./noise/NoiseFilter":179}],179:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35240,7 +35864,7 @@ var NoiseFilter = function (_core$Filter) {
 
 exports.default = NoiseFilter;
 
-},{"../../core":89,"path":2}],179:[function(require,module,exports){
+},{"../../core":90,"path":2}],180:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -35354,7 +35978,7 @@ if (typeof _deprecation2.default === 'function') {
 global.PIXI = exports; // eslint-disable-line
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./accessibility":66,"./core":89,"./deprecation":155,"./extract":157,"./extras":165,"./filters":177,"./interaction":184,"./loaders":187,"./mesh":196,"./particles":199,"./polyfill":205,"./prepare":209}],180:[function(require,module,exports){
+},{"./accessibility":67,"./core":90,"./deprecation":156,"./extract":158,"./extras":166,"./filters":178,"./interaction":185,"./loaders":188,"./mesh":197,"./particles":200,"./polyfill":206,"./prepare":210}],181:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35578,7 +36202,7 @@ var InteractionData = function () {
 
 exports.default = InteractionData;
 
-},{"../core":89}],181:[function(require,module,exports){
+},{"../core":90}],182:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -35663,7 +36287,7 @@ var InteractionEvent = function () {
 
 exports.default = InteractionEvent;
 
-},{}],182:[function(require,module,exports){
+},{}],183:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37423,7 +38047,7 @@ exports.default = InteractionManager;
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":89,"./InteractionData":180,"./InteractionEvent":181,"./InteractionTrackingData":183,"./interactiveTarget":185,"eventemitter3":13}],183:[function(require,module,exports){
+},{"../core":90,"./InteractionData":181,"./InteractionEvent":182,"./InteractionTrackingData":184,"./interactiveTarget":186,"eventemitter3":13}],184:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -37599,7 +38223,7 @@ InteractionTrackingData.FLAGS = Object.freeze({
     RIGHT_DOWN: 1 << 2
 });
 
-},{}],184:[function(require,module,exports){
+},{}],185:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37651,7 +38275,7 @@ Object.defineProperty(exports, 'InteractionEvent', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./InteractionData":180,"./InteractionEvent":181,"./InteractionManager":182,"./InteractionTrackingData":183,"./interactiveTarget":185}],185:[function(require,module,exports){
+},{"./InteractionData":181,"./InteractionEvent":182,"./InteractionManager":183,"./InteractionTrackingData":184,"./interactiveTarget":186}],186:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37768,7 +38392,7 @@ exports.default = {
   _trackedPointers: undefined
 };
 
-},{}],186:[function(require,module,exports){
+},{}],187:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37860,7 +38484,7 @@ function parse(resource, texture) {
     resource.bitmapFont = _extras.BitmapText.registerFont(resource.data, texture);
 }
 
-},{"../core":89,"../extras":165,"path":2,"resource-loader":218}],187:[function(require,module,exports){
+},{"../core":90,"../extras":166,"path":2,"resource-loader":219}],188:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37988,7 +38612,7 @@ AppPrototype.destroy = function destroy(removeView) {
     this._parentDestroy(removeView);
 };
 
-},{"../core/Application":67,"./bitmapFontParser":186,"./loader":188,"./spritesheetParser":189,"./textureParser":190,"resource-loader":218}],188:[function(require,module,exports){
+},{"../core/Application":68,"./bitmapFontParser":187,"./loader":189,"./spritesheetParser":190,"./textureParser":191,"resource-loader":219}],189:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38159,7 +38783,7 @@ var Resource = _resourceLoader2.default.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":186,"./spritesheetParser":189,"./textureParser":190,"eventemitter3":13,"resource-loader":218,"resource-loader/lib/middlewares/parsing/blob":219}],189:[function(require,module,exports){
+},{"./bitmapFontParser":187,"./spritesheetParser":190,"./textureParser":191,"eventemitter3":13,"resource-loader":219,"resource-loader/lib/middlewares/parsing/blob":220}],190:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38218,7 +38842,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":89,"resource-loader":218,"url":8}],190:[function(require,module,exports){
+},{"../core":90,"resource-loader":219,"url":8}],191:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38241,7 +38865,7 @@ var _Texture2 = _interopRequireDefault(_Texture);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"../core/textures/Texture":139,"resource-loader":218}],191:[function(require,module,exports){
+},{"../core/textures/Texture":140,"resource-loader":219}],192:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38610,7 +39234,7 @@ Mesh.DRAW_MODES = {
   TRIANGLES: 1
 };
 
-},{"../core":89,"../core/textures/Texture":139}],192:[function(require,module,exports){
+},{"../core":90,"../core/textures/Texture":140}],193:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38996,7 +39620,7 @@ var NineSlicePlane = function (_Plane) {
 
 exports.default = NineSlicePlane;
 
-},{"./Plane":193}],193:[function(require,module,exports){
+},{"./Plane":194}],194:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39137,7 +39761,7 @@ var Plane = function (_Mesh) {
 
 exports.default = Plane;
 
-},{"./Mesh":191}],194:[function(require,module,exports){
+},{"./Mesh":192}],195:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39373,7 +39997,7 @@ var Rope = function (_Mesh) {
 
 exports.default = Rope;
 
-},{"./Mesh":191}],195:[function(require,module,exports){
+},{"./Mesh":192}],196:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39656,7 +40280,7 @@ exports.default = MeshSpriteRenderer;
 
 core.CanvasRenderer.registerPlugin('mesh', MeshSpriteRenderer);
 
-},{"../../core":89,"../Mesh":191}],196:[function(require,module,exports){
+},{"../../core":90,"../Mesh":192}],197:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39717,7 +40341,7 @@ Object.defineProperty(exports, 'Rope', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./Mesh":191,"./NineSlicePlane":192,"./Plane":193,"./Rope":194,"./canvas/CanvasMeshRenderer":195,"./webgl/MeshRenderer":197}],197:[function(require,module,exports){
+},{"./Mesh":192,"./NineSlicePlane":193,"./Plane":194,"./Rope":195,"./canvas/CanvasMeshRenderer":196,"./webgl/MeshRenderer":198}],198:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39868,7 +40492,7 @@ exports.default = MeshRenderer;
 
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
-},{"../../core":89,"../Mesh":191,"path":2,"pixi-gl-core":37}],198:[function(require,module,exports){
+},{"../../core":90,"../Mesh":192,"path":2,"pixi-gl-core":37}],199:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40246,7 +40870,7 @@ var ParticleContainer = function (_core$Container) {
 
 exports.default = ParticleContainer;
 
-},{"../core":89,"../core/utils":149}],199:[function(require,module,exports){
+},{"../core":90,"../core/utils":150}],200:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40271,7 +40895,7 @@ Object.defineProperty(exports, 'ParticleRenderer', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./ParticleContainer":198,"./webgl/ParticleRenderer":201}],200:[function(require,module,exports){
+},{"./ParticleContainer":199,"./webgl/ParticleRenderer":202}],201:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40501,12 +41125,16 @@ var ParticleBuffer = function () {
 
     ParticleBuffer.prototype.destroy = function destroy() {
         this.dynamicProperties = null;
-        this.dynamicData = null;
         this.dynamicBuffer.destroy();
+        this.dynamicBuffer = null;
+        this.dynamicData = null;
+        this.dynamicDataUint32 = null;
 
         this.staticProperties = null;
-        this.staticData = null;
         this.staticBuffer.destroy();
+        this.staticBuffer = null;
+        this.staticData = null;
+        this.staticDataUint32 = null;
     };
 
     return ParticleBuffer;
@@ -40514,7 +41142,7 @@ var ParticleBuffer = function () {
 
 exports.default = ParticleBuffer;
 
-},{"../../core/utils/createIndicesForQuads":147,"pixi-gl-core":37}],201:[function(require,module,exports){
+},{"../../core/utils/createIndicesForQuads":148,"pixi-gl-core":37}],202:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40990,7 +41618,7 @@ exports.default = ParticleRenderer;
 
 core.WebGLRenderer.registerPlugin('particle', ParticleRenderer);
 
-},{"../../core":89,"../../core/utils":149,"./ParticleBuffer":200,"./ParticleShader":202}],202:[function(require,module,exports){
+},{"../../core":90,"../../core/utils":150,"./ParticleBuffer":201,"./ParticleShader":203}],203:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41023,9 +41651,9 @@ var ParticleShader = function (_Shader) {
 
         return _possibleConstructorReturn(this, _Shader.call(this, gl,
         // vertex shader
-        ['attribute vec2 aVertexPosition;', 'attribute vec2 aTextureCoord;', 'attribute vec4 aColor;', 'attribute vec2 aPositionCoord;', 'attribute vec2 aScale;', 'attribute float aRotation;', 'uniform mat3 projectionMatrix;', 'uniform vec4 uColor;', 'varying vec2 vTextureCoord;', 'varying vec4 vColor;', 'void main(void){', '   vec2 v = aVertexPosition;', '   v.x = (aVertexPosition.x) * cos(aRotation) - (aVertexPosition.y) * sin(aRotation);', '   v.y = (aVertexPosition.x) * sin(aRotation) + (aVertexPosition.y) * cos(aRotation);', '   v = v + aPositionCoord;', '   gl_Position = vec4((projectionMatrix * vec3(v, 1.0)).xy, 0.0, 1.0);', '   vTextureCoord = aTextureCoord;', '   vColor = aColor * uColor;', '}'].join('\n'),
+        ['attribute vec2 aVertexPosition;', 'attribute vec2 aTextureCoord;', 'attribute vec4 aColor;', 'attribute vec2 aPositionCoord;', 'attribute vec2 aScale;', 'attribute float aRotation;', 'uniform mat3 projectionMatrix;', 'uniform vec4 uColor;', 'varying vec2 vTextureCoord;', 'varying vec4 vColor;', 'void main(void){', '   float x = (aVertexPosition.x) * cos(aRotation) - (aVertexPosition.y) * sin(aRotation);', '   float y = (aVertexPosition.x) * sin(aRotation) + (aVertexPosition.y) * cos(aRotation);', '   vec2 v = vec2(x, y);', '   v = v + aPositionCoord;', '   gl_Position = vec4((projectionMatrix * vec3(v, 1.0)).xy, 0.0, 1.0);', '   vTextureCoord = aTextureCoord;', '   vColor = aColor * uColor;', '}'].join('\n'),
         // hello
-        ['varying vec2 vTextureCoord;', 'varying vec4 vColor;', 'uniform sampler2D uSampler;', 'void main(void){', '  vec4 color = texture2D(uSampler, vTextureCoord) * vColor;', '  if (color.a == 0.0) discard;', '  gl_FragColor = color;', '}'].join('\n')));
+        ['varying vec2 vTextureCoord;', 'varying vec4 vColor;', 'uniform sampler2D uSampler;', 'void main(void){', '  vec4 color = texture2D(uSampler, vTextureCoord) * vColor;', '  gl_FragColor = color;', '}'].join('\n')));
     }
 
     return ParticleShader;
@@ -41033,7 +41661,7 @@ var ParticleShader = function (_Shader) {
 
 exports.default = ParticleShader;
 
-},{"../../core/Shader":68}],203:[function(require,module,exports){
+},{"../../core/Shader":69}],204:[function(require,module,exports){
 "use strict";
 
 // References:
@@ -41051,7 +41679,7 @@ if (!Math.sign) {
     };
 }
 
-},{}],204:[function(require,module,exports){
+},{}],205:[function(require,module,exports){
 'use strict';
 
 var _objectAssign = require('object-assign');
@@ -41066,7 +41694,7 @@ if (!Object.assign) {
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
 
-},{"object-assign":17}],205:[function(require,module,exports){
+},{"object-assign":17}],206:[function(require,module,exports){
 'use strict';
 
 require('./Object.assign');
@@ -41091,7 +41719,7 @@ if (!window.Uint16Array) {
     window.Uint16Array = Array;
 }
 
-},{"./Math.sign":203,"./Object.assign":204,"./requestAnimationFrame":206}],206:[function(require,module,exports){
+},{"./Math.sign":204,"./Object.assign":205,"./requestAnimationFrame":207}],207:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -41168,7 +41796,7 @@ if (!global.cancelAnimationFrame) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],207:[function(require,module,exports){
+},{}],208:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41656,7 +42284,7 @@ function findTextStyle(item, queue) {
     return false;
 }
 
-},{"../core":89,"./limiters/CountLimiter":210}],208:[function(require,module,exports){
+},{"../core":90,"./limiters/CountLimiter":211}],209:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41776,7 +42404,7 @@ function uploadBaseTextures(prepare, item) {
 
 core.CanvasRenderer.registerPlugin('prepare', CanvasPrepare);
 
-},{"../../core":89,"../BasePrepare":207}],209:[function(require,module,exports){
+},{"../../core":90,"../BasePrepare":208}],210:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41828,7 +42456,7 @@ Object.defineProperty(exports, 'TimeLimiter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./BasePrepare":207,"./canvas/CanvasPrepare":208,"./limiters/CountLimiter":210,"./limiters/TimeLimiter":211,"./webgl/WebGLPrepare":212}],210:[function(require,module,exports){
+},{"./BasePrepare":208,"./canvas/CanvasPrepare":209,"./limiters/CountLimiter":211,"./limiters/TimeLimiter":212,"./webgl/WebGLPrepare":213}],211:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41886,7 +42514,7 @@ var CountLimiter = function () {
 
 exports.default = CountLimiter;
 
-},{}],211:[function(require,module,exports){
+},{}],212:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -41944,7 +42572,7 @@ var TimeLimiter = function () {
 
 exports.default = TimeLimiter;
 
-},{}],212:[function(require,module,exports){
+},{}],213:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42066,7 +42694,7 @@ function findGraphics(item, queue) {
 
 core.WebGLRenderer.registerPlugin('prepare', WebGLPrepare);
 
-},{"../../core":89,"../BasePrepare":207}],213:[function(require,module,exports){
+},{"../../core":90,"../BasePrepare":208}],214:[function(require,module,exports){
 'use strict'
 
 /**
@@ -42096,7 +42724,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
   arr.length = len
 }
 
-},{}],214:[function(require,module,exports){
+},{}],215:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42714,7 +43342,7 @@ var Loader = function () {
 
 exports.default = Loader;
 
-},{"./Resource":215,"./async":216,"mini-signals":16,"parse-uri":18}],215:[function(require,module,exports){
+},{"./Resource":216,"./async":217,"mini-signals":16,"parse-uri":18}],216:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43870,7 +44498,7 @@ function reqType(xhr) {
     return xhr.toString().replace('object ', '');
 }
 
-},{"mini-signals":16,"parse-uri":18}],216:[function(require,module,exports){
+},{"mini-signals":16,"parse-uri":18}],217:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44079,7 +44707,7 @@ function queue(worker, concurrency) {
     return q;
 }
 
-},{}],217:[function(require,module,exports){
+},{}],218:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44147,7 +44775,7 @@ function encodeBinary(input) {
     return output;
 }
 
-},{}],218:[function(require,module,exports){
+},{}],219:[function(require,module,exports){
 'use strict';
 
 // import Loader from './Loader';
@@ -44171,7 +44799,7 @@ module.exports = Loader;
 // export default Loader;
 module.exports.default = Loader;
 
-},{"./Loader":214,"./Resource":215,"./async":216,"./b64":217}],219:[function(require,module,exports){
+},{"./Loader":215,"./Resource":216,"./async":217,"./b64":218}],220:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44259,7 +44887,7 @@ function blobMiddlewareFactory() {
     };
 }
 
-},{"../../Resource":215,"../../b64":217}],220:[function(require,module,exports){
+},{"../../Resource":216,"../../b64":218}],221:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -44321,7 +44949,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":221,"./lib/tychei":222,"./lib/xor128":223,"./lib/xor4096":224,"./lib/xorshift7":225,"./lib/xorwow":226,"./seedrandom":227}],221:[function(require,module,exports){
+},{"./lib/alea":222,"./lib/tychei":223,"./lib/xor128":224,"./lib/xor4096":225,"./lib/xorshift7":226,"./lib/xorwow":227,"./seedrandom":228}],222:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -44437,7 +45065,7 @@ if (module && module.exports) {
 
 
 
-},{}],222:[function(require,module,exports){
+},{}],223:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -44542,7 +45170,7 @@ if (module && module.exports) {
 
 
 
-},{}],223:[function(require,module,exports){
+},{}],224:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44625,7 +45253,7 @@ if (module && module.exports) {
 
 
 
-},{}],224:[function(require,module,exports){
+},{}],225:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -44773,7 +45401,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],225:[function(require,module,exports){
+},{}],226:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -44872,7 +45500,7 @@ if (module && module.exports) {
 );
 
 
-},{}],226:[function(require,module,exports){
+},{}],227:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -44960,7 +45588,7 @@ if (module && module.exports) {
 
 
 
-},{}],227:[function(require,module,exports){
+},{}],228:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -45209,7 +45837,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":1}],228:[function(require,module,exports){
+},{"crypto":1}],229:[function(require,module,exports){
 // angle.js <https://github.com/davidfig/anglejs>
 // Released under MIT license <https://github.com/davidfig/angle/blob/master/LICENSE>
 // Author: David Figatner
@@ -45485,7 +46113,7 @@ module.exports = {
     equals,
     explain
 }
-},{}],229:[function(require,module,exports){
+},{}],230:[function(require,module,exports){
 /**
  * @file color.js
  * @author David Figatner
@@ -45794,401 +46422,7 @@ class Color
 };
 
 module.exports = new Color();
-},{"yy-random":234}],230:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
-
-const EventEmitter = require('eventemitter3')
-
-module.exports = class Input extends EventEmitter
-{
-    /**
-     * basic input support for touch, mouse, and keyboard
-     *
-     * @param {object} [options]
-     * @param {HTMLElement} [options.div=document] object to attach listener to
-     * @param {boolean} [options.noPointers] turns off mouse/touch/pen listeners
-     * @param {boolean} [options.noKeyboard] turns off key listener
-     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
-     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
-     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
-     *
-     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
-     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
-     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
-     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
-     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
-     *
-     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
-     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
-     */
-    constructor(options)
-    {
-        super()
-        options = options || {}
-        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
-        this.chromeDebug = options.chromeDebug
-        this.preventDefault = options.preventDefault
-
-        this.pointers = []
-        this.keys = {}
-        this.input = []
-
-        this.div = options.div || document
-        this.options = options
-        this.callbacks = [
-            this.mouseDown.bind(this),
-            this.mouseMove.bind(this),
-            this.mouseUp.bind(this), // 2
-            this.touchStart.bind(this),
-            this.touchMove.bind(this),
-            this.touchEnd.bind(this),
-            this.keydown.bind(this), // 6
-            this.keyup.bind(this),
-            this.wheel.bind(this) // 8
-        ]
-        if (!options.noPointers)
-        {
-            this.addPointers()
-        }
-        if (!options.noKeyboard)
-        {
-            this.addKeyboard()
-        }
-    }
-
-    /**
-     * remove all listeners
-     */
-    destroy()
-    {
-        this.removePointers()
-        this.removeKeyboard()
-    }
-
-    /**
-     * turns on pointer listeners (on by default); can be used after removePointers()
-     */
-    addPointers()
-    {
-        if (!this.listeningPointer)
-        {
-            const div = this.div
-            div.addEventListener('mousedown', this.callbacks[0])
-            div.addEventListener('mousemove', this.callbacks[1])
-            div.addEventListener('mouseup', this.callbacks[2])
-            div.addEventListener('mouseout', this.callbacks[2])
-            div.addEventListener('wheel', this.callbacks[8])
-
-            div.addEventListener('touchstart', this.callbacks[3])
-            div.addEventListener('touchmove', this.callbacks[4])
-            div.addEventListener('touchend', this.callbacks[5])
-            div.addEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = true
-        }
-    }
-
-    /**
-     * remove pointers listener
-     */
-    removePointers()
-    {
-        if (this.listeningPointer)
-        {
-            const div = this.div
-            div.removeEventListener('mousedown', this.callbacks[0])
-            div.removeEventListener('mousemove', this.callbacks[1])
-            div.removeEventListener('mouseup', this.callbacks[2])
-            div.removeEventListener('mouseout', this.callbacks[2])
-            div.removeEventListener('wheel', this.callbacks[8])
-
-            div.removeEventListener('touchstart', this.callbacks[3])
-            div.removeEventListener('touchmove', this.callbacks[4])
-            div.removeEventListener('touchend', this.callbacks[5])
-            div.removeEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = false
-        }
-    }
-
-    /**
-     * turns on keyboard listener (off by default); can be used after removeKeyboard()
-     */
-    addKeyboard()
-    {
-        if (!this.listeningKeyboard)
-        {
-            document.addEventListener('keydown', this.callbacks[6])
-            document.addEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = true
-        }
-    }
-
-    /**
-     * removes keyboard listener
-     */
-    removeKeyboard()
-    {
-        if (this.listeningKeyboard)
-        {
-            document.removeEventListener('keydown', this.callbacks[6])
-            document.removeEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = false
-        }
-    }
-
-    /**
-     * helper function to find touch from list based on id
-     * @private
-     * @param  {number} id for saved touch
-     * @return {object}
-     */
-    findTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                return this.pointers[i]
-            }
-        }
-        return null
-    }
-
-    /**
-     * helper function to remove touch from touch list
-     * @private
-     * @param  {object} touch object
-     */
-    removeTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                this.pointers.splice(i, 1)
-                return
-            }
-        }
-    }
-
-    /**
-     * Handle touch start
-     * @private
-     * @param  {object} e touch event
-     */
-    touchStart(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const touches = e.changedTouches
-        for (let i = 0; i < touches.length; i++)
-        {
-            const touch = touches[i]
-            const entry = {
-                identifier: touch.identifier,
-                x: touch.clientX,
-                y: touch.clientY
-            }
-            this.pointers.push(entry)
-            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch move
-     * @private
-     * @param  {object} e touch event
-     */
-    touchMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch end
-     * @private
-     * @param  {object} e touch event
-     */
-    touchEnd(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            const previous = this.findTouch(touch.identifier)
-            if (previous !== null)
-            {
-                this.removeTouch(touch.identifier)
-                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
-            }
-        }
-    }
-
-    /**
-     * Handle mouse down
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseDown(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        while (this.pointers.length)
-        {
-            this.pointers.pop()
-        }
-        this.pointers.push({id: 'mouse'})
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleDown(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse move
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleMove(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse up
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseUp(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.pointers.pop()
-        this.handleUp(x, y, e, 'mouse')
-    }
-
-    handleDown(x, y, e, id)
-    {
-        this.emit('down', x, y, { event: e, input: this, id })
-        if (!this.threshold || this.pointers > 1)
-        {
-            this.start = null
-        }
-        else
-        {
-            this.start = { x, y }
-        }
-    }
-
-    handleUp(x, y, e, id)
-    {
-        if (this.start)
-        {
-            this.start = null
-            this.emit('click', x, y, { event: e, input: this, id })
-        }
-        this.emit('up', x, y, { event: e, input: this, id })
-    }
-
-    handleMove(x, y, e, id)
-    {
-        if (this.start)
-        {
-            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
-            {
-                this.start = null
-            }
-        }
-        this.emit('move', x, y, { event: e, input: this, id })
-    }
-
-    wheel(e)
-    {
-        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
-    }
-
-    /**
-     * Sets event listener for keyboard
-     * @private
-     */
-    keysListener()
-    {
-    }
-
-    /**
-     * @private
-     * @param  {object} e
-     */
-    keydown(e)
-    {
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        if (this.chromeDebug)
-        {
-            // allow chrome to open developer console
-            if (this.keys.meta && code === 73)
-            {
-                return
-            }
-
-            // reload page with meta + r
-            if (code === 82 && this.keys.meta)
-            {
-                window.location.reload()
-                return
-            }
-        }
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.emit('keydown', code, this.keys, { event: e, input: this })
-    }
-
-    /**
-     * Handle key up
-     * @private
-     * @param  {object}
-     */
-    keyup(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        this.emit('keyup', code, this.keys, { event: e, input: this })
-    }
-}
-},{"eventemitter3":13}],231:[function(require,module,exports){
+},{"yy-random":234}],231:[function(require,module,exports){
 module.exports = require('./src/loop')
 },{"./src/loop":233}],232:[function(require,module,exports){
 const Events = require('eventemitter3')
@@ -46896,4 +47130,4 @@ class Random
 }
 
 module.exports = new Random()
-},{"seedrandom":220}]},{},[10]);
+},{"seedrandom":221}]},{},[10]);
