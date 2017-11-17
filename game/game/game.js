@@ -7,39 +7,6 @@
 //                       | |    
 //                       |_|   
 
-/*class Line extends PIXI.Graphics {
-    constructor(points, lineSize, lineColor) {
-        super()
-
-        this.lineWidth = lineSize || 5
-        this.lineColor = lineColor || "0x000000"
-
-        //this.updatePoints(points)
-
-        this.lineStyle(this.lineWidth, this.lineColor)
-        this.moveTo(points[0], points[1])
-        this.lineTo(points[2], points[3])
-
-        this.delay = false
-    }
-
-    updatePoints(points) {
-
-        //this.position.set(points[0], points[1])
-        //this.scale.set()
-
-        
-        if (this.delay) {
-            this.clear()
-        }
-        this.delay = !this.delay
-
-        this.lineStyle(this.lineWidth, this.lineColor)
-        this.moveTo(points[0], points[1])
-        this.lineTo(points[2], points[3])
-    }
-}*/
-
 class Line extends PIXI.Graphics {
     constructor(lineSize, lineColor) {
         super()
@@ -149,13 +116,20 @@ function onLoad(loader, resources) {
     sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    const planet1 = stage.addChild(createPlanet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2))
-    const planet2a = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1))
-    const planet2b = stage.addChild(createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1))
-    const planet3 = stage.addChild(createPlanet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
-    const planet4 = stage.addChild(createPlanet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
+    const planet1 = createPlanet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
+    const planet2a = createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1)
+    const planet2b = createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1)
+    const planet3 = createPlanet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
+    const planet4 = createPlanet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
 
     planets = [planet1, planet2a, planet2b, planet3, planet4]
+    drawLines = []
+    for (i in planets) {
+        drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
+    }
+    for (i in planets) {
+        game.stage.addChild(planets[i])
+    }
 
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
@@ -232,7 +206,11 @@ function stopFollow() {
     focusPlanet = null
 }
 
-function centerView() {
+function exists(n) {
+    return typeof n !== 'undefined' && n !== null
+}
+
+function centerView(inter) {
     if (!snappingToCenter) {
         stopSnap()
         snappingToCenter = true
@@ -240,6 +218,7 @@ function centerView() {
         viewport.snap(0, 0, {
             time: animTime,
             removeOnComplete: true,
+            center: true,
             ease: 'easeInOutSine'
         })
 
@@ -310,6 +289,16 @@ viewport.on('drag-start', function (e) {
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
 viewport.on('click', function (e) {
+    if (isSendingShips()) {
+
+        if (exists(selectedPlanet)) {
+            console.log('SelectedRadius: ' + selectedPlanet.orbit.radius)
+            cancelSendShips()
+        }
+
+        return
+    }
+
     stopSnap()
 
     var point = new PIXI.Point(e.screen.x, e.screen.y)
@@ -604,26 +593,24 @@ var drawLinesFrom
 var drawLines
 
 function goToSendShipsScreen(fromPlanet) {
+    viewport.pausePlugin('drag')
+    viewport.pausePlugin('wheel')
     centerView()
     drawLinesFrom = fromPlanet
-
-    if (!drawLines) {
-        drawLines = []
-
-        for (i in planets) {
-            drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
-        }
-    }
+    updateLines = ticksPerCollideUpdate
 }
 
 function cancelSendShips() {
-
     for (i in drawLines) {
         drawLines[i].visible = false
     }
-
     drawLinesFrom = null
-    drawLinesTo = null
+    viewport.resumePlugin('drag')
+    viewport.resumePlugin('wheel')
+}
+
+function isSendingShips() {
+    return drawLinesFrom
 }
 
 // Tells if the value x is between or equal to y and z within the error margin (error should be positive)
@@ -642,6 +629,11 @@ function isBetween(x, y, z, error) {
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
 
+const sunCollisionRadius = 30
+const ticksPerCollideUpdate = 20
+var updateLines = ticksPerCollideUpdate
+var selectedPlanet
+
 var lastPixels = 1
 var pixels = 0
 var lastShips = 1
@@ -649,8 +641,6 @@ var ships = 0
 var planets
 var myPlanet
 var focusPlanet
-
-var mybool = false
 
 function gameLoop() {
 
@@ -698,110 +688,93 @@ function gameLoop() {
         sendShipText.visible = false
     }
 
-    if (drawLinesFrom) {
+    // If drawing the ship travel lines
+    if (isSendingShips()) {
+        updateLines =0
+        
+        if (updateLines > ticksPerCollideUpdate) {
+            updateLines = 0
+            selectedPlanet = null
+        }
+
         // For each planet, draw a line from the drawLinesFrom planet to it
         for (i in planets) {
             // Don't draw a line from the drawLinesFrom planet to itself
             if (planets[i] != drawLinesFrom) {
+                // Only draw lines every update cycle
+                if (updateLines == 0) {
+                    // Player Planet
+                    let pX = drawLinesFrom.position.x
+                    let pY = drawLinesFrom.position.y
 
-                // Player Planet
-                let pX = drawLinesFrom.position.x
-                let pY = drawLinesFrom.position.y
+                    // Target Planet
+                    let target = planets[i]
+                    let p2X = planets[i].position.x
+                    let p2Y = planets[i].position.y
 
-                // Target Planet
-                let target = planets[i]
-                let p2X = planets[i].position.x
-                let p2Y = planets[i].position.y
+                    // Line Slope (origin is the Planet Player pos)
+                    let mX = p2X - pX
+                    let mY = p2Y - pY
 
-                // Line Slope (origin is the Planet Player pos)
-                let mX = p2X - pX
-                let mY = p2Y - pY
+                    var collides = false
+                    for (n in planets) {
+                        if (planets[n] != drawLinesFrom && planets[n] != target) {
+                            // current planet of interest
+                            let current = planets[n]
+                            let cX = current.position.x
+                            let cY = current.position.y
+                            // If the target planet is within the bounds of the two planets
+                            if (isBetween(cX, pX, p2X, current.radius) && isBetween(cY, pY, p2Y, current.radius)) {
+                                // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
+                                let a = -mY
+                                let b = mX
+                                let c = (pX * mY) - (mX * pY)
+                                let numerator = (a * cX + b * cY + c)
+                                var distSquared = (numerator * numerator) / (a * a + b * b)
 
-                var collides = false
-                for (n in planets) {
-                    if (planets[n] != drawLinesFrom && planets[n] != target) {
-                        // current planet of interest
-                        let current = planets[n]
-                        let cX = current.position.x
-                        let cY = current.position.y
-                        // If the target planet is within the bounds of the two planets
-                        if (isBetween(cX, pX, p2X, current.radius) && isBetween(cY, pY, p2Y, current.radius)) {
+                                // if the tradjectory intersects with a planet
+                                if (distSquared < current.radius * current.radius) {
+                                    collides = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if (!collides) {
+                        // Tests collision for the sun (same as above with planets)
+                        if (isBetween(0, pX, p2X, sunCollisionRadius) && isBetween(0, pY, p2Y, sunCollisionRadius)) {
                             // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
                             let a = -mY
                             let b = mX
                             let c = (pX * mY) - (mX * pY)
-                            var dist = Math.abs(a * cX + b * cY + c) / Math.sqrt(a * a + b * b)
+                            var distSquared = (c * c) / (a * a + b * b)
 
                             // if the tradjectory intersects with a planet
-                            if (dist < current.radius) {
+                            if (distSquared < sunCollisionRadius * sunCollisionRadius) {
                                 collides = true
-                                break
                             }
                         }
                     }
-                }
 
-                if (!collides) {
-                    // Tests collision for the sun (same as above with planets)
-                    const sunRadius = 26
-                    if (isBetween(0, pX, p2X, sunRadius) && isBetween(0, pY, p2Y, sunRadius)) {
-                        // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-                        let a = -mY
-                        let b = mX
-                        let c = (pX * mY) - (mX * pY)
-                        var dist = Math.abs(c) / Math.sqrt(a * a + b * b)
+                    drawLines[i].visible = !collides
 
-                        // if the tradjectory intersects with a planet
-                        if (dist < sunRadius) {
-                            collides = true
+                    if (!collides) {
+                        if (exists(selectedPlanet)) {
+                            let worldPoint = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
+                            let mouseX = worldPoint.x
+                            let mouseY = worldPoint.y
+                            let x2 = selectedPlanet.position.x
+                            let y2 = selectedPlanet.position.y
+
+                            if (distSqr(mouseX, mouseY, p2X, p2Y) < distSqr(mouseX, mouseY, x2, y2)) {
+                                selectedPlanet = planets[i]
+                            }
+                        } else {
+                            selectedPlanet = planets[i]
                         }
                     }
                 }
-
-                drawLines[i].visible = !collides
-
-                /*
-                // If the Line slope is in the direction of the target
-                // (e.g. prevents from collision detection against objects outside of the bounds of the line)
-                if (((dX < 0 && mX < 0) || (dX > 0 && mY > 0)) && ((dY < 0 && mY < 0) || (dY > 0 && mY > 0))) {
-
-                    // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-
-                    // Find the shortest distance between the point (the planet's (x,y)) and the line (the player's velocity vector)
-                    var a = -mY;
-                    var b = mX;
-                    var c = (pX * mY) - (mX * pY);
-                    var dist = Math.abs(a * p2X + b * p2Y + c) / Math.sqrt(a * a + b * b)
-
-                    // If the distance from the line to the center of the planet is less than the land radius, that means that it intersects and it's gonna crash yo
-                    if (dist < planet.landRadius) {
-                        warningText.visible = true;
-
-                        warningText.text = defaultWarningText + ' (T-' + timeUntilCrash + ')';
-                    }
-                }*/
-
-                /*
-                let x1 = planets[i].position.x
-                let y1 = planets[i].position.y
-                let x2 = drawLinesFrom.position.x
-                let y2 = drawLinesFrom.position.y
-
-                let m = (y2 - y1) / (x2 - x1)
-
-                let a = m
-                let b = -1
-                let c = -(m * x1 + y1)
-
-                let x0 = 0
-                let y0 = 0
-
-                let dist = Math.abs(a * x0 + b * y0 + c) / Math.sqrt(a * a + b * b)
-                
-                if (dist < 1)
-                    drawLines[i].visible = false
-                    */
-
 
                 drawLines[i].setPoints([planets[i].position.x,
                                        planets[i].position.y,
