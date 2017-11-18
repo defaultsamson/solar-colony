@@ -296,6 +296,8 @@ function onMouseClick(e) {
     if (isSendingShips()) {
 
         if (selectedPlanet) {
+            var pos = findFastestIntersect(drawLinesFrom, selectedPlanet)
+            console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
             sendShips(drawLinesFrom, selectedPlanet, sendShipsAmount)
             cancelSendShips()
         } else {
@@ -465,6 +467,14 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
     planet.opm = opm
+
+    // Ghosting ring
+    var ghost = new PIXI.Graphics()
+    ghost.lineStyle(dashThickness * 2, Colour.dark8)
+    ghost.arc(planet.radius, planet.radius, planet.radius, 0, 7)
+    ghost.visible = true
+    ghost.pivot.set(planet.radius, planet.radius)
+    planet.ghost = game.stage.addChild(ghost)
 
     // The rotation speed in radians/second
     planet.speed = opm * (1 / 60) * 2 * Math.PI
@@ -652,6 +662,47 @@ function sendShips(fromPlanet, toPlanet, amount) {
     removeShips(fromPlanet, amount)
 }
 
+const shipSpeed = 50 // units per second
+
+function findFastestIntersect(x, y, to) {
+    if (!exists(to)) {
+        to = y
+        y = x.position.y
+        x = x.position.x
+    }
+
+    const tAccuracy = 0.1 // smaller is better
+    const deltaTimeStep = 0.1 // seconds to go forward in time each loop
+    var timeStep = 1// start at 1 to predict future time steps, ignore the current
+    var lastVariance
+    var lastCalcPlanet
+    var calcPlanet
+    do {
+        lastCalcPlanet = calcPlanet
+        
+        calcPlanet = calcPlanetPosition(to, timeStep)
+
+        var distance = Math.sqrt(distSqr(calcPlanet.x, calcPlanet.y, x, y))
+
+        // the time that it takes the ships to travel the distance
+        var time = distance / shipSpeed
+
+        var variance = Math.abs(timeStep - time)
+
+        // If the variance starts increasing, quit right away or else it'll go into an infinite loop
+        if (lastCalcPlanet) {
+            if (variance > lastVariance)
+                return lastCalcPlanet
+        }
+        
+        lastVariance = variance
+        
+        timeStep += deltaTimeStep
+    } while (variance > tAccuracy)
+
+    return calcPlanet
+}
+
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -739,15 +790,15 @@ function gameLoop() {
             if (planets[i] != drawLinesFrom) {
                 // Only draw lines every update cycle
                 if (updateLines == 0) {
-                    planets[i].outline.visible = false
+                    let target = planets[i]
+                    target.outline.visible = false
                     // Player Planet
                     let pX = drawLinesFrom.position.x
                     let pY = drawLinesFrom.position.y
 
                     // Target Planet
-                    let target = planets[i]
-                    let p2X = planets[i].position.x
-                    let p2Y = planets[i].position.y
+                    let p2X = target.position.x
+                    let p2Y = target.position.y
 
                     // Line Slope (origin is the Planet Player pos)
                     let mX = p2X - pX
@@ -795,6 +846,13 @@ function gameLoop() {
                     }
 
                     drawLines[i].visible = !collides
+                    target.ghost.visible = drawLines[i].visible
+
+                    if (target.ghost.visible) {
+                        var pos = findFastestIntersect(drawLinesFrom, target)
+                        target.ghost.position.x = pos.x
+                        target.ghost.position.y = pos.y
+                    }
 
                     if (!collides) {
                         let worldPoint = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
@@ -809,10 +867,10 @@ function gameLoop() {
                                 let y2 = selectedPlanet.position.y
 
                                 if (distSqr(mouseX, mouseY, p2X, p2Y) < distSqr(mouseX, mouseY, x2, y2)) {
-                                    selectedPlanet = planets[i]
+                                    selectedPlanet = target
                                 }
                             } else {
-                                selectedPlanet = planets[i]
+                                selectedPlanet = target
                             }
                         }
                     }
