@@ -466,6 +466,8 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     // Set the scale
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
+
+    // orbits per minute
     planet.opm = opm
 
     // Ghosting ring
@@ -662,45 +664,91 @@ function sendShips(fromPlanet, toPlanet, amount) {
     removeShips(fromPlanet, amount)
 }
 
-const shipSpeed = 50 // units per second
+// WARNING: the lesser this speed is, the less accurate findFastestIntersect will be
+const shipSpeed = 20 // units per second
 
-function findFastestIntersect(x, y, to) {
-    if (!exists(to)) {
-        to = y
-        y = x.position.y
-        x = x.position.x
-    }
+function findFastestIntersect(from, to) {
 
-    const tAccuracy = 0.1 // smaller is better
-    const deltaTimeStep = 0.1 // seconds to go forward in time each loop
-    var timeStep = 1// start at 1 to predict future time steps, ignore the current
-    var lastVariance
-    var lastCalcPlanet
-    var calcPlanet
+    /*
+    const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
+    const minTime = 0 //minDist / shipSpeed
+    //const maxDist = from.orbit.radius + to.orbit.radius
+    const maxTime = 20
+
+    var dist = Math.sqrt(distSqr(from.position.x, from.position.y, to.position.x, to.position.y))
+
+    var deltaTime = 0.001
+    var time = minTime
+    var bestPos
+    var bestVariance
+    var bestTime
+
     do {
-        lastCalcPlanet = calcPlanet
-        
-        calcPlanet = calcPlanetPosition(to, timeStep)
+        var planetPos = calcPlanetPosition(to, time)
 
-        var distance = Math.sqrt(distSqr(calcPlanet.x, calcPlanet.y, x, y))
+        var distance = Math.sqrt(distSqr(planetPos.x, planetPos.y, from.position.x, from.position.y))
 
+        var variance = Math.abs((distance / shipSpeed) - time)
+
+        if ((!bestPos) || variance < bestVariance) {
+            bestPos = planetPos
+            bestVariance = variance
+            bestTime = time
+        }
+
+        time += deltaTime
+    } while (time < maxTime)
+
+    if (to.orbit.radius == 150)
+        console.log('best: ' + bestTime + 's')
+    return bestPos*/
+
+    //var timeToTravel = Math.sqrt(sqrDist) / Math.pow(shipSpeed, 3/2)
+
+    //var time = dist / shipSpeed - (to.speed)
+
+    //return calcPlanetPosition(to, time)
+
+    /*
+    const maxDist = from.orbit.radius + to.orbit.radius
+    const minDist = from.orbit.radius - to.orbit.radius
+    var maxTime = maxDist / shipSpeed
+    var minTime = minDist / shipSpeed
+
+    minTime = Math.abs(minTime)
+        maxTime = 2 * maxTime
+
+    // seconds to go forward in time each loop
+    // smaller is better
+    const deltaTimeStep = 0.001
+
+    // The time to step the simulation forward by. Used in the loop below
+    var timeStep = minTime
+    // The position of the planet (to) with the least variance from the planet takes to move to that position and the time it will take for the ships to reach that position
+    var leastPos
+    // The variance as described in the above comment
+    var leastVariance
+
+    do {
+        // The planet's position after the timeStep
+        var calcPlanet = calcPlanetPosition(to, timeStep)
+
+        var distance = Math.sqrt(distSqr(calcPlanet.x, calcPlanet.y, from.position.x, from.position.y))
         // the time that it takes the ships to travel the distance
         var time = distance / shipSpeed
+        var variance = timeStep - time
 
-        var variance = Math.abs(timeStep - time)
-
-        // If the variance starts increasing, quit right away or else it'll go into an infinite loop
-        if (lastCalcPlanet) {
-            if (variance > lastVariance)
-                return lastCalcPlanet
+        // If there is a current variance less than the existing one (or if it doesn't exist) then replace it with the lesser one
+        if ((!leastVariance) || variance < leastVariance) {
+            leastVariance = variance
+            leastPos = calcPlanet
         }
-        
-        lastVariance = variance
-        
-        timeStep += deltaTimeStep
-    } while (variance > tAccuracy)
 
-    return calcPlanet
+        // increase the timeStep for next time
+        timeStep += deltaTimeStep
+    } while (timeStep <= maxTime)
+
+    return leastPos*/
 }
 
 //   _____                      
