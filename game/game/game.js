@@ -174,7 +174,9 @@ function onLoad(loader, resources) {
     myPlanet = planet2a
     //planet1.tint = 0xFFCCCC
     planet2a.tint = 0xFFAAAA
+    planet2a.outline.tint = planet2a.tint
     planet2b.tint = 0xAAAAFF
+    planet2b.outline.tint = planet2b.tint
     //planet3.tint = 0xCCCCFF
     //planet4.tint = 0xFAFACC
 }
@@ -206,10 +208,6 @@ function stopFollow() {
     focusPlanet = null
 }
 
-function exists(n) {
-    return typeof n !== 'undefined' && n !== null
-}
-
 function centerView(inter) {
     if (!snappingToCenter) {
         stopSnap()
@@ -233,32 +231,7 @@ function centerView(inter) {
 }
 
 function updateKeyboard() {
-    // This is a test
-    if (PIXI.keyboardManager.isPressed(Key.UP)) {
-        stopSnap()
-        stopFollow()
-        viewport.snap(0, 0, {
-            time: 1000,
-            removeOnComplete: true,
-            ease: 'easeOutQuart'
-        })
-    }
-
-    // This is a test
-    if (PIXI.keyboardManager.isPressed(Key.RIGHT)) {
-
-        viewport.snapZoom({
-            height: 200,
-            time: 5000,
-            removeOnComplete: true,
-            ease: 'easeOutExpo',
-            center: {
-                x: 0,
-                y: 0
-            }
-        })
-    }
-
+    
     if (PIXI.keyboardManager.isPressed(Key.P)) {
         pixels += 5000
     }
@@ -266,17 +239,13 @@ function updateKeyboard() {
         removeShips(myPlanet, 10)
     }
 
-    // This is a test
-    if (PIXI.keyboardManager.isPressed(Key.DOWN)) {
-        //viewport.removePlugin('snap')
-
-        for (i in planets) {
-            drawLines[i].clear()
-        }
-    }
-
     if (PIXI.keyboardManager.isPressed(Key.ESCAPE)) {
-        centerView()
+
+        if (isSendingShips()) {
+            cancelSendShips()
+        } else {
+            centerView()
+        }
     }
 
     PIXI.keyboardManager.update()
@@ -291,8 +260,10 @@ viewport.on('wheel', stopSnap)
 viewport.on('click', function (e) {
     if (isSendingShips()) {
 
-        if (exists(selectedPlanet)) {
-            console.log('SelectedRadius: ' + selectedPlanet.orbit.radius)
+        if (selectedPlanet) {
+            sendShips(drawLinesFrom, selectedPlanet, sendShipsAmount)
+            cancelSendShips()
+        } else {
             cancelSendShips()
         }
 
@@ -319,7 +290,7 @@ viewport.on('click', function (e) {
     }
 
     if (sendShipText.visible && sendShipText.containsPoint(point)) {
-        goToSendShipsScreen(myPlanet)
+        goToSendShipsScreen(myPlanet, 100)
         return
     }
 
@@ -446,9 +417,19 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     planet.radius = 0.5 * planet.width
     planet.orbit = orbit
     planet.pivot.set(planet.radius, planet.radius)
+
+    // Selection ring
+    var ring = new PIXI.Graphics()
+    ring.lineStyle(dashThickness * 46, Colour.dark8)
+    ring.arc(planet.radius, planet.radius, planet.radius * 3, 0, 7)
+    ring.visible = false
+    planet.outline = planet.addChild(ring)
+
+    // Set the scale
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
     planet.opm = opm
+
     // The rotation speed in radians/second
     planet.speed = opm * (1 / 60) * 2 * Math.PI
     planet.rotationConstant = rotationConstant
@@ -531,6 +512,10 @@ function distSqr(x1, y1, x2, y2) {
     return ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2))
 }
 
+function exists(n) {
+    return typeof n !== 'undefined' && n !== null
+}
+
 function calcPlanetPosition(planet, additionalAge) {
     if (!additionalAge)
         additionalAge = 0
@@ -592,19 +577,24 @@ function resizeHud(width, height) {
 var drawLinesFrom
 var drawLines
 
-function goToSendShipsScreen(fromPlanet) {
+function goToSendShipsScreen(fromPlanet, amount) {
+    updateLines = ticksPerCollideUpdate
+    drawLinesFrom = fromPlanet
+    sendShipsAmount = amount
     viewport.pausePlugin('drag')
     viewport.pausePlugin('wheel')
     centerView()
-    drawLinesFrom = fromPlanet
-    updateLines = ticksPerCollideUpdate
 }
 
 function cancelSendShips() {
     for (i in drawLines) {
         drawLines[i].visible = false
     }
+    for (i in planets) {
+        planets[i].outline.visible = false
+    }
     drawLinesFrom = null
+    sendShipsAmount = 0
     viewport.resumePlugin('drag')
     viewport.resumePlugin('wheel')
 }
@@ -622,6 +612,10 @@ function isBetween(x, y, z, error) {
     }
 }
 
+function sendShips(fromPlanet, toPlanet, amount) {
+    removeShips(fromPlanet, amount)
+}
+
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -629,15 +623,21 @@ function isBetween(x, y, z, error) {
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
 
+// Variables for sending ships
 const sunCollisionRadius = 30
-const ticksPerCollideUpdate = 20
+const ticksPerCollideUpdate = 5
 var updateLines = ticksPerCollideUpdate
+const selectPlanetRadius = 100
 var selectedPlanet
+var sendShipsAmount = 0
 
+// Stats
 var lastPixels = 1
 var pixels = 0
 var lastShips = 1
 var ships = 0
+
+// Planet vars
 var planets
 var myPlanet
 var focusPlanet
@@ -690,8 +690,8 @@ function gameLoop() {
 
     // If drawing the ship travel lines
     if (isSendingShips()) {
-        updateLines =0
-        
+        updateLines++
+
         if (updateLines > ticksPerCollideUpdate) {
             updateLines = 0
             selectedPlanet = null
@@ -703,6 +703,7 @@ function gameLoop() {
             if (planets[i] != drawLinesFrom) {
                 // Only draw lines every update cycle
                 if (updateLines == 0) {
+                    planets[i].outline.visible = false
                     // Player Planet
                     let pX = drawLinesFrom.position.x
                     let pY = drawLinesFrom.position.y
@@ -760,18 +761,23 @@ function gameLoop() {
                     drawLines[i].visible = !collides
 
                     if (!collides) {
-                        if (exists(selectedPlanet)) {
-                            let worldPoint = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
-                            let mouseX = worldPoint.x
-                            let mouseY = worldPoint.y
-                            let x2 = selectedPlanet.position.x
-                            let y2 = selectedPlanet.position.y
+                        let worldPoint = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
+                        let mouseX = worldPoint.x
+                        let mouseY = worldPoint.y
+                        let radSqr = (selectPlanetRadius + target.radius) * (selectPlanetRadius + target.radius)
 
-                            if (distSqr(mouseX, mouseY, p2X, p2Y) < distSqr(mouseX, mouseY, x2, y2)) {
+                        if (distSqr(mouseX, mouseY, p2X, p2Y) < radSqr) {
+                            if (selectedPlanet) {
+
+                                let x2 = selectedPlanet.position.x
+                                let y2 = selectedPlanet.position.y
+
+                                if (distSqr(mouseX, mouseY, p2X, p2Y) < distSqr(mouseX, mouseY, x2, y2)) {
+                                    selectedPlanet = planets[i]
+                                }
+                            } else {
                                 selectedPlanet = planets[i]
                             }
-                        } else {
-                            selectedPlanet = planets[i]
                         }
                     }
                 }
@@ -780,6 +786,12 @@ function gameLoop() {
                                        planets[i].position.y,
                                        drawLinesFrom.position.x,
                                        drawLinesFrom.position.y])
+            }
+        }
+
+        if (updateLines == 0) {
+            if (selectedPlanet) {
+                selectedPlanet.outline.visible = true
             }
         }
     }
