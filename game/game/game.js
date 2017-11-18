@@ -231,7 +231,7 @@ function centerView(inter) {
 }
 
 function updateKeyboard() {
-    
+
     if (PIXI.keyboardManager.isPressed(Key.P)) {
         pixels += 5000
     }
@@ -239,7 +239,40 @@ function updateKeyboard() {
         removeShips(myPlanet, 10)
     }
 
-    if (PIXI.keyboardManager.isPressed(Key.ESCAPE)) {
+    let screenPoint = game.renderer.plugins.interaction.mouse.global
+    if (PIXI.keyboardManager.isPressed(Key.W)) {
+        viewport.down(screenPoint.x, screenPoint.y, {
+            id: 0
+        })
+    } else if (PIXI.keyboardManager.isDown(Key.W)) {
+        viewport.move(screenPoint.x, screenPoint.y, {
+            id: 0
+        })
+    } else if (PIXI.keyboardManager.isReleased(Key.W)) {
+        if (viewport.plugins['drag'] && viewport.plugins['drag'].moved) {
+
+        } else {
+            let worldPoint = viewport.toWorld(screenPoint)
+
+            onMouseClick({
+                screen: {
+                    x: screenPoint.x,
+                    y: screenPoint.y
+                },
+                world: {
+                    x: worldPoint.x,
+                    y: worldPoint.y
+                },
+                viewport: viewport
+            })
+        }
+
+        viewport.up(screenPoint.x, screenPoint.y, {
+            id: 0
+        })
+    }
+
+    if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
 
         if (isSendingShips()) {
             cancelSendShips()
@@ -257,7 +290,9 @@ viewport.on('drag-start', function (e) {
 })
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
-viewport.on('click', function (e) {
+viewport.on('click', onMouseClick)
+
+function onMouseClick(e) {
     if (isSendingShips()) {
 
         if (selectedPlanet) {
@@ -357,7 +392,8 @@ viewport.on('click', function (e) {
             centerView()
         }
     }
-})
+}
+
 // Upon ending of the snap, if it was just snapping to a planet, begin to follow it
 viewport.on('snap-end', function () {
     if (snappingToPlanet) {
