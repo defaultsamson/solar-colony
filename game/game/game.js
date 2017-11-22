@@ -669,6 +669,51 @@ const shipSpeed = 20 // units per second
 
 function findFastestIntersect(from, to) {
 
+    // The accuracy
+    const epsilon = 1
+    const intervals = [{
+        above: 20,
+        i: 0.002
+    }, {
+        above: 10,
+        i: 0.0005
+    }, {
+        above: 0,
+        i: 0.0001
+    }]
+
+    let sx = from.position.x
+    let sy = from.position.y
+
+    var time = 0
+    var p
+    do {
+        p = calcPlanetPosition(to, time)
+
+        let dx = p.x - sx
+        let dy = p.y - sy
+        let dist = Math.sqrt(dx * dx + dy * dy)
+
+        let xComp = (p.x - sx) * (1 - (shipSpeed * time / dist))
+        let yComp = (p.x - sx) * (1 - (shipSpeed * time / dist))
+
+        let d = Math.sqrt(xComp * xComp + yComp * yComp)
+
+        if (d < epsilon){
+            return p
+        }
+
+        for (i in intervals) {
+            if (d > intervals[i].above) {
+                time += intervals[i].i
+            }
+        }
+
+    } while (true)
+
+
+    return p
+
     /*
     const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
     const minTime = 0 //minDist / shipSpeed
