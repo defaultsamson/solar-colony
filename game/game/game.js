@@ -24,6 +24,39 @@ class Line extends PIXI.Graphics {
     }
 }
 
+class Ship extends Object {
+    constructor(fromX, fromY, toX, toY, speed, amount, tint, planet) {
+        super()
+
+        this.sprite = game.stage.addChild(new PIXI.Sprite(shipTexture))
+        this.sprite.pivot.set(0.5, 0.5)
+        this.sprite.anchor.set(0.5, 0.5)
+        this.sprite.position.set(fromX, fromY)
+        this.sprite.tint = tint
+
+        this.amount = amount
+        this.planet = planet
+
+        this.fromX = fromX
+        this.fromY = fromY
+        this.toX = toX
+        this.toY = toY
+        this.speed = speed
+        let dX = toX - fromX
+        let dY = toY - fromY
+        let dnet = Math.sqrt(dX * dX + dY * dY)
+        this.vX = dX * speed / dnet
+        this.vY = dY * speed / dnet
+
+        this.sprite.rotation = (Math.PI / 2) - Math.asin(this.vY / speed) * 2 * Math.PI
+    }
+
+    update(delta) {
+        this.sprite.position.x += this.vX * delta
+        this.sprite.position.y += this.vY * delta
+    }
+}
+
 const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
 
 const maxHeight = 1000
@@ -130,6 +163,7 @@ function onLoad(loader, resources) {
     for (i in planets) {
         game.stage.addChild(planets[i])
     }
+    sendingShips = []
 
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
@@ -296,9 +330,10 @@ function onMouseClick(e) {
     if (isSendingShips()) {
 
         if (selectedPlanet) {
-            var pos = calcPlanetPosition(selectedPlanet, timeToFastestIntersect(drawLinesFrom, selectedPlanet))
-            console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
-            sendShips(drawLinesFrom, selectedPlanet, sendShipsAmount)
+            let duration = timeToFastestIntersect(drawLinesFrom, selectedPlanet)
+            var pos = calcPlanetPosition(selectedPlanet, duration)
+            // console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
+            sendShips(drawLinesFrom, pos.x, pos.y, selectedPlanet, sendShipsAmount, duration)
             cancelSendShips()
         } else {
             cancelSendShips()
@@ -557,7 +592,9 @@ function getPlanet(x, y) {
 }
 
 function distSqr(x1, y1, x2, y2) {
-    return ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2))
+    let x = (x2 - x1)
+    let y = (y2 - y1)
+    return (x * x) + (y * y)
 }
 
 function exists(n) {
@@ -661,8 +698,10 @@ function isBetween(x, y, z, error) {
     }
 }
 
-function sendShips(fromPlanet, toPlanet, amount) {
+function sendShips(fromPlanet, toX, toY, toPlanet, amount) {
     removeShips(fromPlanet, amount)
+
+    var ship = sendingShips.push(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet))
 }
 
 // WARNING: the lesser this speed is, the less accurate findFastestIntersect will be
@@ -691,8 +730,7 @@ function timeToFastestIntersect(from, to) {
 
         let delta = d - time
 
-        if (delta < 0.3) {
-            console.log(iterations)
+        if (delta < 0.5) {
             return time
         } else if (delta < 2) {
             time += 0.1
@@ -707,10 +745,10 @@ function timeToFastestIntersect(from, to) {
     } while (iterations < 1000)
 
 
-
-
-
-
+    return {
+        x: 0,
+        y: 0
+    }
 
     /*
     const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
@@ -745,6 +783,7 @@ var lastShips = 1
 var ships = 0
 
 // Planet vars
+var sendingShips
 var planets
 var myPlanet
 var focusPlanet
@@ -810,90 +849,100 @@ function gameLoop() {
             if (planets[i] != drawLinesFrom) {
                 // Only draw lines every update cycle
                 if (updateLines == 0) {
-                    let targetPlanet = planets[i]
-                    targetPlanet.outline.visible = false
+                    let planet = planets[i]
+                    planet.outline.visible = false
+
                     // Player Planet
                     let pX = drawLinesFrom.position.x
                     let pY = drawLinesFrom.position.y
 
-                    let targetTime = timeToFastestIntersect(drawLinesFrom, targetPlanet)
-                    var target = calcPlanetPosition(targetPlanet, targetTime)
-
-                    // Target
-                    let p2X = target.x
-                    let p2Y = target.y
+                    let targetTime = timeToFastestIntersect(drawLinesFrom, planet)
+                    let target = calcPlanetPosition(planet, targetTime)
 
                     // Line Slope (origin is the Planet Player pos)
-                    let mX = p2X - pX
-                    let mY = p2Y - pY
+                    let mX = target.x - pX
+                    let mY = target.y - pY
 
                     var collides = false
-                    for (n in planets) {
-                        if (planets[n] != drawLinesFrom && planets[n] != targetPlanet) {
-                            // current planet of interest
-                            let current = planets[n]
-                            let cPos = calcPlanetPosition(current, targetTime)
-                            // If the target is within the bounds of the two planets
-                            if (isBetween(cPos.x, pX, p2X, current.radius) && isBetween(cPos.y, pY, p2Y, current.radius)) {
-                                // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-                                let a = -mY
-                                let b = mX
-                                let c = (pX * mY) - (mX * pY)
-                                let numerator = (a * cPos.x + b * cPos.y + c)
-                                var distSquared = (numerator * numerator) / (a * a + b * b)
 
-                                // if the tradjectory intersects with a planet
-                                if (distSquared < current.radius * current.radius) {
-                                    collides = true
-                                    break
-                                }
-                            }
+                    // Tests collision for the sun (same as above with planets)
+                    if (isBetween(0, pX, target.x, sunCollisionRadius) && isBetween(0, pY, target.y, sunCollisionRadius)) {
+                        // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
+                        let a = -mY
+                        let b = mX
+                        let c = (pX * mY) - (mX * pY)
+                        var distSquared = (c * c) / (a * a + b * b)
+
+                        // if the tradjectory intersects with a planet
+                        if (distSquared < sunCollisionRadius * sunCollisionRadius) {
+                            collides = true
                         }
                     }
 
+                    // If it doesn't collide with the sun, test if it collides with a planet
                     if (!collides) {
-                        // Tests collision for the sun (same as above with planets)
-                        if (isBetween(0, pX, p2X, sunCollisionRadius) && isBetween(0, pY, p2Y, sunCollisionRadius)) {
-                            // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-                            let a = -mY
-                            let b = mX
-                            let c = (pX * mY) - (mX * pY)
-                            var distSquared = (c * c) / (a * a + b * b)
+                        for (n in planets) {
+                            if (planets[n] != drawLinesFrom && planets[n] != planet) {
+                                // current planet of interest
+                                let current = planets[n]
+                                let cPos = calcPlanetPosition(current, targetTime)
+                                // If the target is within the bounds of the two planets
+                                if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
+                                    // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
+                                    let a = -mY
+                                    let b = mX
+                                    let c = (pX * mY) - (mX * pY)
+                                    let numerator = (a * cPos.x + b * cPos.y + c)
+                                    var distSquared = (numerator * numerator) / (a * a + b * b)
 
-                            // if the tradjectory intersects with a planet
-                            if (distSquared < sunCollisionRadius * sunCollisionRadius) {
-                                collides = true
+                                    // if the tradjectory intersects with a planet
+                                    if (distSquared < current.radius * current.radius) {
+                                        collides = true
+                                        break
+                                    }
+                                }
                             }
                         }
                     }
 
                     drawLines[i].visible = !collides
-                    targetPlanet.ghost.visible = drawLines[i].visible
+                    planet.ghost.visible = !collides
 
-                    if (targetPlanet.ghost.visible) {
-                        targetPlanet.ghost.position.x = target.x
-                        targetPlanet.ghost.position.y = target.y
+                    if (planet.ghost.visible = !collides) {
+                        planet.ghost.position.set(target.x, target.y)
                     }
 
+                    // Planet selection via mouse
                     if (!collides) {
-                        let worldPoint = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
-                        let mouseX = worldPoint.x
-                        let mouseY = worldPoint.y
-                        let radSqr = (selectPlanetRadius + targetPlanet.radius) * (selectPlanetRadius + targetPlanet.radius)
+                        let mouse = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
 
-                        if (distSqr(mouseX, mouseY, p2X, p2Y) < radSqr) {
+                        let targetDist = distSqr(mouse.x, mouse.y, target.x, target.y)
+                        let planetDist = distSqr(mouse.x, mouse.y, planet.position.x, planet.position.y)
+
+                        let radSqr = distSqr(selectPlanetRadius + planet.radius, 0)
+
+                        // if the mouse is within the selection radius of the planet
+                        //if (targetDist < radSqr || planetDist < radSqr) {
+
+                            if (planet.orbit.radius == 150) {
+                                console.log(' mouse: (' + mouse.x + ', ' + mouse.y + ')')
+                                console.log('target: (' + target.x + ', ' + target.y + ')')
+                                console.log(' dist: (' + Math.sqrt(distSqr(mouse.x, mouse.y, target.x, target.y)) + ')')
+                            }
+
+
                             if (selectedPlanet) {
+                                let selectedDist = distSqr(mouse.x, mouse.y, selectedPlanet.position.x, selectedPlanet.position.y)
+                                let selectedGhostDist = distSqr(mouse.x, mouse.y, selectedPlanet.ghost.position.x, selectedPlanet.ghost.position.y)
 
-                                let x2 = selectedPlanet.position.x
-                                let y2 = selectedPlanet.position.y
-
-                                if (distSqr(mouseX, mouseY, p2X, p2Y) < distSqr(mouseX, mouseY, x2, y2)) {
-                                    selectedPlanet = targetPlanet
+                                if ((targetDist < selectedDist && targetDist < selectedGhostDist) || (planetDist < selectedDist && planetDist < selectedGhostDist)) {
+                                    selectedPlanet = planet
                                 }
                             } else {
-                                selectedPlanet = targetPlanet
+                                // If no selected planet exists, immediately set this one
+                                selectedPlanet = planet
                             }
-                        }
+                        //}
                     }
                 }
 
@@ -909,6 +958,10 @@ function gameLoop() {
                 selectedPlanet.outline.visible = true
             }
         }
+    }
+
+    for (i in sendingShips) {
+        sendingShips[i].update(eTime)
     }
 
     updateHud()
