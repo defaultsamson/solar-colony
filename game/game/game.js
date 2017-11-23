@@ -296,7 +296,7 @@ function onMouseClick(e) {
     if (isSendingShips()) {
 
         if (selectedPlanet) {
-            var pos = findFastestIntersect(drawLinesFrom, selectedPlanet)
+            var pos = calcPlanetPosition(selectedPlanet, timeToFastestIntersect(drawLinesFrom, selectedPlanet))
             console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
             sendShips(drawLinesFrom, selectedPlanet, sendShipsAmount)
             cancelSendShips()
@@ -640,6 +640,7 @@ function cancelSendShips() {
     }
     for (i in planets) {
         planets[i].outline.visible = false
+        planets[i].ghost.visible = false
     }
     drawLinesFrom = null
     sendShipsAmount = 0
@@ -665,10 +666,26 @@ function sendShips(fromPlanet, toPlanet, amount) {
 }
 
 // WARNING: the lesser this speed is, the less accurate findFastestIntersect will be
-const shipSpeed = 20 // units per second
+const shipSpeed = 10 // units per second
 
-function findFastestIntersect(from, to) {
+function timeToFastestIntersect(from, to) {
 
+    const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
+    const minTime = minDist / shipSpeed
+    const maxDist = from.orbit.radius + to.orbit.radius
+    const maxTime = maxDist / shipSpeed
+    var dist = Math.sqrt(distSqr(from.position.x, from.position.y, to.position.x, to.position.y))
+    var distTime = dist / shipSpeed
+
+    //var time = Math.max(minTime, minTime + (Math.sqrt(distTime) * to.opm))
+    //var time = Math.max(minTime, minTime + (distTime / minTime) * to.opm)
+    //var time = Math.max(minTime, minTime + (distTime / maxDist) * to.opm + distTime / (2 * Math.PI))
+
+    //var time = ((dist / minDist) - 1) / shipSpeed + minTime
+
+    return minTime + Math.sqrt(distTime * distTime / maxDist)
+
+    /**
     // The accuracy
     const epsilon = 1
     const intervals = [{
@@ -713,6 +730,7 @@ function findFastestIntersect(from, to) {
 
 
     return p
+    **/
 
     /*
     const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
@@ -942,7 +960,7 @@ function gameLoop() {
                     target.ghost.visible = drawLines[i].visible
 
                     if (target.ghost.visible) {
-                        var pos = findFastestIntersect(drawLinesFrom, target)
+                        var pos = calcPlanetPosition(target, timeToFastestIntersect(drawLinesFrom, target))
                         target.ghost.position.x = pos.x
                         target.ghost.position.y = pos.y
                     }
@@ -969,8 +987,8 @@ function gameLoop() {
                     }
                 }
 
-                drawLines[i].setPoints([planets[i].position.x,
-                                       planets[i].position.y,
+                drawLines[i].setPoints([planets[i].ghost.position.x,
+                                       planets[i].ghost.position.y,
                                        drawLinesFrom.position.x,
                                        drawLinesFrom.position.y])
             }
