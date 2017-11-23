@@ -462,7 +462,7 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     ring.arc(planet.radius, planet.radius, planet.radius * 3, 0, 7)
     ring.visible = false
     planet.outline = planet.addChild(ring)
-    
+
     // Set the scale
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
@@ -670,6 +670,49 @@ const shipSpeed = 10 // units per second
 
 function timeToFastestIntersect(from, to) {
 
+    // Found on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
+
+    let r = to.orbit.radius
+    let x1 = from.position.x
+    let y1 = from.position.y
+    let s1Sqr = shipSpeed * shipSpeed
+
+    // The first part of the equation
+    let frst = (r * r) + (x1 * x1) + (y1 * y1)
+
+    var time = 0
+    var iterations = 0
+
+    do {
+        iterations++
+        let pos = calcPlanetPosition(to, time)
+
+        let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
+
+        let delta = d - time
+
+        if (delta < 0.3) {
+            console.log(iterations)
+            return time
+        } else if (delta < 2) {
+            time += 0.1
+        } else if (delta < 4) {
+            time += 0.5
+        } else {
+            time += 1
+        }
+
+
+        let desired
+    } while (iterations < 1000)
+
+
+
+
+
+
+
+    /*
     const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
     const minTime = minDist / shipSpeed
     const maxDist = from.orbit.radius + to.orbit.radius
@@ -677,7 +720,7 @@ function timeToFastestIntersect(from, to) {
     var dist = Math.sqrt(distSqr(from.position.x, from.position.y, to.position.x, to.position.y))
     var distTime = dist / shipSpeed
 
-    return minTime / to.opm + Math.sqrt(distTime * distTime / maxDist) * ((dist / minDist) - 1)
+    return minTime / to.opm + Math.sqrt(distTime * distTime / maxDist) * ((dist / minDist) - 1)*/
 }
 
 //   _____                      
