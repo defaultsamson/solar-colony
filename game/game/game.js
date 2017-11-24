@@ -753,7 +753,7 @@ function timeToFastestIntersect(from, to) {
 
 
         let desired
-    } while (iterations < 300)
+    } while (iterations < 1000)
 
 
     return {
@@ -773,7 +773,7 @@ function timeToFastestIntersect(from, to) {
 const sunCollisionRadius = 30
 const ticksPerCollideUpdate = 10
 var updateLines = ticksPerCollideUpdate
-const selectPlanetRadius = 100
+const selectPlanetRadius = 55
 var selectedPlanet
 var sendShipsAmount = 0
 
