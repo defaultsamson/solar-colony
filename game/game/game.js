@@ -740,7 +740,8 @@ function timeToFastestIntersect(from, to) {
 
         let delta = d - time
 
-        if (delta < 0.2) {
+        // The smaller the right side of the < is, the more accurate, but also the more
+        if (delta < 0.5) {
             return time
         } else if (delta < 2) {
             time += 0.1
@@ -752,7 +753,7 @@ function timeToFastestIntersect(from, to) {
 
 
         let desired
-    } while (iterations < 1000)
+    } while (iterations < 300)
 
 
     return {
