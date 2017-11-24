@@ -25,7 +25,7 @@ class Line extends PIXI.Graphics {
 }
 
 class Ship extends Object {
-    constructor(fromX, fromY, toX, toY, speed, amount, tint, planet) {
+    constructor(fromX, fromY, toX, toY, speed, amount, tint, planet, duration) {
         super()
 
         this.sprite = game.stage.addChild(new PIXI.Sprite(shipTexture))
@@ -36,6 +36,8 @@ class Ship extends Object {
 
         this.amount = amount
         this.planet = planet
+        this.duration = duration
+        this.cumulativeDuration = 0
 
         this.fromX = fromX
         this.fromY = fromY
@@ -48,12 +50,21 @@ class Ship extends Object {
         this.vX = dX * speed / dnet
         this.vY = dY * speed / dnet
 
-        this.sprite.rotation = (Math.PI / 2) - Math.asin(this.vY / speed) * 2 * Math.PI
+        this.sprite.rotation = (this.vX > 0 ? 1 : -1) * (Math.PI / 2 + Math.asin(this.vY / speed))
     }
 
     update(delta) {
-        this.sprite.position.x += this.vX * delta
-        this.sprite.position.y += this.vY * delta
+        this.cumulativeDuration += delta
+        if (this.cumulativeDuration >= this.duration) {
+            this.arrive()
+        } else {
+            this.sprite.position.x += this.vX * delta
+            this.sprite.position.y += this.vY * delta
+        }
+    }
+
+    arrive() {
+        game.stage.removeChild(this.sprite)
     }
 }
 
@@ -698,14 +709,13 @@ function isBetween(x, y, z, error) {
     }
 }
 
-function sendShips(fromPlanet, toX, toY, toPlanet, amount) {
+function sendShips(fromPlanet, toX, toY, toPlanet, amount, duration) {
     removeShips(fromPlanet, amount)
 
-    var ship = sendingShips.push(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet))
+    var ship = sendingShips.push(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet, duration))
 }
 
-// WARNING: the lesser this speed is, the less accurate findFastestIntersect will be
-const shipSpeed = 10 // units per second
+const shipSpeed = 15 // units per second
 
 function timeToFastestIntersect(from, to) {
 
@@ -730,7 +740,7 @@ function timeToFastestIntersect(from, to) {
 
         let delta = d - time
 
-        if (delta < 0.5) {
+        if (delta < 0.2) {
             return time
         } else if (delta < 2) {
             time += 0.1
@@ -749,16 +759,6 @@ function timeToFastestIntersect(from, to) {
         x: 0,
         y: 0
     }
-
-    /*
-    const minDist = Math.abs(from.orbit.radius - to.orbit.radius)
-    const minTime = minDist / shipSpeed
-    const maxDist = from.orbit.radius + to.orbit.radius
-    const maxTime = maxDist / shipSpeed
-    var dist = Math.sqrt(distSqr(from.position.x, from.position.y, to.position.x, to.position.y))
-    var distTime = dist / shipSpeed
-
-    return minTime / to.opm + Math.sqrt(distTime * distTime / maxDist) * ((dist / minDist) - 1)*/
 }
 
 //   _____                      
@@ -770,7 +770,7 @@ function timeToFastestIntersect(from, to) {
 
 // Variables for sending ships
 const sunCollisionRadius = 30
-const ticksPerCollideUpdate = 5
+const ticksPerCollideUpdate = 10
 var updateLines = ticksPerCollideUpdate
 const selectPlanetRadius = 100
 var selectedPlanet
@@ -915,34 +915,25 @@ function gameLoop() {
                     // Planet selection via mouse
                     if (!collides) {
                         let mouse = viewport.toWorld(game.renderer.plugins.interaction.mouse.global)
-
                         let targetDist = distSqr(mouse.x, mouse.y, target.x, target.y)
                         let planetDist = distSqr(mouse.x, mouse.y, planet.position.x, planet.position.y)
 
-                        let radSqr = distSqr(selectPlanetRadius + planet.radius, 0)
+                        let radSqr = distSqr(0, 0, 0, selectPlanetRadius + planet.radius)
 
-                        // if the mouse is within the selection radius of the planet
-                        //if (targetDist < radSqr || planetDist < radSqr) {
+                        if (targetDist < radSqr || planetDist < radSqr) {
+                            if (!selectedPlanet) {
+                                selectedPlanet = planet
+                            } else {
+                                // if the mouse is within the selection radius of the planet
 
-                            if (planet.orbit.radius == 150) {
-                                console.log(' mouse: (' + mouse.x + ', ' + mouse.y + ')')
-                                console.log('target: (' + target.x + ', ' + target.y + ')')
-                                console.log(' dist: (' + Math.sqrt(distSqr(mouse.x, mouse.y, target.x, target.y)) + ')')
-                            }
-
-
-                            if (selectedPlanet) {
                                 let selectedDist = distSqr(mouse.x, mouse.y, selectedPlanet.position.x, selectedPlanet.position.y)
                                 let selectedGhostDist = distSqr(mouse.x, mouse.y, selectedPlanet.ghost.position.x, selectedPlanet.ghost.position.y)
 
                                 if ((targetDist < selectedDist && targetDist < selectedGhostDist) || (planetDist < selectedDist && planetDist < selectedGhostDist)) {
                                     selectedPlanet = planet
                                 }
-                            } else {
-                                // If no selected planet exists, immediately set this one
-                                selectedPlanet = planet
                             }
-                        //}
+                        }
                     }
                 }
 
