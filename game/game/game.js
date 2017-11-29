@@ -508,6 +508,12 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     ring.visible = false
     planet.outline = planet.addChild(ring)
 
+    // Ghost selection ring
+    var gring = new PIXI.Graphics()
+    gring.lineStyle(scale * dashThickness * 46, Colour.dark8)
+    gring.arc(scale * planet.radius, scale * planet.radius, scale * planet.radius * 3, 0, 7)
+    gring.visible = false
+
     // Set the scale
     planet.scale.set(scale)
     planet.radius = planet.radius * planet.scale.x
@@ -521,6 +527,7 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     ghost.arc(planet.radius, planet.radius, planet.radius, 0, 7)
     ghost.visible = true
     ghost.pivot.set(planet.radius, planet.radius)
+    ghost.outline = ghost.addChild(gring)
     planet.ghost = game.stage.addChild(ghost)
 
     // The rotation speed in radians/second
@@ -688,6 +695,7 @@ function cancelSendShips() {
     for (i in planets) {
         planets[i].outline.visible = false
         planets[i].ghost.visible = false
+        planets[i].ghost.outline.visible = false
     }
     drawLinesFrom = null
     sendShipsAmount = 0
@@ -777,6 +785,7 @@ function updateSelectedPlanet(mouse) {
             if (updateLines == 0) {
                 let planet = planets[i]
                 planet.outline.visible = false
+                planet.ghost.outline.visible = false
 
                 // Player Planet
                 let pX = drawLinesFrom.position.x
@@ -872,6 +881,7 @@ function updateSelectedPlanet(mouse) {
     if (updateLines == 0) {
         if (selectedPlanet) {
             selectedPlanet.outline.visible = true
+            selectedPlanet.ghost.outline.visible = true
         }
     }
 }
