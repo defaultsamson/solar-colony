@@ -129,6 +129,7 @@ PIXI.loader
     .add('planet1', 'game/assets/planet1.png')
     .add('planet2', 'game/assets/planet2.png')
     .add('ship', 'game/assets/ship.png')
+    .add('spawn', 'game/assets/spawn.png')
     .load(onLoad)
 
 //  _____       _ _   
@@ -147,6 +148,7 @@ var sun
 var hud
 
 var shipTexture
+var spawnTexture
 
 function onLoad(loader, resources) {
 
@@ -204,10 +206,14 @@ function onLoad(loader, resources) {
     buy100ShipText = new PIXI.Text('100 Ship (800 pixels)', style)
     hud.addChild(buy100ShipText)
 
+    buySpawnText = new PIXI.Text('1 Spawn (1000 pixels)', style)
+    hud.addChild(buySpawnText)
+
     sendShipText = new PIXI.Text('Send Ships (100 ships)', style)
     hud.addChild(sendShipText)
 
     shipTexture = resources.ship.texture
+    spawnTexture = resources.spawn.texture
 
     resize()
 
@@ -281,7 +287,8 @@ function updateKeyboard() {
         pixels += 5000
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
-        removeShips(myPlanet, 10)
+        // removeShips(myPlanet, 10)
+        removeSpawn(myPlanet, 1)
     }
 
     let screenPoint = game.renderer.plugins.interaction.mouse.global
@@ -376,6 +383,11 @@ function onMouseClick(e) {
         return
     }
 
+    if (buySpawnText.visible && buySpawnText.containsPoint(point)) {
+        createSpawn(myPlanet)
+        return
+    }
+
     var planet = getPlanet(e.world.x, e.world.y)
     if (planet) {
 
@@ -463,6 +475,7 @@ const dashThickness = 1.4
 
 // The max number of ships to display in storage per planet
 const maxShips = 100
+const maxSpawns = 10
 
 function createOrbit(x, y, radius, dashLength) {
 
@@ -534,6 +547,7 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     planet.speed = opm * (1 / 60) * 2 * Math.PI
     planet.rotationConstant = rotationConstant
     planet.ships = []
+    planet.spawns = []
     planet.age = startAngle / planet.speed
     return planet
 }
@@ -559,7 +573,7 @@ function createShips(planet, n, cost) {
                 let y = o + planet.radius / planet.scale.x
 
                 ship.tint = planet.tint
-                ship.pivot.set(0.5, 0.5)
+                ship.pivot.set(ship.width * 0.5, ship.height * 0.5)
                 ship.position.set(x, y)
                 ship.rotation = angle + (Math.PI / 2)
                 planet.addChild(ship)
@@ -585,6 +599,51 @@ function removeShips(planet, n) {
     }
 
     ships = Math.max(0, ships - n)
+}
+
+function createSpawn(planet) {
+    if (pixels >= 1000 && planet.spawns.length < maxSpawns) {
+        pixels -= 1000
+
+        var spawn = new PIXI.Sprite(spawnTexture)
+
+        // The position on the planet's surface to place the spawn (the angle)
+        // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+        let angle = Math.PI * 6 * planet.spawns.length / 10
+
+        let distFromPlanet = -8
+
+        // hypotenuse, opposite, adjacent
+        let h = planet.radius / planet.scale.x + distFromPlanet
+        let o = h * Math.sin(angle)
+        let a = h * Math.cos(angle)
+        let x = a + planet.radius / planet.scale.x
+        let y = o + planet.radius / planet.scale.x
+
+        spawn.tint = planet.tint
+        spawn.pivot.set(spawn.width * 0.5, spawn.height)
+        spawn.scale.set(1.3)
+        spawn.position.set(x, y)
+        spawn.rotation = angle + (Math.PI / 2)
+        planet.addChild(spawn)
+        planet.spawns.push(spawn)
+    }
+}
+
+// Removes the spawns from the planet
+function removeSpawn(planet, n) {
+
+    let removeTo = (planet.spawns.length - n)
+
+    if (removeTo >= 0) {
+        for (var i = planet.spawns.length - 1; i >= removeTo && i >= 0; i--) {
+            planet.removeChild(planet.spawns[i])
+        }
+
+        // Removes the ships from the array
+        planet.spawns.splice(removeTo, n)
+        updatePurchaseHud()
+    }
 }
 
 //  _    _ _   _ _ 
@@ -666,6 +725,11 @@ function updateHud() {
 }
 
 function resizeHud(width, height) {
+    if (!exists(width)) {
+        width = window.innerWidth
+        height = window.innerHeight
+    }
+    
     pixelText.position.set(hudMargin, hudMargin)
     shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
 
@@ -674,6 +738,8 @@ function resizeHud(width, height) {
     buy100ShipText.position.set(width / 2 - buy100ShipText.width - 100, (height - buy100ShipText.height) / 2 - buy10ShipText.height - 2)
 
     sendShipText.position.set(width / 2 + 100, (height - buy10ShipText.height) / 2)
+
+    buySpawnText.position.set(width / 2 - (buySpawnText.width / 2), -100 + (height - buySpawnText.height) / 2)
 }
 
 var drawLinesFrom
@@ -760,10 +826,8 @@ function timeToFastestIntersect(from, to) {
             time += 1
         }
 
-
         let desired
     } while (iterations < 1000)
-
 
     return {
         x: 0,
@@ -888,6 +952,10 @@ function updateSelectedPlanet(mouse) {
     }
 }
 
+function updatePurchaseHud() {
+    lastPixels = -1
+}
+
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -947,6 +1015,15 @@ function gameLoop() {
         buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
         buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
         buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
+
+        if (myPlanet.spawns.length >= maxSpawns) {
+            buySpawnText.text = 'MAX SPAWNS'
+        } else {
+            buySpawnText.text = '1 Spawn (1000 pixels)'
+        }
+        resizeHud()
+        
+        buySpawnText.tint = pixels < 1000 || myPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
     }
     if (ships != lastShips) {
         lastShips = ships
@@ -959,11 +1036,13 @@ function gameLoop() {
         buy10ShipText.visible = true
         buy100ShipText.visible = true
         sendShipText.visible = true
+        buySpawnText.visible = true
     } else {
         buy1ShipText.visible = false
         buy10ShipText.visible = false
         buy100ShipText.visible = false
         sendShipText.visible = false
+        buySpawnText.visible = false
     }
 
     // If drawing the ship travel lines
