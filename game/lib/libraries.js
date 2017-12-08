@@ -1892,7 +1892,7 @@ window.PIXI['default'] = PIXI
 require('pixi-particles')
 require('pixi-keyboard')
 
-},{"pixi-keyboard":48,"pixi-particles":49,"pixi-viewport":50,"pixi.js":180}],11:[function(require,module,exports){
+},{"pixi-keyboard":31,"pixi-particles":32,"pixi-viewport":33,"pixi.js":162}],11:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -3926,7 +3926,7 @@ module.exports = class face extends wait
         }
     }
 }
-},{"./wait":30,"yy-angle":229}],23:[function(require,module,exports){
+},{"./wait":30,"yy-angle":228}],23:[function(require,module,exports){
 const Loop = require('yy-loop')
 
 const Angle = require('./angle')
@@ -4536,7 +4536,7 @@ module.exports = class tint extends wait
         }
     }
 }
-},{"./wait":30,"yy-color":230}],29:[function(require,module,exports){
+},{"./wait":30,"yy-color":229}],29:[function(require,module,exports){
 const wait = require('./wait')
 
 /** animate any numeric parameter of an object or array of objects */
@@ -5032,1663 +5032,9 @@ module.exports = class wait extends EventEmitter
     calculate() {}
 }
 },{"eventemitter3":13,"penner":19}],31:[function(require,module,exports){
-var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
-
-/**
- * Helper class to create a webGL buffer
- *
- * @class
- * @memberof PIXI.glCore
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param type {gl.ARRAY_BUFFER | gl.ELEMENT_ARRAY_BUFFER} @mat
- * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
- * @param drawType {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
- */
-var Buffer = function(gl, type, data, drawType)
-{
-
-	/**
-     * The current WebGL rendering context
-     *
-     * @member {WebGLRenderingContext}
-     */
-	this.gl = gl;
-
-	/**
-     * The WebGL buffer, created upon instantiation
-     *
-     * @member {WebGLBuffer}
-     */
-	this.buffer = gl.createBuffer();
-
-	/**
-     * The type of the buffer
-     *
-     * @member {gl.ARRAY_BUFFER|gl.ELEMENT_ARRAY_BUFFER}
-     */
-	this.type = type || gl.ARRAY_BUFFER;
-
-	/**
-     * The draw type of the buffer
-     *
-     * @member {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
-     */
-	this.drawType = drawType || gl.STATIC_DRAW;
-
-	/**
-     * The data in the buffer, as a typed array
-     *
-     * @member {ArrayBuffer| SharedArrayBuffer|ArrayBufferView}
-     */
-	this.data = EMPTY_ARRAY_BUFFER;
-
-	if(data)
-	{
-		this.upload(data);
-	}
-
-	this._updateID = 0;
-};
-
-/**
- * Uploads the buffer to the GPU
- * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data to upload
- * @param offset {Number} if only a subset of the data should be uploaded, this is the amount of data to subtract
- * @param dontBind {Boolean} whether to bind the buffer before uploading it
- */
-Buffer.prototype.upload = function(data, offset, dontBind)
-{
-	// todo - needed?
-	if(!dontBind) this.bind();
-
-	var gl = this.gl;
-
-	data = data || this.data;
-	offset = offset || 0;
-
-	if(this.data.byteLength >= data.byteLength)
-	{
-		gl.bufferSubData(this.type, offset, data);
-	}
-	else
-	{
-		gl.bufferData(this.type, data, this.drawType);
-	}
-
-	this.data = data;
-};
-/**
- * Binds the buffer
- *
- */
-Buffer.prototype.bind = function()
-{
-	var gl = this.gl;
-	gl.bindBuffer(this.type, this.buffer);
-};
-
-Buffer.createVertexBuffer = function(gl, data, drawType)
-{
-	return new Buffer(gl, gl.ARRAY_BUFFER, data, drawType);
-};
-
-Buffer.createIndexBuffer = function(gl, data, drawType)
-{
-	return new Buffer(gl, gl.ELEMENT_ARRAY_BUFFER, data, drawType);
-};
-
-Buffer.create = function(gl, type, data, drawType)
-{
-	return new Buffer(gl, type, data, drawType);
-};
-
-/**
- * Destroys the buffer
- *
- */
-Buffer.prototype.destroy = function(){
-	this.gl.deleteBuffer(this.buffer);
-};
-
-module.exports = Buffer;
-
-},{}],32:[function(require,module,exports){
-
-var Texture = require('./GLTexture');
-
-/**
- * Helper class to create a webGL Framebuffer
- *
- * @class
- * @memberof PIXI.glCore
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param width {Number} the width of the drawing area of the frame buffer
- * @param height {Number} the height of the drawing area of the frame buffer
- */
-var Framebuffer = function(gl, width, height)
-{
-    /**
-     * The current WebGL rendering context
-     *
-     * @member {WebGLRenderingContext}
-     */
-    this.gl = gl;
-
-    /**
-     * The frame buffer
-     *
-     * @member {WebGLFramebuffer}
-     */
-    this.framebuffer = gl.createFramebuffer();
-
-    /**
-     * The stencil buffer
-     *
-     * @member {WebGLRenderbuffer}
-     */
-    this.stencil = null;
-
-    /**
-     * The stencil buffer
-     *
-     * @member {PIXI.glCore.GLTexture}
-     */
-    this.texture = null;
-
-    /**
-     * The width of the drawing area of the buffer
-     *
-     * @member {Number}
-     */
-    this.width = width || 100;
-    /**
-     * The height of the drawing area of the buffer
-     *
-     * @member {Number}
-     */
-    this.height = height || 100;
-};
-
-/**
- * Adds a texture to the frame buffer
- * @param texture {PIXI.glCore.GLTexture}
- */
-Framebuffer.prototype.enableTexture = function(texture)
-{
-    var gl = this.gl;
-
-    this.texture = texture || new Texture(gl);
-
-    this.texture.bind();
-
-    //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,  this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-
-    this.bind();
-
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture.texture, 0);
-};
-
-/**
- * Initialises the stencil buffer
- */
-Framebuffer.prototype.enableStencil = function()
-{
-    if(this.stencil)return;
-
-    var gl = this.gl;
-
-    this.stencil = gl.createRenderbuffer();
-
-    gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
-
-    // TODO.. this is depth AND stencil?
-    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.stencil);
-    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL,  this.width  , this.height );
-
-
-};
-
-/**
- * Erases the drawing area and fills it with a colour
- * @param  r {Number} the red value of the clearing colour
- * @param  g {Number} the green value of the clearing colour
- * @param  b {Number} the blue value of the clearing colour
- * @param  a {Number} the alpha value of the clearing colour
- */
-Framebuffer.prototype.clear = function( r, g, b, a )
-{
-    this.bind();
-
-    var gl = this.gl;
-
-    gl.clearColor(r, g, b, a);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-};
-
-/**
- * Binds the frame buffer to the WebGL context
- */
-Framebuffer.prototype.bind = function()
-{
-    var gl = this.gl;
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer );
-};
-
-/**
- * Unbinds the frame buffer to the WebGL context
- */
-Framebuffer.prototype.unbind = function()
-{
-    var gl = this.gl;
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null );
-};
-/**
- * Resizes the drawing area of the buffer to the given width and height
- * @param  width  {Number} the new width
- * @param  height {Number} the new height
- */
-Framebuffer.prototype.resize = function(width, height)
-{
-    var gl = this.gl;
-
-    this.width = width;
-    this.height = height;
-
-    if ( this.texture )
-    {
-        this.texture.uploadData(null, width, height);
-    }
-
-    if ( this.stencil )
-    {
-        // update the stencil buffer width and height
-        gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
-        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, width, height);
-    }
-};
-
-/**
- * Destroys this buffer
- */
-Framebuffer.prototype.destroy = function()
-{
-    var gl = this.gl;
-
-    //TODO
-    if(this.texture)
-    {
-        this.texture.destroy();
-    }
-
-    gl.deleteFramebuffer(this.framebuffer);
-
-    this.gl = null;
-
-    this.stencil = null;
-    this.texture = null;
-};
-
-/**
- * Creates a frame buffer with a texture containing the given data
- * @static
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param width {Number} the width of the drawing area of the frame buffer
- * @param height {Number} the height of the drawing area of the frame buffer
- * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
- */
-Framebuffer.createRGBA = function(gl, width, height, data)
-{
-    var texture = Texture.fromData(gl, null, width, height);
-    texture.enableNearestScaling();
-    texture.enableWrapClamp();
-
-    //now create the framebuffer object and attach the texture to it.
-    var fbo = new Framebuffer(gl, width, height);
-    fbo.enableTexture(texture);
-
-    //fbo.enableStencil(); // get this back on soon!
-
-    fbo.unbind();
-
-    return fbo;
-};
-
-/**
- * Creates a frame buffer with a texture containing the given data
- * @static
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param width {Number} the width of the drawing area of the frame buffer
- * @param height {Number} the height of the drawing area of the frame buffer
- * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
- */
-Framebuffer.createFloat32 = function(gl, width, height, data)
-{
-    // create a new texture..
-    var texture = new Texture.fromData(gl, data, width, height);
-    texture.enableNearestScaling();
-    texture.enableWrapClamp();
-
-    //now create the framebuffer object and attach the texture to it.
-    var fbo = new Framebuffer(gl, width, height);
-    fbo.enableTexture(texture);
-
-    fbo.unbind();
-
-    return fbo;
-};
-
-module.exports = Framebuffer;
-
-},{"./GLTexture":34}],33:[function(require,module,exports){
-
-var compileProgram = require('./shader/compileProgram'),
-	extractAttributes = require('./shader/extractAttributes'),
-	extractUniforms = require('./shader/extractUniforms'),
-	setPrecision = require('./shader/setPrecision'),
-	generateUniformAccessObject = require('./shader/generateUniformAccessObject');
-
-/**
- * Helper class to create a webGL Shader
- *
- * @class
- * @memberof PIXI.glCore
- * @param gl {WebGLRenderingContext}
- * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
- * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
- * @param precision {precision]} The float precision of the shader. Options are 'lowp', 'mediump' or 'highp'.
- * @param attributeLocations {object} A key value pair showing which location eact attribute should sit eg {position:0, uvs:1}
- */
-var Shader = function(gl, vertexSrc, fragmentSrc, precision, attributeLocations)
-{
-	/**
-	 * The current WebGL rendering context
-	 *
-	 * @member {WebGLRenderingContext}
-	 */
-	this.gl = gl;
-
-	if(precision)
-	{
-		vertexSrc = setPrecision(vertexSrc, precision);
-		fragmentSrc = setPrecision(fragmentSrc, precision);
-	}
-
-	/**
-	 * The shader program
-	 *
-	 * @member {WebGLProgram}
-	 */
-	// First compile the program..
-	this.program = compileProgram(gl, vertexSrc, fragmentSrc, attributeLocations);
-
-	/**
-	 * The attributes of the shader as an object containing the following properties
-	 * {
-	 * 	type,
-	 * 	size,
-	 * 	location,
-	 * 	pointer
-	 * }
-	 * @member {Object}
-	 */
-	// next extract the attributes
-	this.attributes = extractAttributes(gl, this.program);
-
-    this.uniformData = extractUniforms(gl, this.program);
-
-	/**
-	 * The uniforms of the shader as an object containing the following properties
-	 * {
-	 * 	gl,
-	 * 	data
-	 * }
-	 * @member {Object}
-	 */
-	this.uniforms = generateUniformAccessObject( gl, this.uniformData );
-
-};
-/**
- * Uses this shader
- */
-Shader.prototype.bind = function()
-{
-	this.gl.useProgram(this.program);
-};
-
-/**
- * Destroys this shader
- * TODO
- */
-Shader.prototype.destroy = function()
-{
-	this.attributes = null;
-	this.uniformData = null;
-	this.uniforms = null;
-
-	var gl = this.gl;
-	gl.deleteProgram(this.program);
-};
-
-
-module.exports = Shader;
-
-},{"./shader/compileProgram":39,"./shader/extractAttributes":41,"./shader/extractUniforms":42,"./shader/generateUniformAccessObject":43,"./shader/setPrecision":47}],34:[function(require,module,exports){
-
-/**
- * Helper class to create a WebGL Texture
- *
- * @class
- * @memberof PIXI.glCore
- * @param gl {WebGLRenderingContext} The current WebGL context
- * @param width {number} the width of the texture
- * @param height {number} the height of the texture
- * @param format {number} the pixel format of the texture. defaults to gl.RGBA
- * @param type {number} the gl type of the texture. defaults to gl.UNSIGNED_BYTE
- */
-var Texture = function(gl, width, height, format, type)
-{
-	/**
-	 * The current WebGL rendering context
-	 *
-	 * @member {WebGLRenderingContext}
-	 */
-	this.gl = gl;
-
-
-	/**
-	 * The WebGL texture
-	 *
-	 * @member {WebGLTexture}
-	 */
-	this.texture = gl.createTexture();
-
-	/**
-	 * If mipmapping was used for this texture, enable and disable with enableMipmap()
-	 *
-	 * @member {Boolean}
-	 */
-	// some settings..
-	this.mipmap = false;
-
-
-	/**
-	 * Set to true to enable pre-multiplied alpha
-	 *
-	 * @member {Boolean}
-	 */
-	this.premultiplyAlpha = false;
-
-	/**
-	 * The width of texture
-	 *
-	 * @member {Number}
-	 */
-	this.width = width || -1;
-	/**
-	 * The height of texture
-	 *
-	 * @member {Number}
-	 */
-	this.height = height || -1;
-
-	/**
-	 * The pixel format of the texture. defaults to gl.RGBA
-	 *
-	 * @member {Number}
-	 */
-	this.format = format || gl.RGBA;
-
-	/**
-	 * The gl type of the texture. defaults to gl.UNSIGNED_BYTE
-	 *
-	 * @member {Number}
-	 */
-	this.type = type || gl.UNSIGNED_BYTE;
-
-
-};
-
-/**
- * Uploads this texture to the GPU
- * @param source {HTMLImageElement|ImageData|HTMLVideoElement} the source image of the texture
- */
-Texture.prototype.upload = function(source)
-{
-	this.bind();
-
-	var gl = this.gl;
-
-
-	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
-
-	var newWidth = source.videoWidth || source.width;
-	var newHeight = source.videoHeight || source.height;
-
-	if(newHeight !== this.height || newWidth !== this.width)
-	{
-		gl.texImage2D(gl.TEXTURE_2D, 0, this.format, this.format, this.type, source);
-	}
-	else
-	{
-    	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.format, this.type, source);
-	}
-
-	// if the source is a video, we need to use the videoWidth / videoHeight properties as width / height will be incorrect.
-	this.width = newWidth;
-	this.height = newHeight;
-
-};
-
-var FLOATING_POINT_AVAILABLE = false;
-
-/**
- * Use a data source and uploads this texture to the GPU
- * @param data {TypedArray} the data to upload to the texture
- * @param width {number} the new width of the texture
- * @param height {number} the new height of the texture
- */
-Texture.prototype.uploadData = function(data, width, height)
-{
-	this.bind();
-
-	var gl = this.gl;
-
-
-	if(data instanceof Float32Array)
-	{
-		if(!FLOATING_POINT_AVAILABLE)
-		{
-			var ext = gl.getExtension("OES_texture_float");
-
-			if(ext)
-			{
-				FLOATING_POINT_AVAILABLE = true;
-			}
-			else
-			{
-				throw new Error('floating point textures not available');
-			}
-		}
-
-		this.type = gl.FLOAT;
-	}
-	else
-	{
-		// TODO support for other types
-		this.type = this.type || gl.UNSIGNED_BYTE;
-	}
-
-	// what type of data?
-	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
-
-
-	if(width !== this.width || height !== this.height)
-	{
-		gl.texImage2D(gl.TEXTURE_2D, 0, this.format,  width, height, 0, this.format, this.type, data || null);
-	}
-	else
-	{
-		gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, this.format, this.type, data || null);
-	}
-
-	this.width = width;
-	this.height = height;
-
-
-//	texSubImage2D
-};
-
-/**
- * Binds the texture
- * @param  location
- */
-Texture.prototype.bind = function(location)
-{
-	var gl = this.gl;
-
-	if(location !== undefined)
-	{
-		gl.activeTexture(gl.TEXTURE0 + location);
-	}
-
-	gl.bindTexture(gl.TEXTURE_2D, this.texture);
-};
-
-/**
- * Unbinds the texture
- */
-Texture.prototype.unbind = function()
-{
-	var gl = this.gl;
-	gl.bindTexture(gl.TEXTURE_2D, null);
-};
-
-/**
- * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
- */
-Texture.prototype.minFilter = function( linear )
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	if(this.mipmap)
-	{
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
-	}
-	else
-	{
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR : gl.NEAREST);
-	}
-};
-
-/**
- * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
- */
-Texture.prototype.magFilter = function( linear )
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear ? gl.LINEAR : gl.NEAREST);
-};
-
-/**
- * Enables mipmapping
- */
-Texture.prototype.enableMipmap = function()
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	this.mipmap = true;
-
-	gl.generateMipmap(gl.TEXTURE_2D);
-};
-
-/**
- * Enables linear filtering
- */
-Texture.prototype.enableLinearScaling = function()
-{
-	this.minFilter(true);
-	this.magFilter(true);
-};
-
-/**
- * Enables nearest neighbour interpolation
- */
-Texture.prototype.enableNearestScaling = function()
-{
-	this.minFilter(false);
-	this.magFilter(false);
-};
-
-/**
- * Enables clamping on the texture so WebGL will not repeat it
- */
-Texture.prototype.enableWrapClamp = function()
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-};
-
-/**
- * Enable tiling on the texture
- */
-Texture.prototype.enableWrapRepeat = function()
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-};
-
-Texture.prototype.enableWrapMirrorRepeat = function()
-{
-	var gl = this.gl;
-
-	this.bind();
-
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
-};
-
-
-/**
- * Destroys this texture
- */
-Texture.prototype.destroy = function()
-{
-	var gl = this.gl;
-	//TODO
-	gl.deleteTexture(this.texture);
-};
-
-/**
- * @static
- * @param gl {WebGLRenderingContext} The current WebGL context
- * @param source {HTMLImageElement|ImageData} the source image of the texture
- * @param premultiplyAlpha {Boolean} If we want to use pre-multiplied alpha
- */
-Texture.fromSource = function(gl, source, premultiplyAlpha)
-{
-	var texture = new Texture(gl);
-	texture.premultiplyAlpha = premultiplyAlpha || false;
-	texture.upload(source);
-
-	return texture;
-};
-
-/**
- * @static
- * @param gl {WebGLRenderingContext} The current WebGL context
- * @param data {TypedArray} the data to upload to the texture
- * @param width {number} the new width of the texture
- * @param height {number} the new height of the texture
- */
-Texture.fromData = function(gl, data, width, height)
-{
-	//console.log(data, width, height);
-	var texture = new Texture(gl);
-	texture.uploadData(data, width, height);
-
-	return texture;
-};
-
-
-module.exports = Texture;
-
-},{}],35:[function(require,module,exports){
-
-// state object//
-var setVertexAttribArrays = require( './setVertexAttribArrays' );
-
-/**
- * Helper class to work with WebGL VertexArrayObjects (vaos)
- * Only works if WebGL extensions are enabled (they usually are)
- *
- * @class
- * @memberof PIXI.glCore
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- */
-function VertexArrayObject(gl, state)
-{
-    this.nativeVaoExtension = null;
-
-    if(!VertexArrayObject.FORCE_NATIVE)
-    {
-        this.nativeVaoExtension = gl.getExtension('OES_vertex_array_object') ||
-                                  gl.getExtension('MOZ_OES_vertex_array_object') ||
-                                  gl.getExtension('WEBKIT_OES_vertex_array_object');
-    }
-
-    this.nativeState = state;
-
-    if(this.nativeVaoExtension)
-    {
-        this.nativeVao = this.nativeVaoExtension.createVertexArrayOES();
-
-        var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
-
-        // VAO - overwrite the state..
-        this.nativeState = {
-            tempAttribState: new Array(maxAttribs),
-            attribState: new Array(maxAttribs)
-        };
-    }
-
-    /**
-     * The current WebGL rendering context
-     *
-     * @member {WebGLRenderingContext}
-     */
-    this.gl = gl;
-
-    /**
-     * An array of attributes
-     *
-     * @member {Array}
-     */
-    this.attributes = [];
-
-    /**
-     * @member {PIXI.glCore.GLBuffer}
-     */
-    this.indexBuffer = null;
-
-    /**
-     * A boolean flag
-     *
-     * @member {Boolean}
-     */
-    this.dirty = false;
-}
-
-VertexArrayObject.prototype.constructor = VertexArrayObject;
-module.exports = VertexArrayObject;
-
-/**
-* Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
-* If you find on older devices that things have gone a bit weird then set this to true.
-*/
-/**
- * Lets the VAO know if you should use the WebGL extension or the native methods.
- * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
- * If you find on older devices that things have gone a bit weird then set this to true.
- * @static
- * @property {Boolean} FORCE_NATIVE
- */
-VertexArrayObject.FORCE_NATIVE = false;
-
-/**
- * Binds the buffer
- */
-VertexArrayObject.prototype.bind = function()
-{
-    if(this.nativeVao)
-    {
-        this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
-
-        if(this.dirty)
-        {
-            this.dirty = false;
-            this.activate();
-        }
-    }
-    else
-    {
-
-        this.activate();
-    }
-
-    return this;
-};
-
-/**
- * Unbinds the buffer
- */
-VertexArrayObject.prototype.unbind = function()
-{
-    if(this.nativeVao)
-    {
-        this.nativeVaoExtension.bindVertexArrayOES(null);
-    }
-
-    return this;
-};
-
-/**
- * Uses this vao
- */
-VertexArrayObject.prototype.activate = function()
-{
-
-    var gl = this.gl;
-    var lastBuffer = null;
-
-    for (var i = 0; i < this.attributes.length; i++)
-    {
-        var attrib = this.attributes[i];
-
-        if(lastBuffer !== attrib.buffer)
-        {
-            attrib.buffer.bind();
-            lastBuffer = attrib.buffer;
-        }
-
-        gl.vertexAttribPointer(attrib.attribute.location,
-                               attrib.attribute.size,
-                               attrib.type || gl.FLOAT,
-                               attrib.normalized || false,
-                               attrib.stride || 0,
-                               attrib.start || 0);
-    }
-
-    setVertexAttribArrays(gl, this.attributes, this.nativeState);
-
-    if(this.indexBuffer)
-    {
-        this.indexBuffer.bind();
-    }
-
-    return this;
-};
-
-/**
- *
- * @param buffer     {PIXI.gl.GLBuffer}
- * @param attribute  {*}
- * @param type       {String}
- * @param normalized {Boolean}
- * @param stride     {Number}
- * @param start      {Number}
- */
-VertexArrayObject.prototype.addAttribute = function(buffer, attribute, type, normalized, stride, start)
-{
-    this.attributes.push({
-        buffer:     buffer,
-        attribute:  attribute,
-
-        location:   attribute.location,
-        type:       type || this.gl.FLOAT,
-        normalized: normalized || false,
-        stride:     stride || 0,
-        start:      start || 0
-    });
-
-    this.dirty = true;
-
-    return this;
-};
-
-/**
- *
- * @param buffer   {PIXI.gl.GLBuffer}
- */
-VertexArrayObject.prototype.addIndex = function(buffer/*, options*/)
-{
-    this.indexBuffer = buffer;
-
-    this.dirty = true;
-
-    return this;
-};
-
-/**
- * Unbinds this vao and disables it
- */
-VertexArrayObject.prototype.clear = function()
-{
-    // var gl = this.gl;
-
-    // TODO - should this function unbind after clear?
-    // for now, no but lets see what happens in the real world!
-    if(this.nativeVao)
-    {
-        this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
-    }
-
-    this.attributes.length = 0;
-    this.indexBuffer = null;
-
-    return this;
-};
-
-/**
- * @param type  {Number}
- * @param size  {Number}
- * @param start {Number}
- */
-VertexArrayObject.prototype.draw = function(type, size, start)
-{
-    var gl = this.gl;
-
-    if(this.indexBuffer)
-    {
-        gl.drawElements(type, size || this.indexBuffer.data.length, gl.UNSIGNED_SHORT, (start || 0) * 2 );
-    }
-    else
-    {
-        // TODO need a better way to calculate size..
-        gl.drawArrays(type, start, size || this.getSize());
-    }
-
-    return this;
-};
-
-/**
- * Destroy this vao
- */
-VertexArrayObject.prototype.destroy = function()
-{
-    // lose references
-    this.gl = null;
-    this.indexBuffer = null;
-    this.attributes = null;
-    this.nativeState = null;
-
-    if(this.nativeVao)
-    {
-        this.nativeVaoExtension.deleteVertexArrayOES(this.nativeVao);
-    }
-
-    this.nativeVaoExtension = null;
-    this.nativeVao = null;
-};
-
-VertexArrayObject.prototype.getSize = function()
-{
-    var attrib = this.attributes[0];
-    return attrib.buffer.data.length / (( attrib.stride/4 ) || attrib.attribute.size);
-};
-
-},{"./setVertexAttribArrays":38}],36:[function(require,module,exports){
-
-/**
- * Helper class to create a webGL Context
- *
- * @class
- * @memberof PIXI.glCore
- * @param canvas {HTMLCanvasElement} the canvas element that we will get the context from
- * @param options {Object} An options object that gets passed in to the canvas element containing the context attributes,
- *                         see https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement/getContext for the options available
- * @return {WebGLRenderingContext} the WebGL context
- */
-var createContext = function(canvas, options)
-{
-    var gl = canvas.getContext('webgl', options) || 
-         canvas.getContext('experimental-webgl', options);
-
-    if (!gl)
-    {
-        // fail, not able to get a context
-        throw new Error('This browser does not support webGL. Try using the canvas renderer');
-    }
-
-    return gl;
-};
-
-module.exports = createContext;
-
-},{}],37:[function(require,module,exports){
-var gl = {
-    createContext:          require('./createContext'),
-    setVertexAttribArrays:  require('./setVertexAttribArrays'),
-    GLBuffer:               require('./GLBuffer'),
-    GLFramebuffer:          require('./GLFramebuffer'),
-    GLShader:               require('./GLShader'),
-    GLTexture:              require('./GLTexture'),
-    VertexArrayObject:      require('./VertexArrayObject'),
-    shader:                 require('./shader')
-};
-
-// Export for Node-compatible environments
-if (typeof module !== 'undefined' && module.exports)
-{
-    // Export the module
-    module.exports = gl;
-}
-
-// Add to the browser window pixi.gl
-if (typeof window !== 'undefined')
-{
-    // add the window object
-    window.PIXI = window.PIXI || {};
-    window.PIXI.glCore = gl;
-}
-
-},{"./GLBuffer":31,"./GLFramebuffer":32,"./GLShader":33,"./GLTexture":34,"./VertexArrayObject":35,"./createContext":36,"./setVertexAttribArrays":38,"./shader":44}],38:[function(require,module,exports){
-// var GL_MAP = {};
-
-/**
- * @param gl {WebGLRenderingContext} The current WebGL context
- * @param attribs {*}
- * @param state {*}
- */
-var setVertexAttribArrays = function (gl, attribs, state)
-{
-    var i;
-    if(state)
-    {
-        var tempAttribState = state.tempAttribState,
-            attribState = state.attribState;
-
-        for (i = 0; i < tempAttribState.length; i++)
-        {
-            tempAttribState[i] = false;
-        }
-
-        // set the new attribs
-        for (i = 0; i < attribs.length; i++)
-        {
-            tempAttribState[attribs[i].attribute.location] = true;
-        }
-
-        for (i = 0; i < attribState.length; i++)
-        {
-            if (attribState[i] !== tempAttribState[i])
-            {
-                attribState[i] = tempAttribState[i];
-
-                if (state.attribState[i])
-                {
-                    gl.enableVertexAttribArray(i);
-                }
-                else
-                {
-                    gl.disableVertexAttribArray(i);
-                }
-            }
-        }
-
-    }
-    else
-    {
-        for (i = 0; i < attribs.length; i++)
-        {
-            var attrib = attribs[i];
-            gl.enableVertexAttribArray(attrib.attribute.location);
-        }
-    }
-};
-
-module.exports = setVertexAttribArrays;
-
-},{}],39:[function(require,module,exports){
-
-/**
- * @class
- * @memberof PIXI.glCore.shader
- * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
- * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
- * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
- * @param attributeLocations {Object} An attribute location map that lets you manually set the attribute locations
- * @return {WebGLProgram} the shader program
- */
-var compileProgram = function(gl, vertexSrc, fragmentSrc, attributeLocations)
-{
-    var glVertShader = compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
-    var glFragShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-
-    var program = gl.createProgram();
-
-    gl.attachShader(program, glVertShader);
-    gl.attachShader(program, glFragShader);
-
-    // optionally, set the attributes manually for the program rather than letting WebGL decide..
-    if(attributeLocations)
-    {
-        for(var i in attributeLocations)
-        {
-            gl.bindAttribLocation(program, attributeLocations[i], i);
-        }
-    }
-
-
-    gl.linkProgram(program);
-
-    // if linking fails, then log and cleanup
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS))
-    {
-        console.error('Pixi.js Error: Could not initialize shader.');
-        console.error('gl.VALIDATE_STATUS', gl.getProgramParameter(program, gl.VALIDATE_STATUS));
-        console.error('gl.getError()', gl.getError());
-
-        // if there is a program info log, log it
-        if (gl.getProgramInfoLog(program) !== '')
-        {
-            console.warn('Pixi.js Warning: gl.getProgramInfoLog()', gl.getProgramInfoLog(program));
-        }
-
-        gl.deleteProgram(program);
-        program = null;
-    }
-
-    // clean up some shaders
-    gl.deleteShader(glVertShader);
-    gl.deleteShader(glFragShader);
-
-    return program;
-};
-
-/**
- * @private
- * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
- * @param type {Number} the type, can be either VERTEX_SHADER or FRAGMENT_SHADER
- * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
- * @return {WebGLShader} the shader
- */
-var compileShader = function (gl, type, src)
-{
-    var shader = gl.createShader(type);
-
-    gl.shaderSource(shader, src);
-    gl.compileShader(shader);
-
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
-    {
-        console.log(gl.getShaderInfoLog(shader));
-        return null;
-    }
-
-    return shader;
-};
-
-module.exports = compileProgram;
-
-},{}],40:[function(require,module,exports){
-/**
- * @class
- * @memberof PIXI.glCore.shader
- * @param type {String} Type of value
- * @param size {Number}
- */
-var defaultValue = function(type, size) 
-{
-    switch (type)
-    {
-        case 'float':
-            return 0;
-
-        case 'vec2': 
-            return new Float32Array(2 * size);
-
-        case 'vec3':
-            return new Float32Array(3 * size);
-
-        case 'vec4':     
-            return new Float32Array(4 * size);
-            
-        case 'int':
-        case 'sampler2D':
-            return 0;
-
-        case 'ivec2':   
-            return new Int32Array(2 * size);
-
-        case 'ivec3':
-            return new Int32Array(3 * size);
-
-        case 'ivec4': 
-            return new Int32Array(4 * size);
-
-        case 'bool':     
-            return false;
-
-        case 'bvec2':
-
-            return booleanArray( 2 * size);
-
-        case 'bvec3':
-            return booleanArray(3 * size);
-
-        case 'bvec4':
-            return booleanArray(4 * size);
-
-        case 'mat2':
-            return new Float32Array([1, 0,
-                                     0, 1]);
-
-        case 'mat3': 
-            return new Float32Array([1, 0, 0,
-                                     0, 1, 0,
-                                     0, 0, 1]);
-
-        case 'mat4':
-            return new Float32Array([1, 0, 0, 0,
-                                     0, 1, 0, 0,
-                                     0, 0, 1, 0,
-                                     0, 0, 0, 1]);
-    }
-};
-
-var booleanArray = function(size)
-{
-    var array = new Array(size);
-
-    for (var i = 0; i < array.length; i++) 
-    {
-        array[i] = false;
-    }
-
-    return array;
-};
-
-module.exports = defaultValue;
-
-},{}],41:[function(require,module,exports){
-
-var mapType = require('./mapType');
-var mapSize = require('./mapSize');
-
-/**
- * Extracts the attributes
- * @class
- * @memberof PIXI.glCore.shader
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param program {WebGLProgram} The shader program to get the attributes from
- * @return attributes {Object}
- */
-var extractAttributes = function(gl, program)
-{
-    var attributes = {};
-
-    var totalAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
-
-    for (var i = 0; i < totalAttributes; i++)
-    {
-        var attribData = gl.getActiveAttrib(program, i);
-        var type = mapType(gl, attribData.type);
-
-        attributes[attribData.name] = {
-            type:type,
-            size:mapSize(type),
-            location:gl.getAttribLocation(program, attribData.name),
-            //TODO - make an attribute object
-            pointer: pointer
-        };
-    }
-
-    return attributes;
-};
-
-var pointer = function(type, normalized, stride, start){
-    // console.log(this.location)
-    gl.vertexAttribPointer(this.location,this.size, type || gl.FLOAT, normalized || false, stride || 0, start || 0);
-};
-
-module.exports = extractAttributes;
-
-},{"./mapSize":45,"./mapType":46}],42:[function(require,module,exports){
-var mapType = require('./mapType');
-var defaultValue = require('./defaultValue');
-
-/**
- * Extracts the uniforms
- * @class
- * @memberof PIXI.glCore.shader
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param program {WebGLProgram} The shader program to get the uniforms from
- * @return uniforms {Object}
- */
-var extractUniforms = function(gl, program)
-{
-	var uniforms = {};
-
-    var totalUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
-
-    for (var i = 0; i < totalUniforms; i++)
-    {
-    	var uniformData = gl.getActiveUniform(program, i);
-    	var name = uniformData.name.replace(/\[.*?\]/, "");
-        var type = mapType(gl, uniformData.type );
-
-    	uniforms[name] = {
-    		type:type,
-    		size:uniformData.size,
-    		location:gl.getUniformLocation(program, name),
-    		value:defaultValue(type, uniformData.size)
-    	};
-    }
-
-	return uniforms;
-};
-
-module.exports = extractUniforms;
-
-},{"./defaultValue":40,"./mapType":46}],43:[function(require,module,exports){
-/**
- * Extracts the attributes
- * @class
- * @memberof PIXI.glCore.shader
- * @param gl {WebGLRenderingContext} The current WebGL rendering context
- * @param uniforms {Array} @mat ?
- * @return attributes {Object}
- */
-var generateUniformAccessObject = function(gl, uniformData)
-{
-    // this is the object we will be sending back.
-    // an object hierachy will be created for structs
-    var uniforms = {data:{}};
-
-    uniforms.gl = gl;
-
-    var uniformKeys= Object.keys(uniformData);
-
-    for (var i = 0; i < uniformKeys.length; i++)
-    {
-        var fullName = uniformKeys[i];
-
-        var nameTokens = fullName.split('.');
-        var name = nameTokens[nameTokens.length - 1];
-
-
-        var uniformGroup = getUniformGroup(nameTokens, uniforms);
-
-        var uniform =  uniformData[fullName];
-        uniformGroup.data[name] = uniform;
-
-        uniformGroup.gl = gl;
-
-        Object.defineProperty(uniformGroup, name, {
-            get: generateGetter(name),
-            set: generateSetter(name, uniform)
-        });
-    }
-
-    return uniforms;
-};
-
-var generateGetter = function(name)
-{
-	var template = getterTemplate.replace('%%', name);
-	return new Function(template); // jshint ignore:line
-};
-
-var generateSetter = function(name, uniform)
-{
-    var template = setterTemplate.replace(/%%/g, name);
-    var setTemplate;
-
-    if(uniform.size === 1)
-    {
-        setTemplate = GLSL_TO_SINGLE_SETTERS[uniform.type];
-    }
-    else
-    {
-        setTemplate = GLSL_TO_ARRAY_SETTERS[uniform.type];
-    }
-
-    if(setTemplate)
-    {
-        template += "\nthis.gl." + setTemplate + ";";
-    }
-
-  	return new Function('value', template); // jshint ignore:line
-};
-
-var getUniformGroup = function(nameTokens, uniform)
-{
-    var cur = uniform;
-
-    for (var i = 0; i < nameTokens.length - 1; i++)
-    {
-        var o = cur[nameTokens[i]] || {data:{}};
-        cur[nameTokens[i]] = o;
-        cur = o;
-    }
-
-    return cur;
-};
-
-var getterTemplate = [
-    'return this.data.%%.value;',
-].join('\n');
-
-var setterTemplate = [
-    'this.data.%%.value = value;',
-    'var location = this.data.%%.location;'
-].join('\n');
-
-
-var GLSL_TO_SINGLE_SETTERS = {
-
-    'float':    'uniform1f(location, value)',
-
-    'vec2':     'uniform2f(location, value[0], value[1])',
-    'vec3':     'uniform3f(location, value[0], value[1], value[2])',
-    'vec4':     'uniform4f(location, value[0], value[1], value[2], value[3])',
-
-    'int':      'uniform1i(location, value)',
-    'ivec2':    'uniform2i(location, value[0], value[1])',
-    'ivec3':    'uniform3i(location, value[0], value[1], value[2])',
-    'ivec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
-
-    'bool':     'uniform1i(location, value)',
-    'bvec2':    'uniform2i(location, value[0], value[1])',
-    'bvec3':    'uniform3i(location, value[0], value[1], value[2])',
-    'bvec4':    'uniform4i(location, value[0], value[1], value[2], value[3])',
-
-    'mat2':     'uniformMatrix2fv(location, false, value)',
-    'mat3':     'uniformMatrix3fv(location, false, value)',
-    'mat4':     'uniformMatrix4fv(location, false, value)',
-
-    'sampler2D':'uniform1i(location, value)'
-};
-
-var GLSL_TO_ARRAY_SETTERS = {
-
-    'float':    'uniform1fv(location, value)',
-
-    'vec2':     'uniform2fv(location, value)',
-    'vec3':     'uniform3fv(location, value)',
-    'vec4':     'uniform4fv(location, value)',
-
-    'int':      'uniform1iv(location, value)',
-    'ivec2':    'uniform2iv(location, value)',
-    'ivec3':    'uniform3iv(location, value)',
-    'ivec4':    'uniform4iv(location, value)',
-
-    'bool':     'uniform1iv(location, value)',
-    'bvec2':    'uniform2iv(location, value)',
-    'bvec3':    'uniform3iv(location, value)',
-    'bvec4':    'uniform4iv(location, value)',
-
-    'sampler2D':'uniform1iv(location, value)'
-};
-
-module.exports = generateUniformAccessObject;
-
-},{}],44:[function(require,module,exports){
-module.exports = {
-    compileProgram: require('./compileProgram'),
-    defaultValue: require('./defaultValue'),
-    extractAttributes: require('./extractAttributes'),
-    extractUniforms: require('./extractUniforms'),
-    generateUniformAccessObject: require('./generateUniformAccessObject'),
-    setPrecision: require('./setPrecision'),
-    mapSize: require('./mapSize'),
-    mapType: require('./mapType')
-};
-},{"./compileProgram":39,"./defaultValue":40,"./extractAttributes":41,"./extractUniforms":42,"./generateUniformAccessObject":43,"./mapSize":45,"./mapType":46,"./setPrecision":47}],45:[function(require,module,exports){
-/**
- * @class
- * @memberof PIXI.glCore.shader
- * @param type {String}
- * @return {Number}
- */
-var mapSize = function(type) 
-{ 
-    return GLSL_TO_SIZE[type];
-};
-
-
-var GLSL_TO_SIZE = {
-    'float':    1,
-    'vec2':     2,
-    'vec3':     3,
-    'vec4':     4,
-
-    'int':      1,
-    'ivec2':    2,
-    'ivec3':    3,
-    'ivec4':    4,
-
-    'bool':     1,
-    'bvec2':    2,
-    'bvec3':    3,
-    'bvec4':    4,
-
-    'mat2':     4,
-    'mat3':     9,
-    'mat4':     16,
-
-    'sampler2D':  1
-};
-
-module.exports = mapSize;
-
-},{}],46:[function(require,module,exports){
-
-
-var mapSize = function(gl, type) 
-{
-    if(!GL_TABLE) 
-    {
-        var typeNames = Object.keys(GL_TO_GLSL_TYPES);
-
-        GL_TABLE = {};
-
-        for(var i = 0; i < typeNames.length; ++i) 
-        {
-            var tn = typeNames[i];
-            GL_TABLE[ gl[tn] ] = GL_TO_GLSL_TYPES[tn];
-        }
-    }
-
-  return GL_TABLE[type];
-};
-
-var GL_TABLE = null;
-
-var GL_TO_GLSL_TYPES = {
-  'FLOAT':       'float',
-  'FLOAT_VEC2':  'vec2',
-  'FLOAT_VEC3':  'vec3',
-  'FLOAT_VEC4':  'vec4',
-
-  'INT':         'int',
-  'INT_VEC2':    'ivec2',
-  'INT_VEC3':    'ivec3',
-  'INT_VEC4':    'ivec4',
-  
-  'BOOL':        'bool',
-  'BOOL_VEC2':   'bvec2',
-  'BOOL_VEC3':   'bvec3',
-  'BOOL_VEC4':   'bvec4',
-  
-  'FLOAT_MAT2':  'mat2',
-  'FLOAT_MAT3':  'mat3',
-  'FLOAT_MAT4':  'mat4',
-  
-  'SAMPLER_2D':  'sampler2D'  
-};
-
-module.exports = mapSize;
-
-},{}],47:[function(require,module,exports){
-/**
- * Sets the float precision on the shader. If the precision is already present this function will do nothing
- * @param {string} src       the shader source
- * @param {string} precision The float precision of the shader. Options are 'lowp', 'mediump' or 'highp'.
- *
- * @return {string} modified shader source
- */
-var setPrecision = function(src, precision)
-{
-    if(src.substring(0, 9) !== 'precision')
-    {
-        return 'precision ' + precision + ' float;\n' + src;
-    }
-
-    return src;
-};
-
-module.exports = setPrecision;
-
-},{}],48:[function(require,module,exports){
 !function(e){function t(s){if(n[s])return n[s].exports;var i=n[s]={exports:{},id:s,loaded:!1};return e[s].call(i.exports,i,i.exports,t),i.loaded=!0,i.exports}var n={};return t.m=e,t.c=n,t.p="",t(0)}([function(e,t,n){e.exports=n(5)},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}var r=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var o=n(2),a=s(o),u=function(){function e(t,n){i(this,e),this.key=t,this.manager=n,this.isPressed=!1,this.isDown=!1,this.isReleased=!1,this.crtl=!1,this.shift=!1,this.alt=!1}return r(e,[{key:"update",value:function(){this.isDown=this.manager.isDown(this.key),this.isPressed=this.manager.isPressed(this.key),this.isReleased=this.manager.isReleased(this.key),this.crtl=this.manager.isDown(a["default"].CTRL),this.shift=this.manager.isDown(a["default"].SHIFT),this.alt=this.manager.isDown(a["default"].ALT)}},{key:"remove",value:function(){this.manager.removeHotKey(this.key)}}]),e}();t["default"]=u},function(e,t){"use strict";Object.defineProperty(t,"__esModule",{value:!0});var n={BACKSPACE:8,TAB:9,ENTER:13,SHIFT:16,PAUSE:19,CTRL:17,ALT:18,CAPS_LOCK:20,ESCAPE:27,SPACE:32,PAGE_UP:33,PAGE_DOWN:34,END:35,HOME:36,LEFT:37,UP:38,RIGHT:39,DOWN:40,PRINT_SCREEN:44,INSERT:45,DELETE:46,_0:48,_1:49,_2:50,_3:51,_4:52,_5:53,_6:54,_7:55,_8:56,_9:57,A:65,B:66,C:67,D:68,E:69,F:70,G:71,H:72,I:73,J:74,K:75,L:76,M:77,N:78,O:79,P:80,Q:81,R:82,S:83,T:84,U:85,V:86,W:87,X:88,Y:89,Z:90,CMD:91,CMD_RIGHT:93,NUM_0:96,NUM_1:97,NUM_2:98,NUM_3:99,NUM_4:100,NUM_5:101,NUM_6:102,NUM_7:103,NUM_8:104,NUM_9:105,MULTIPLY:106,ADD:107,SUBTRACT:109,DECIMAL_POINT:110,DIVIDE:111,F1:112,F2:113,F3:114,F4:115,F5:116,F6:117,F7:118,F8:119,F9:120,F10:121,F11:122,F12:123,NUM_LOCK:144,SCROLL_LOCK:145,SEMI_COLON:186,EQUAL:187,COMMA:188,DASH:189,PERIOD:190,FORWARD_SLASH:191,OPEN_BRACKET:219,BACK_SLASH:220,CLOSE_BRACKET:221,SINGLE_QUOTE:222};t["default"]=n},function(e,t){e.exports=PIXI},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}function i(e,t){if(!(e instanceof t))throw new TypeError("Cannot call a class as a function")}function r(e,t){if(!e)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!t||"object"!=typeof t&&"function"!=typeof t?e:t}function o(e,t){if("function"!=typeof t&&null!==t)throw new TypeError("Super expression must either be null or a function, not "+typeof t);e.prototype=Object.create(t&&t.prototype,{constructor:{value:e,enumerable:!1,writable:!0,configurable:!0}}),t&&(Object.setPrototypeOf?Object.setPrototypeOf(e,t):e.__proto__=t)}function a(e){return"[object Array]"===Object.prototype.toString.call(e)}var u=function(){function e(e,t){for(var n=0;n<t.length;n++){var s=t[n];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(e,s.key,s)}}return function(t,n,s){return n&&e(t.prototype,n),s&&e(t,s),t}}();Object.defineProperty(t,"__esModule",{value:!0});var l=n(3),f=s(l),d=n(1),h=s(d),y=function(e){function t(){i(this,t);var e=r(this,Object.getPrototypeOf(t).call(this));return e.isEnabled=!1,e._pressedKeys=[],e._releasedKeys=[],e._downKeys=[],e._hotKeys=[],e._preventDefaultKeys=[],e}return o(t,e),u(t,[{key:"enable",value:function(){this.isEnabled||(this.isEnabled=!0,this._enableEvents())}},{key:"_enableEvents",value:function(){window.addEventListener("keydown",this._onKeyDown.bind(this),!0),window.addEventListener("keyup",this._onKeyUp.bind(this),!0)}},{key:"disable",value:function(){this.isEnabled&&(this.isEnabled=!1,this._disableEvents())}},{key:"_disableEvents",value:function(){window.removeEventListener("keydown",this._onKeyDown,!0),window.removeEventListener("keyup",this._onKeyUp,!0)}},{key:"setPreventDefault",value:function(e){var t=arguments.length<=1||void 0===arguments[1]?!0:arguments[1];if(a(e))for(var n=0;n<e.length;n++)this._preventDefaultKeys[e[n]]=t;else this._preventDefaultKeys[e]=t}},{key:"_onKeyDown",value:function(e){var t=e.which||e.keyCode;this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)||(this._downKeys.push(t),this._pressedKeys[t]=!0,this.emit("pressed",t))}},{key:"_onKeyUp",value:function(e){var t=e.which||e.keyCode;if(this._preventDefaultKeys[t]&&e.preventDefault(),this.isDown(t)){this._pressedKeys[t]=!1,this._releasedKeys[t]=!0;var n=this._downKeys.indexOf(t);-1!==n&&this._downKeys.splice(n,1),this.emit("released",t)}}},{key:"isDown",value:function(e){return-1!==this._downKeys.indexOf(e)}},{key:"isPressed",value:function(e){return!!this._pressedKeys[e]}},{key:"isReleased",value:function(e){return!!this._releasedKeys[e]}},{key:"update",value:function(){for(var e in this._hotKeys)this._hotKeys[e].update();for(var t=0;t<this._downKeys.length;t++)this.emit("down",this._downKeys[t]);this._pressedKeys.length=0,this._releasedKeys.length=0}},{key:"getHotKey",value:function(e){var t=this._hotKeys[e]||new h["default"](e,this);return this._hotKeys[e]=t,t}},{key:"removeHotKey",value:function(e){this._hotKeys[e]&&delete this._hotKeys[e]}}]),t}(f["default"].utils.EventEmitter);t["default"]=y},function(e,t,n){"use strict";function s(e){return e&&e.__esModule?e:{"default":e}}Object.defineProperty(t,"__esModule",{value:!0});var i=n(3),r=s(i),o=n(4),a=s(o),u=n(1),l=s(u),f=n(2),d=s(f),h={KeyboardManager:a["default"],Key:d["default"],HotKey:l["default"]};if(!r["default"].keyboard){var y=new a["default"];y.enable(),r["default"].keyboard=h,r["default"].keyboardManager=y}t["default"]=h}]);
 
-},{}],49:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 (function (global){
 /*!
  * pixi-particles - v2.1.9
@@ -6701,438 +5047,9 @@ module.exports = setPrecision;
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],50:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 module.exports = require('./src/viewport')
-},{"./src/viewport":63}],51:[function(require,module,exports){
-/* Copyright (c) 2017 YOPEY YOPEY LLC */
-
-const EventEmitter = require('eventemitter3')
-
-module.exports = class Input extends EventEmitter
-{
-    /**
-     * basic input support for touch, mouse, and keyboard
-     *
-     * @param {object} [options]
-     * @param {HTMLElement} [options.div=document] object to attach listener to
-     * @param {boolean} [options.noPointers] turns off mouse/touch/pen listeners
-     * @param {boolean} [options.noKeyboard] turns off key listener
-     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
-     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
-     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
-     *
-     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
-     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
-     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
-     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
-     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
-     *
-     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
-     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
-     */
-    constructor(options)
-    {
-        super()
-        options = options || {}
-        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
-        this.chromeDebug = options.chromeDebug
-        this.preventDefault = options.preventDefault
-
-        this.pointers = []
-        this.keys = {}
-        this.input = []
-
-        this.div = options.div || document
-        this.options = options
-        this.callbacks = [
-            this.mouseDown.bind(this),
-            this.mouseMove.bind(this),
-            this.mouseUp.bind(this), // 2
-            this.touchStart.bind(this),
-            this.touchMove.bind(this),
-            this.touchEnd.bind(this),
-            this.keydown.bind(this), // 6
-            this.keyup.bind(this),
-            this.wheel.bind(this) // 8
-        ]
-        if (!options.noPointers)
-        {
-            this.addPointers()
-        }
-        if (!options.noKeyboard)
-        {
-            this.addKeyboard()
-        }
-    }
-
-    /**
-     * remove all listeners
-     */
-    destroy()
-    {
-        this.removePointers()
-        this.removeKeyboard()
-    }
-
-    /**
-     * turns on pointer listeners (on by default); can be used after removePointers()
-     */
-    addPointers()
-    {
-        if (!this.listeningPointer)
-        {
-            const div = this.div
-            div.addEventListener('mousedown', this.callbacks[0])
-            div.addEventListener('mousemove', this.callbacks[1])
-            div.addEventListener('mouseup', this.callbacks[2])
-            div.addEventListener('mouseout', this.callbacks[2])
-            div.addEventListener('wheel', this.callbacks[8])
-
-            div.addEventListener('touchstart', this.callbacks[3])
-            div.addEventListener('touchmove', this.callbacks[4])
-            div.addEventListener('touchend', this.callbacks[5])
-            div.addEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = true
-        }
-    }
-
-    /**
-     * remove pointers listener
-     */
-    removePointers()
-    {
-        if (this.listeningPointer)
-        {
-            const div = this.div
-            div.removeEventListener('mousedown', this.callbacks[0])
-            div.removeEventListener('mousemove', this.callbacks[1])
-            div.removeEventListener('mouseup', this.callbacks[2])
-            div.removeEventListener('mouseout', this.callbacks[2])
-            div.removeEventListener('wheel', this.callbacks[8])
-
-            div.removeEventListener('touchstart', this.callbacks[3])
-            div.removeEventListener('touchmove', this.callbacks[4])
-            div.removeEventListener('touchend', this.callbacks[5])
-            div.removeEventListener('touchcancel', this.callbacks[5])
-            this.listeningPointer = false
-        }
-    }
-
-    /**
-     * turns on keyboard listener (off by default); can be used after removeKeyboard()
-     */
-    addKeyboard()
-    {
-        if (!this.listeningKeyboard)
-        {
-            document.addEventListener('keydown', this.callbacks[6])
-            document.addEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = true
-        }
-    }
-
-    /**
-     * removes keyboard listener
-     */
-    removeKeyboard()
-    {
-        if (this.listeningKeyboard)
-        {
-            document.removeEventListener('keydown', this.callbacks[6])
-            document.removeEventListener('keyup', this.callbacks[7])
-            this.listeningKeyboard = false
-        }
-    }
-
-    /**
-     * helper function to find touch from list based on id
-     * @private
-     * @param  {number} id for saved touch
-     * @return {object}
-     */
-    findTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                return this.pointers[i]
-            }
-        }
-        return null
-    }
-
-    /**
-     * helper function to remove touch from touch list
-     * @private
-     * @param  {object} touch object
-     */
-    removeTouch(id)
-    {
-        for (let i = 0; i < this.pointers.length; i++)
-        {
-            if (this.pointers[i].identifier === id)
-            {
-                this.pointers.splice(i, 1)
-                return
-            }
-        }
-    }
-
-    /**
-     * Handle touch start
-     * @private
-     * @param  {object} e touch event
-     */
-    touchStart(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const touches = e.changedTouches
-        for (let i = 0; i < touches.length; i++)
-        {
-            const touch = touches[i]
-            const x = touch.clientX
-            const y = touch.clientY
-            if (this.clamp)
-            {
-                if (this.outsideClamp(x, y))
-                {
-                    continue
-                }
-            }
-            const entry = {
-                identifier: touch.identifier,
-                x,
-                y
-            }
-            this.pointers.push(entry)
-            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch move
-     * @private
-     * @param  {object} e touch event
-     */
-    touchMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            if (this.clamp && !this.findTouch(touch.identifier))
-            {
-                continue
-            }
-            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
-        }
-    }
-
-    /**
-     * Handle touch end
-     * @private
-     * @param  {object} e touch event
-     */
-    touchEnd(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        for (let i = 0; i < e.changedTouches.length; i++)
-        {
-            const touch = e.changedTouches[i]
-            const previous = this.findTouch(touch.identifier)
-            if (previous !== null)
-            {
-                this.removeTouch(touch.identifier)
-                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
-            }
-        }
-    }
-
-    /**
-     * Handle mouse down
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseDown(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        while (this.pointers.length)
-        {
-            this.pointers.pop()
-        }
-        this.pointers.push({id: 'mouse'})
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        if (!this.clamp || !this.outsideClamp(x, y))
-        {
-            this.handleDown(x, y, e, 'mouse')
-        }
-    }
-
-    /**
-     * Handle mouse move
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseMove(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.handleMove(x, y, e, 'mouse')
-    }
-
-    /**
-     * Handle mouse up
-     * @private
-     * @param  {object} e touch event
-     */
-    mouseUp(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
-        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
-        this.pointers.pop()
-        this.handleUp(x, y, e, 'mouse')
-    }
-
-    handleDown(x, y, e, id)
-    {
-        this.emit('down', x, y, { event: e, input: this, id })
-        if (!this.threshold || this.pointers > 1)
-        {
-            this.start = null
-        }
-        else
-        {
-            this.start = { x, y }
-        }
-    }
-
-    handleUp(x, y, e, id)
-    {
-        if (this.start)
-        {
-            this.start = null
-            this.emit('click', x, y, { event: e, input: this, id })
-        }
-        this.emit('up', x, y, { event: e, input: this, id })
-    }
-
-    handleMove(x, y, e, id)
-    {
-        if (this.start)
-        {
-            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
-            {
-                this.start = null
-            }
-        }
-        this.emit('move', x, y, { event: e, input: this, id })
-    }
-
-    wheel(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
-    }
-
-    /**
-     * Sets event listener for keyboard
-     * @private
-     */
-    keysListener()
-    {
-    }
-
-    /**
-     * @private
-     * @param  {object} e
-     */
-    keydown(e)
-    {
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        if (this.chromeDebug)
-        {
-            // allow chrome to open developer console
-            if (this.keys.shift && this.keys.ctrl && code === 73)
-            {
-                return
-            }
-
-            // reload page with meta + r
-            if (code === 82 && this.keys.ctrl)
-            {
-                window.location.reload()
-                return
-            }
-        }
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.emit('keydown', code, this.keys, { event: e, input: this })
-    }
-
-    /**
-     * Handle key up
-     * @private
-     * @param  {object}
-     */
-    keyup(e)
-    {
-        if (this.preventDefault)
-        {
-            e.preventDefault()
-        }
-        this.keys.shift = e.shiftKey
-        this.keys.meta = e.metaKey
-        this.keys.ctrl = e.ctrlKey
-        const code = (typeof e.which === 'number') ? e.which : e.keyCode
-        this.emit('keyup', code, this.keys, { event: e, input: this })
-    }
-
-    /**
-     * clamp screen to only accept pointers in rectangle in the down event
-     * @param {number} x
-     * @param {number} y
-     */
-    clampDown(x, y, width, height)
-    {
-        this.clamp = { x, y, width, height }
-    }
-
-    outsideClamp(x, y)
-    {
-        return x < this.clamp.x || x > this.clamp.x + this.clamp.width || y < this.clamp.y || y > this.clamp.y + this.clamp.height
-    }
-}
-},{"eventemitter3":13}],52:[function(require,module,exports){
+},{"./src/viewport":45}],34:[function(require,module,exports){
 const Ease = require('pixi-ease')
 const exists = require('exists')
 
@@ -7241,6 +5158,40 @@ module.exports = class Bounce extends Plugin
         }
     }
 
+    calcUnderflowX()
+    {
+        let x
+        switch (this.underflowX)
+        {
+            case -1:
+                x = 0
+                break
+            case 1:
+                x = (this.parent.screenWidth - this.parent.screenWorldWidth)
+                break
+            default:
+                x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2
+        }
+        return x
+    }
+
+    calcUnderflowY()
+    {
+        let y
+        switch (this.underflowY)
+        {
+            case -1:
+                y = 0
+                break
+            case 1:
+                y = (this.parent.screenHeight - this.parent.screenWorldHeight)
+                break
+            default:
+                y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2
+        }
+        return y
+    }
+
     bounce()
     {
         if (this.paused)
@@ -7275,30 +5226,13 @@ module.exports = class Bounce extends Plugin
             if (!this.toX && !decelerate.x)
             {
                 let x
-                if (this.parent.screenWorldWidth < this.parent.screenWidth)
+                if (oob.left && this.left)
                 {
-                    switch (this.underflowX)
-                    {
-                        case -1:
-                            x = 0
-                            break
-                        case 1:
-                            x = (this.parent.screenWidth - this.parent.screenWorldWidth)
-                            break
-                        default:
-                            x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2
-                    }
+                    x = (this.parent.screenWorldWidth < this.parent.screenWidth) ? this.calcUnderflowX() : 0
                 }
-                else
+                else if (oob.right && this.right)
                 {
-                    if (oob.left && this.left)
-                    {
-                        x = 0
-                    }
-                    else if (oob.right && this.right)
-                    {
-                        x = -point.x
-                    }
+                    x = (this.parent.screenWorldWidth < this.parent.screenWidth) ? this.calcUnderflowX() : -point.x
                 }
                 if (exists(x) && this.parent.container.x !== x)
                 {
@@ -7309,30 +5243,13 @@ module.exports = class Bounce extends Plugin
             if (!this.toY && !decelerate.y)
             {
                 let y
-                if (this.parent.screenWorldHeight < this.parent.screenHeight)
+                if (oob.top && this.top)
                 {
-                    switch (this.underflowY)
-                    {
-                        case -1:
-                            y = 0
-                            break
-                        case 1:
-                            y = (this.parent.screenHeight - this.parent.screenWorldHeight)
-                            break
-                        default:
-                            y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2
-                    }
+                    y = (this.parent.screenWorldHeight < this.parent.screenHeight) ? this.calcUnderflowY() : 0
                 }
-                else
+                else if (oob.bottom && this.bottom)
                 {
-                    if (oob.top && this.top)
-                    {
-                        y = 0
-                    }
-                    else if (oob.bottom && this.bottom)
-                    {
-                        y = -point.y
-                    }
+                    y = (this.parent.screenWorldHeight < this.parent.screenHeight) ? this.calcUnderflowY() : -point.y
                 }
                 if (exists(y) && this.parent.container.y !== y)
                 {
@@ -7348,7 +5265,7 @@ module.exports = class Bounce extends Plugin
         this.toX = this.toY = null
     }
 }
-},{"./plugin":60,"exists":14,"pixi-ease":20}],53:[function(require,module,exports){
+},{"./plugin":42,"exists":14,"pixi-ease":20}],35:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class ClampZoom extends Plugin
@@ -7408,7 +5325,7 @@ module.exports = class ClampZoom extends Plugin
     }
 }
 
-},{"./plugin":60}],54:[function(require,module,exports){
+},{"./plugin":42}],36:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class clamp extends Plugin
@@ -7530,7 +5447,7 @@ module.exports = class clamp extends Plugin
         }
     }
 }
-},{"./plugin":60}],55:[function(require,module,exports){
+},{"./plugin":42}],37:[function(require,module,exports){
 const exists = require('exists')
 
 const Plugin = require('./plugin')
@@ -7652,7 +5569,7 @@ module.exports = class Decelerate extends Plugin
         this.x = this.y = null
     }
 }
-},{"./plugin":60,"exists":14}],56:[function(require,module,exports){
+},{"./plugin":42,"exists":14}],38:[function(require,module,exports){
 const exists = require('exists')
 
 const Plugin = require('./plugin')
@@ -7856,7 +5773,7 @@ module.exports = class Drag extends Plugin
         }
     }
 }
-},{"./plugin":60,"exists":14}],57:[function(require,module,exports){
+},{"./plugin":42,"exists":14}],39:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Follow extends Plugin
@@ -7920,7 +5837,7 @@ module.exports = class Follow extends Plugin
         }
     }
 }
-},{"./plugin":60}],58:[function(require,module,exports){
+},{"./plugin":42}],40:[function(require,module,exports){
 const exists = require('exists')
 const Angle = require('yy-angle')
 
@@ -8104,7 +6021,7 @@ module.exports = class MouseEdges extends Plugin
         }
     }
 }
-},{"./plugin":60,"exists":14,"yy-angle":229}],59:[function(require,module,exports){
+},{"./plugin":42,"exists":14,"yy-angle":228}],41:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Pinch extends Plugin
@@ -8221,7 +6138,7 @@ module.exports = class Pinch extends Plugin
         }
     }
 }
-},{"./plugin":60}],60:[function(require,module,exports){
+},{"./plugin":42}],42:[function(require,module,exports){
 module.exports = class Plugin
 {
     constructor(parent)
@@ -8248,7 +6165,7 @@ module.exports = class Plugin
         this.paused = false
     }
 }
-},{}],61:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -8389,7 +6306,7 @@ module.exports = class SnapZoom extends Plugin
         super.resume()
     }
 }
-},{"./plugin":60,"exists":14,"pixi-ease":20}],62:[function(require,module,exports){
+},{"./plugin":42,"exists":14,"pixi-ease":20}],44:[function(require,module,exports){
 const Plugin = require('./plugin')
 const Ease = require('pixi-ease')
 const exists = require('exists')
@@ -8502,7 +6419,7 @@ module.exports = class Snap extends Plugin
         }
     }
 }
-},{"./plugin":60,"exists":14,"pixi-ease":20}],63:[function(require,module,exports){
+},{"./plugin":42,"exists":14,"pixi-ease":20}],45:[function(require,module,exports){
 const Loop = require('yy-loop')
 const Input = require('yy-input')
 const exists = require('exists')
@@ -8943,6 +6860,7 @@ module.exports = class Viewport extends Loop
             y = arguments[0].y
         }
         this.container.position.set((this.worldScreenWidth / 2 - x) * this.container.scale.x, (this.worldScreenHeight / 2 - y) * this.container.scale.y)
+        this._reset()
         this.dirty = true
         return this
     }
@@ -8973,6 +6891,10 @@ module.exports = class Viewport extends Loop
             this.container.position.set(-arguments[0] * this.container.scale.x, -arguments[1] * this.container.scale.y)
         }
         this._reset()
+        if (this.plugins['clamp'])
+        {
+            this.plugins['clamp'].update()
+        }
         this.dirty = true
         return this
     }
@@ -9079,6 +7001,39 @@ module.exports = class Viewport extends Loop
             this.moveCenter(save)
         }
         return this
+    }
+
+    /**
+     * zoom viewport by a certain percent (in both x and y direction)
+     * @param {number} percent change (e.g., 0.25 would increase a starting scale of 1.0 to 1.25)
+     * @param {boolean} [center] maintain the same center of the screen after zoom
+     * @return {Viewport} the viewport
+     */
+    zoomPercent(percent, center)
+    {
+        let save
+        if (center)
+        {
+            save = this.center
+        }
+        const scale = this.container.scale.x + this.container.scale.x * percent
+        this.container.scale.set(scale)
+        if (center)
+        {
+            this.moveCenter(save)
+        }
+        return this
+    }
+
+    /**
+     * zoom viewport by increasing/decreasing width by a certain number of pixels
+     * @param {number} change in pixels
+     * @param {boolean} [center] maintain the same center of the screen after zoom
+     * @return {Viewport} the viewport
+     */
+    zoom(change, center)
+    {
+        this.fitWidth(change + this.worldScreenWidth, center)
     }
 
     /**
@@ -9392,7 +7347,7 @@ module.exports = class Viewport extends Loop
     }
 }
 
-},{"./bounce":52,"./clamp":54,"./clamp-zoom":53,"./decelerate":55,"./drag":56,"./follow":57,"./mouse-edges":58,"./pinch":59,"./snap":62,"./snap-zoom":61,"./wheel":64,"exists":14,"yy-input":51,"yy-loop":231}],64:[function(require,module,exports){
+},{"./bounce":34,"./clamp":36,"./clamp-zoom":35,"./decelerate":37,"./drag":38,"./follow":39,"./mouse-edges":40,"./pinch":41,"./snap":44,"./snap-zoom":43,"./wheel":46,"exists":14,"yy-input":230,"yy-loop":231}],46:[function(require,module,exports){
 const Plugin = require('./plugin')
 
 module.exports = class Wheel extends Plugin
@@ -9459,7 +7414,7 @@ module.exports = class Wheel extends Plugin
         this.parent.emit('wheel', { wheel: {dx, dy, dz}, viewport: this.parent})
     }
 }
-},{"./plugin":60}],65:[function(require,module,exports){
+},{"./plugin":42}],47:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -9953,7 +7908,7 @@ exports.default = AccessibilityManager;
 core.WebGLRenderer.registerPlugin('accessibility', AccessibilityManager);
 core.CanvasRenderer.registerPlugin('accessibility', AccessibilityManager);
 
-},{"../core":90,"./accessibleTarget":66,"ismobilejs":15}],66:[function(require,module,exports){
+},{"../core":72,"./accessibleTarget":48,"ismobilejs":15}],48:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -10011,7 +7966,7 @@ exports.default = {
   _accessibleDiv: false
 };
 
-},{}],67:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10036,7 +7991,7 @@ Object.defineProperty(exports, 'AccessibilityManager', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./AccessibilityManager":65,"./accessibleTarget":66}],68:[function(require,module,exports){
+},{"./AccessibilityManager":47,"./accessibleTarget":48}],50:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10259,7 +8214,7 @@ var Application = function () {
 
 exports.default = Application;
 
-},{"./autoDetectRenderer":70,"./const":71,"./display/Container":73,"./settings":126,"./ticker":146}],69:[function(require,module,exports){
+},{"./autoDetectRenderer":52,"./const":53,"./display/Container":55,"./settings":108,"./ticker":128}],51:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10323,7 +8278,7 @@ var Shader = function (_GLShader) {
 
 exports.default = Shader;
 
-},{"./settings":126,"pixi-gl-core":37}],70:[function(require,module,exports){
+},{"./settings":108,"pixi-gl-core":202}],52:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10392,7 +8347,7 @@ function autoDetectRenderer(options, arg1, arg2, arg3) {
     return new _CanvasRenderer2.default(options, arg1, arg2);
 }
 
-},{"./renderers/canvas/CanvasRenderer":102,"./renderers/webgl/WebGLRenderer":109,"./utils":150}],71:[function(require,module,exports){
+},{"./renderers/canvas/CanvasRenderer":84,"./renderers/webgl/WebGLRenderer":91,"./utils":132}],53:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -10405,7 +8360,7 @@ exports.__esModule = true;
  * @name VERSION
  * @type {string}
  */
-var VERSION = exports.VERSION = '4.6.1';
+var VERSION = exports.VERSION = '4.6.2';
 
 /**
  * Two Pi.
@@ -10735,7 +8690,7 @@ var UPDATE_PRIORITY = exports.UPDATE_PRIORITY = {
   UTILITY: -50
 };
 
-},{}],72:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11078,7 +9033,7 @@ var Bounds = function () {
 
 exports.default = Bounds;
 
-},{"../math":95}],73:[function(require,module,exports){
+},{"../math":77}],55:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -11696,7 +9651,7 @@ var Container = function (_DisplayObject) {
 exports.default = Container;
 Container.prototype.containerUpdateTransform = Container.prototype.updateTransform;
 
-},{"../utils":150,"./DisplayObject":74}],74:[function(require,module,exports){
+},{"../utils":132,"./DisplayObject":56}],56:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12388,7 +10343,7 @@ var DisplayObject = function (_EventEmitter) {
 exports.default = DisplayObject;
 DisplayObject.prototype.displayObjectUpdateTransform = DisplayObject.prototype.updateTransform;
 
-},{"../const":71,"../math":95,"../settings":126,"./Bounds":72,"./Transform":75,"./TransformStatic":77,"eventemitter3":13}],75:[function(require,module,exports){
+},{"../const":53,"../math":77,"../settings":108,"./Bounds":54,"./Transform":57,"./TransformStatic":59,"eventemitter3":13}],57:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12569,7 +10524,7 @@ var Transform = function (_TransformBase) {
 
 exports.default = Transform;
 
-},{"../math":95,"./TransformBase":76}],76:[function(require,module,exports){
+},{"../math":77,"./TransformBase":58}],58:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12656,7 +10611,7 @@ TransformBase.prototype.updateWorldTransform = TransformBase.prototype.updateTra
 
 TransformBase.IDENTITY = new TransformBase();
 
-},{"../math":95}],77:[function(require,module,exports){
+},{"../math":77}],59:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -12866,7 +10821,7 @@ var TransformStatic = function (_TransformBase) {
 
 exports.default = TransformStatic;
 
-},{"../math":95,"./TransformBase":76}],78:[function(require,module,exports){
+},{"../math":77,"./TransformBase":58}],60:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14038,7 +11993,7 @@ exports.default = Graphics;
 
 Graphics._SPRITE_TEXTURE = null;
 
-},{"../const":71,"../display/Bounds":72,"../display/Container":73,"../math":95,"../renderers/canvas/CanvasRenderer":102,"../sprites/Sprite":127,"../textures/RenderTexture":138,"../textures/Texture":140,"../utils":150,"./GraphicsData":79,"./utils/bezierCurveTo":81}],79:[function(require,module,exports){
+},{"../const":53,"../display/Bounds":54,"../display/Container":55,"../math":77,"../renderers/canvas/CanvasRenderer":84,"../sprites/Sprite":109,"../textures/RenderTexture":120,"../textures/Texture":122,"../utils":132,"./GraphicsData":61,"./utils/bezierCurveTo":63}],61:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -14160,7 +12115,7 @@ var GraphicsData = function () {
 
 exports.default = GraphicsData;
 
-},{}],80:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14429,7 +12384,7 @@ exports.default = CanvasGraphicsRenderer;
 
 _CanvasRenderer2.default.registerPlugin('graphics', CanvasGraphicsRenderer);
 
-},{"../../const":71,"../../renderers/canvas/CanvasRenderer":102}],81:[function(require,module,exports){
+},{"../../const":53,"../../renderers/canvas/CanvasRenderer":84}],63:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -14479,7 +12434,7 @@ function bezierCurveTo(fromX, fromY, cpX, cpY, cpX2, cpY2, toX, toY) {
     return path;
 }
 
-},{}],82:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14744,7 +12699,7 @@ exports.default = GraphicsRenderer;
 
 _WebGLRenderer2.default.registerPlugin('graphics', GraphicsRenderer);
 
-},{"../../const":71,"../../renderers/webgl/WebGLRenderer":109,"../../renderers/webgl/utils/ObjectRenderer":119,"../../utils":150,"./WebGLGraphicsData":83,"./shaders/PrimitiveShader":84,"./utils/buildCircle":85,"./utils/buildPoly":87,"./utils/buildRectangle":88,"./utils/buildRoundedRectangle":89}],83:[function(require,module,exports){
+},{"../../const":53,"../../renderers/webgl/WebGLRenderer":91,"../../renderers/webgl/utils/ObjectRenderer":101,"../../utils":132,"./WebGLGraphicsData":65,"./shaders/PrimitiveShader":66,"./utils/buildCircle":67,"./utils/buildPoly":69,"./utils/buildRectangle":70,"./utils/buildRoundedRectangle":71}],65:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14887,7 +12842,7 @@ var WebGLGraphicsData = function () {
 
 exports.default = WebGLGraphicsData;
 
-},{"pixi-gl-core":37}],84:[function(require,module,exports){
+},{"pixi-gl-core":202}],66:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -14932,7 +12887,7 @@ var PrimitiveShader = function (_Shader) {
 
 exports.default = PrimitiveShader;
 
-},{"../../../Shader":69}],85:[function(require,module,exports){
+},{"../../../Shader":51}],67:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15025,7 +12980,7 @@ function buildCircle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../const":71,"../../../utils":150,"./buildLine":86}],86:[function(require,module,exports){
+},{"../../../const":53,"../../../utils":132,"./buildLine":68}],68:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15295,7 +13250,7 @@ function buildNativeLine(graphicsData, webGLData) {
     }
 }
 
-},{"../../../math":95,"../../../utils":150}],87:[function(require,module,exports){
+},{"../../../math":77,"../../../utils":132}],69:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15381,7 +13336,7 @@ function buildPoly(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":150,"./buildLine":86,"earcut":12}],88:[function(require,module,exports){
+},{"../../../utils":132,"./buildLine":68,"earcut":12}],70:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15457,7 +13412,7 @@ function buildRectangle(graphicsData, webGLData, webGLDataNativeLines) {
     }
 }
 
-},{"../../../utils":150,"./buildLine":86}],89:[function(require,module,exports){
+},{"../../../utils":132,"./buildLine":68}],71:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15613,7 +13568,7 @@ function quadraticBezierCurve(fromX, fromY, cpX, cpY, toX, toY) {
     return points;
 }
 
-},{"../../../utils":150,"./buildLine":86,"earcut":12}],90:[function(require,module,exports){
+},{"../../../utils":132,"./buildLine":68,"earcut":12}],72:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -15999,7 +13954,7 @@ exports.WebGLRenderer = _WebGLRenderer2.default; /**
                                                   * @namespace PIXI
                                                   */
 
-},{"./Application":68,"./Shader":69,"./autoDetectRenderer":70,"./const":71,"./display/Bounds":72,"./display/Container":73,"./display/DisplayObject":74,"./display/Transform":75,"./display/TransformBase":76,"./display/TransformStatic":77,"./graphics/Graphics":78,"./graphics/GraphicsData":79,"./graphics/canvas/CanvasGraphicsRenderer":80,"./graphics/webgl/GraphicsRenderer":82,"./math":95,"./renderers/canvas/CanvasRenderer":102,"./renderers/canvas/utils/CanvasRenderTarget":104,"./renderers/webgl/WebGLRenderer":109,"./renderers/webgl/filters/Filter":111,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":114,"./renderers/webgl/managers/WebGLManager":118,"./renderers/webgl/utils/ObjectRenderer":119,"./renderers/webgl/utils/Quad":120,"./renderers/webgl/utils/RenderTarget":121,"./settings":126,"./sprites/Sprite":127,"./sprites/canvas/CanvasSpriteRenderer":128,"./sprites/canvas/CanvasTinter":129,"./sprites/webgl/SpriteRenderer":131,"./text/Text":133,"./text/TextMetrics":134,"./text/TextStyle":135,"./textures/BaseRenderTexture":136,"./textures/BaseTexture":137,"./textures/RenderTexture":138,"./textures/Spritesheet":139,"./textures/Texture":140,"./textures/TextureMatrix":141,"./textures/TextureUvs":142,"./textures/VideoBaseTexture":143,"./ticker":146,"./utils":150,"pixi-gl-core":37}],91:[function(require,module,exports){
+},{"./Application":50,"./Shader":51,"./autoDetectRenderer":52,"./const":53,"./display/Bounds":54,"./display/Container":55,"./display/DisplayObject":56,"./display/Transform":57,"./display/TransformBase":58,"./display/TransformStatic":59,"./graphics/Graphics":60,"./graphics/GraphicsData":61,"./graphics/canvas/CanvasGraphicsRenderer":62,"./graphics/webgl/GraphicsRenderer":64,"./math":77,"./renderers/canvas/CanvasRenderer":84,"./renderers/canvas/utils/CanvasRenderTarget":86,"./renderers/webgl/WebGLRenderer":91,"./renderers/webgl/filters/Filter":93,"./renderers/webgl/filters/spriteMask/SpriteMaskFilter":96,"./renderers/webgl/managers/WebGLManager":100,"./renderers/webgl/utils/ObjectRenderer":101,"./renderers/webgl/utils/Quad":102,"./renderers/webgl/utils/RenderTarget":103,"./settings":108,"./sprites/Sprite":109,"./sprites/canvas/CanvasSpriteRenderer":110,"./sprites/canvas/CanvasTinter":111,"./sprites/webgl/SpriteRenderer":113,"./text/Text":115,"./text/TextMetrics":116,"./text/TextStyle":117,"./textures/BaseRenderTexture":118,"./textures/BaseTexture":119,"./textures/RenderTexture":120,"./textures/Spritesheet":121,"./textures/Texture":122,"./textures/TextureMatrix":123,"./textures/TextureUvs":124,"./textures/VideoBaseTexture":125,"./ticker":128,"./utils":132,"pixi-gl-core":202}],73:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16192,7 +14147,7 @@ var GroupD8 = {
 
 exports.default = GroupD8;
 
-},{"./Matrix":92}],92:[function(require,module,exports){
+},{"./Matrix":74}],74:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -16723,7 +14678,7 @@ var Matrix = function () {
 
 exports.default = Matrix;
 
-},{"./Point":94}],93:[function(require,module,exports){
+},{"./Point":76}],75:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16840,7 +14795,7 @@ var ObservablePoint = function () {
 
 exports.default = ObservablePoint;
 
-},{}],94:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -16931,7 +14886,7 @@ var Point = function () {
 
 exports.default = Point;
 
-},{}],95:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17019,7 +14974,7 @@ Object.defineProperty(exports, 'RoundedRectangle', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./GroupD8":91,"./Matrix":92,"./ObservablePoint":93,"./Point":94,"./shapes/Circle":96,"./shapes/Ellipse":97,"./shapes/Polygon":98,"./shapes/Rectangle":99,"./shapes/RoundedRectangle":100}],96:[function(require,module,exports){
+},{"./GroupD8":73,"./Matrix":74,"./ObservablePoint":75,"./Point":76,"./shapes/Circle":78,"./shapes/Ellipse":79,"./shapes/Polygon":80,"./shapes/Rectangle":81,"./shapes/RoundedRectangle":82}],78:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17133,7 +15088,7 @@ var Circle = function () {
 
 exports.default = Circle;
 
-},{"../../const":71,"./Rectangle":99}],97:[function(require,module,exports){
+},{"../../const":53,"./Rectangle":81}],79:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17255,7 +15210,7 @@ var Ellipse = function () {
 
 exports.default = Ellipse;
 
-},{"../../const":71,"./Rectangle":99}],98:[function(require,module,exports){
+},{"../../const":53,"./Rectangle":81}],80:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17386,7 +15341,7 @@ var Polygon = function () {
 
 exports.default = Polygon;
 
-},{"../../const":71,"../Point":94}],99:[function(require,module,exports){
+},{"../../const":53,"../Point":76}],81:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17649,7 +15604,7 @@ var Rectangle = function () {
 
 exports.default = Rectangle;
 
-},{"../../const":71}],100:[function(require,module,exports){
+},{"../../const":53}],82:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -17782,7 +15737,7 @@ var RoundedRectangle = function () {
 
 exports.default = RoundedRectangle;
 
-},{"../../const":71}],101:[function(require,module,exports){
+},{"../../const":53}],83:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18043,17 +15998,19 @@ var SystemRenderer = function (_EventEmitter) {
    * @param {PIXI.DisplayObject} displayObject - The displayObject the object will be generated from
    * @param {number} scaleMode - Should be one of the scaleMode consts
    * @param {number} resolution - The resolution / device pixel ratio of the texture being generated
+   * @param {PIXI.Rectangle} [region] - The region of the displayObject, that shall be rendered,
+   *        if no region is specified, defaults to the local bounds of the displayObject.
    * @return {PIXI.Texture} a texture of the graphics object
    */
 
 
-  SystemRenderer.prototype.generateTexture = function generateTexture(displayObject, scaleMode, resolution) {
-    var bounds = displayObject.getLocalBounds();
+  SystemRenderer.prototype.generateTexture = function generateTexture(displayObject, scaleMode, resolution, region) {
+    region = region || displayObject.getLocalBounds();
 
-    var renderTexture = _RenderTexture2.default.create(bounds.width | 0, bounds.height | 0, scaleMode, resolution);
+    var renderTexture = _RenderTexture2.default.create(region.width | 0, region.height | 0, scaleMode, resolution);
 
-    tempMatrix.tx = -bounds.x;
-    tempMatrix.ty = -bounds.y;
+    tempMatrix.tx = -region.x;
+    tempMatrix.ty = -region.y;
 
     this.render(displayObject, renderTexture, false, tempMatrix, true);
 
@@ -18145,7 +16102,7 @@ var SystemRenderer = function (_EventEmitter) {
 
 exports.default = SystemRenderer;
 
-},{"../const":71,"../display/Container":73,"../math":95,"../settings":126,"../textures/RenderTexture":138,"../utils":150,"eventemitter3":13}],102:[function(require,module,exports){
+},{"../const":53,"../display/Container":55,"../math":77,"../settings":108,"../textures/RenderTexture":120,"../utils":132,"eventemitter3":13}],84:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18510,7 +16467,7 @@ var CanvasRenderer = function (_SystemRenderer) {
 exports.default = CanvasRenderer;
 _utils.pluginTarget.mixin(CanvasRenderer);
 
-},{"../../const":71,"../../settings":126,"../../utils":150,"../SystemRenderer":101,"./utils/CanvasMaskManager":103,"./utils/CanvasRenderTarget":104,"./utils/mapCanvasBlendModesToPixi":106}],103:[function(require,module,exports){
+},{"../../const":53,"../../settings":108,"../../utils":132,"../SystemRenderer":83,"./utils/CanvasMaskManager":85,"./utils/CanvasRenderTarget":86,"./utils/mapCanvasBlendModesToPixi":88}],85:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18679,7 +16636,7 @@ var CanvasMaskManager = function () {
 
 exports.default = CanvasMaskManager;
 
-},{"../../../const":71}],104:[function(require,module,exports){
+},{"../../../const":53}],86:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18803,7 +16760,7 @@ var CanvasRenderTarget = function () {
 
 exports.default = CanvasRenderTarget;
 
-},{"../../../settings":126}],105:[function(require,module,exports){
+},{"../../../settings":108}],87:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18864,7 +16821,7 @@ function canUseNewCanvasBlendModes() {
     return data[0] === 255 && data[1] === 0 && data[2] === 0;
 }
 
-},{}],106:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -18936,7 +16893,7 @@ function mapCanvasBlendModesToPixi() {
     return array;
 }
 
-},{"../../../const":71,"./canUseNewCanvasBlendModes":105}],107:[function(require,module,exports){
+},{"../../../const":53,"./canUseNewCanvasBlendModes":87}],89:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19056,7 +17013,7 @@ var TextureGarbageCollector = function () {
 
 exports.default = TextureGarbageCollector;
 
-},{"../../const":71,"../../settings":126}],108:[function(require,module,exports){
+},{"../../const":53,"../../settings":108}],90:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -19312,7 +17269,7 @@ var TextureManager = function () {
 
 exports.default = TextureManager;
 
-},{"../../const":71,"../../utils":150,"./utils/RenderTarget":121,"pixi-gl-core":37}],109:[function(require,module,exports){
+},{"../../const":53,"../../utils":132,"./utils/RenderTarget":103,"pixi-gl-core":202}],91:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20014,8 +17971,8 @@ var WebGLRenderer = function (_SystemRenderer) {
     WebGLRenderer.prototype.reset = function reset() {
         this.setObjectRenderer(this.emptyRenderer);
 
+        this.bindVao(null);
         this._activeShader = null;
-        this._activeVao = null;
         this._activeRenderTarget = this.rootRenderTarget;
 
         for (var i = 0; i < this.boundTextures.length; i++) {
@@ -20129,7 +18086,7 @@ var WebGLRenderer = function (_SystemRenderer) {
 exports.default = WebGLRenderer;
 _utils.pluginTarget.mixin(WebGLRenderer);
 
-},{"../../const":71,"../../textures/BaseTexture":137,"../../utils":150,"../SystemRenderer":101,"./TextureGarbageCollector":107,"./TextureManager":108,"./WebGLState":110,"./managers/FilterManager":115,"./managers/MaskManager":116,"./managers/StencilManager":117,"./utils/ObjectRenderer":119,"./utils/RenderTarget":121,"./utils/mapWebGLDrawModesToPixi":124,"./utils/validateContext":125,"pixi-gl-core":37}],110:[function(require,module,exports){
+},{"../../const":53,"../../textures/BaseTexture":119,"../../utils":132,"../SystemRenderer":83,"./TextureGarbageCollector":89,"./TextureManager":90,"./WebGLState":92,"./managers/FilterManager":97,"./managers/MaskManager":98,"./managers/StencilManager":99,"./utils/ObjectRenderer":101,"./utils/RenderTarget":103,"./utils/mapWebGLDrawModesToPixi":106,"./utils/validateContext":107,"pixi-gl-core":202}],92:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20409,7 +18366,7 @@ var WebGLState = function () {
 
 exports.default = WebGLState;
 
-},{"./utils/mapWebGLBlendModesToPixi":123}],111:[function(require,module,exports){
+},{"./utils/mapWebGLBlendModesToPixi":105}],93:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20605,7 +18562,7 @@ var Filter = function () {
 
 exports.default = Filter;
 
-},{"../../../const":71,"../../../settings":126,"../../../utils":150,"./extractUniformsFromSrc":112}],112:[function(require,module,exports){
+},{"../../../const":53,"../../../settings":108,"../../../utils":132,"./extractUniformsFromSrc":94}],94:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20667,7 +18624,7 @@ function extractUniformsFromString(string) {
     return uniforms;
 }
 
-},{"pixi-gl-core":37}],113:[function(require,module,exports){
+},{"pixi-gl-core":202}],95:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20726,7 +18683,7 @@ function calculateSpriteMatrix(outputMatrix, filterArea, textureSize, sprite) {
     return mappedMatrix;
 }
 
-},{"../../../math":95}],114:[function(require,module,exports){
+},{"../../../math":77}],96:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -20814,7 +18771,7 @@ var SpriteMaskFilter = function (_Filter) {
 
 exports.default = SpriteMaskFilter;
 
-},{"../../../../math":95,"../../../../textures/TextureMatrix":141,"../Filter":111,"path":2}],115:[function(require,module,exports){
+},{"../../../../math":77,"../../../../textures/TextureMatrix":123,"../Filter":93,"path":2}],97:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21408,7 +19365,7 @@ var FilterManager = function (_WebGLManager) {
 
 exports.default = FilterManager;
 
-},{"../../../Shader":69,"../../../math":95,"../filters/filterTransforms":113,"../utils/Quad":120,"../utils/RenderTarget":121,"./WebGLManager":118,"bit-twiddle":11}],116:[function(require,module,exports){
+},{"../../../Shader":51,"../../../math":77,"../filters/filterTransforms":95,"../utils/Quad":102,"../utils/RenderTarget":103,"./WebGLManager":100,"bit-twiddle":11}],98:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21618,7 +19575,7 @@ var MaskManager = function (_WebGLManager) {
 
 exports.default = MaskManager;
 
-},{"../filters/spriteMask/SpriteMaskFilter":114,"./WebGLManager":118}],117:[function(require,module,exports){
+},{"../filters/spriteMask/SpriteMaskFilter":96,"./WebGLManager":100}],99:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21771,7 +19728,7 @@ var StencilManager = function (_WebGLManager) {
 
 exports.default = StencilManager;
 
-},{"./WebGLManager":118}],118:[function(require,module,exports){
+},{"./WebGLManager":100}],100:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21826,7 +19783,7 @@ var WebGLManager = function () {
 
 exports.default = WebGLManager;
 
-},{}],119:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -21904,7 +19861,7 @@ var ObjectRenderer = function (_WebGLManager) {
 
 exports.default = ObjectRenderer;
 
-},{"../managers/WebGLManager":118}],120:[function(require,module,exports){
+},{"../managers/WebGLManager":100}],102:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22085,7 +20042,7 @@ var Quad = function () {
 
 exports.default = Quad;
 
-},{"../../../utils/createIndicesForQuads":148,"pixi-gl-core":37}],121:[function(require,module,exports){
+},{"../../../utils/createIndicesForQuads":130,"pixi-gl-core":202}],103:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22412,7 +20369,7 @@ var RenderTarget = function () {
 
 exports.default = RenderTarget;
 
-},{"../../../const":71,"../../../math":95,"../../../settings":126,"pixi-gl-core":37}],122:[function(require,module,exports){
+},{"../../../const":53,"../../../math":77,"../../../settings":108,"pixi-gl-core":202}],104:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22487,7 +20444,7 @@ function generateIfTestSrc(maxIfs) {
     return src;
 }
 
-},{"pixi-gl-core":37}],123:[function(require,module,exports){
+},{"pixi-gl-core":202}],105:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22536,7 +20493,7 @@ function mapWebGLBlendModesToPixi(gl) {
     return array;
 }
 
-},{"../../../const":71}],124:[function(require,module,exports){
+},{"../../../const":53}],106:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22568,7 +20525,7 @@ function mapWebGLDrawModesToPixi(gl) {
   return object;
 }
 
-},{"../../../const":71}],125:[function(require,module,exports){
+},{"../../../const":53}],107:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22584,7 +20541,7 @@ function validateContext(gl) {
     }
 }
 
-},{}],126:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -22819,7 +20776,7 @@ exports.default = {
 
 };
 
-},{"./utils/canUploadSameBuffer":147,"./utils/maxRecommendedTextures":152}],127:[function(require,module,exports){
+},{"./utils/canUploadSameBuffer":129,"./utils/maxRecommendedTextures":134}],109:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23442,7 +21399,7 @@ var Sprite = function (_Container) {
 
 exports.default = Sprite;
 
-},{"../const":71,"../display/Container":73,"../math":95,"../textures/Texture":140,"../utils":150}],128:[function(require,module,exports){
+},{"../const":53,"../display/Container":55,"../math":77,"../textures/Texture":122,"../utils":132}],110:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23595,7 +21552,7 @@ exports.default = CanvasSpriteRenderer;
 
 _CanvasRenderer2.default.registerPlugin('sprite', CanvasSpriteRenderer);
 
-},{"../../const":71,"../../math":95,"../../renderers/canvas/CanvasRenderer":102,"./CanvasTinter":129}],129:[function(require,module,exports){
+},{"../../const":53,"../../math":77,"../../renderers/canvas/CanvasRenderer":84,"./CanvasTinter":111}],111:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -23846,7 +21803,7 @@ CanvasTinter.tintMethod = CanvasTinter.canUseMultiply ? CanvasTinter.tintWithMul
 
 exports.default = CanvasTinter;
 
-},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":105,"../../utils":150}],130:[function(require,module,exports){
+},{"../../renderers/canvas/utils/canUseNewCanvasBlendModes":87,"../../utils":132}],112:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -23899,7 +21856,7 @@ var Buffer = function () {
 
 exports.default = Buffer;
 
-},{}],131:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24450,7 +22407,7 @@ exports.default = SpriteRenderer;
 
 _WebGLRenderer2.default.registerPlugin('sprite', SpriteRenderer);
 
-},{"../../renderers/webgl/WebGLRenderer":109,"../../renderers/webgl/utils/ObjectRenderer":119,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":122,"../../settings":126,"../../utils":150,"../../utils/createIndicesForQuads":148,"./BatchBuffer":130,"./generateMultiTextureShader":132,"bit-twiddle":11,"pixi-gl-core":37}],132:[function(require,module,exports){
+},{"../../renderers/webgl/WebGLRenderer":91,"../../renderers/webgl/utils/ObjectRenderer":101,"../../renderers/webgl/utils/checkMaxIfStatmentsInShader":104,"../../settings":108,"../../utils":132,"../../utils/createIndicesForQuads":130,"./BatchBuffer":112,"./generateMultiTextureShader":114,"bit-twiddle":11,"pixi-gl-core":202}],114:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -24513,7 +22470,7 @@ function generateSampleSrc(maxTextures) {
     return src;
 }
 
-},{"../../Shader":69,"path":2}],133:[function(require,module,exports){
+},{"../../Shader":51,"path":2}],115:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25168,7 +23125,7 @@ var Text = function (_Sprite) {
 
 exports.default = Text;
 
-},{"../const":71,"../math":95,"../settings":126,"../sprites/Sprite":127,"../textures/Texture":140,"../utils":150,"../utils/trimCanvas":155,"./TextMetrics":134,"./TextStyle":135}],134:[function(require,module,exports){
+},{"../const":53,"../math":77,"../settings":108,"../sprites/Sprite":109,"../textures/Texture":122,"../utils":132,"../utils/trimCanvas":137,"./TextMetrics":116,"./TextStyle":117}],116:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -25471,7 +23428,7 @@ TextMetrics._context = canvas.getContext('2d');
  */
 TextMetrics._fonts = {};
 
-},{}],135:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26273,7 +24230,7 @@ function deepCopyProperties(target, source, propertyObj) {
     }
 }
 
-},{"../const":71,"../utils":150}],136:[function(require,module,exports){
+},{"../const":53,"../utils":132}],118:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -26435,7 +24392,7 @@ var BaseRenderTexture = function (_BaseTexture) {
 
 exports.default = BaseRenderTexture;
 
-},{"../settings":126,"./BaseTexture":137}],137:[function(require,module,exports){
+},{"../settings":108,"./BaseTexture":119}],119:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27281,7 +25238,7 @@ var BaseTexture = function (_EventEmitter) {
 
 exports.default = BaseTexture;
 
-},{"../settings":126,"../utils":150,"../utils/determineCrossOrigin":149,"bit-twiddle":11,"eventemitter3":13}],138:[function(require,module,exports){
+},{"../settings":108,"../utils":132,"../utils/determineCrossOrigin":131,"bit-twiddle":11,"eventemitter3":13}],120:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27435,7 +25392,7 @@ var RenderTexture = function (_Texture) {
 
 exports.default = RenderTexture;
 
-},{"./BaseRenderTexture":136,"./Texture":140}],139:[function(require,module,exports){
+},{"./BaseRenderTexture":118,"./Texture":122}],121:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -27697,7 +25654,7 @@ var Spritesheet = function () {
 
 exports.default = Spritesheet;
 
-},{"../":90,"../utils":150}],140:[function(require,module,exports){
+},{"../":72,"../utils":132}],122:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28389,7 +26346,7 @@ Texture.WHITE = createWhiteTexture();
 removeAllHandlers(Texture.WHITE);
 removeAllHandlers(Texture.WHITE.baseTexture);
 
-},{"../math":95,"../settings":126,"../utils":150,"./BaseTexture":137,"./TextureUvs":142,"./VideoBaseTexture":143,"eventemitter3":13}],141:[function(require,module,exports){
+},{"../math":77,"../settings":108,"../utils":132,"./BaseTexture":119,"./TextureUvs":124,"./VideoBaseTexture":125,"eventemitter3":13}],123:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28553,7 +26510,7 @@ var TextureMatrix = function () {
 
 exports.default = TextureMatrix;
 
-},{"../math/Matrix":92}],142:[function(require,module,exports){
+},{"../math/Matrix":74}],124:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -28658,7 +26615,7 @@ var TextureUvs = function () {
 
 exports.default = TextureUvs;
 
-},{"../math/GroupD8":91}],143:[function(require,module,exports){
+},{"../math/GroupD8":73}],125:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29000,7 +26957,7 @@ function createSource(path, type) {
     return source;
 }
 
-},{"../const":71,"../ticker":146,"../utils":150,"../utils/determineCrossOrigin":149,"./BaseTexture":137}],144:[function(require,module,exports){
+},{"../const":53,"../ticker":128,"../utils":132,"../utils/determineCrossOrigin":131,"./BaseTexture":119}],126:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29473,7 +27430,7 @@ var Ticker = function () {
 
 exports.default = Ticker;
 
-},{"../const":71,"../settings":126,"./TickerListener":145}],145:[function(require,module,exports){
+},{"../const":53,"../settings":108,"./TickerListener":127}],127:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29647,7 +27604,7 @@ var TickerListener = function () {
 
 exports.default = TickerListener;
 
-},{}],146:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29727,7 +27684,7 @@ shared.destroy = function () {
 exports.shared = shared;
 exports.Ticker = _Ticker2.default;
 
-},{"./Ticker":144}],147:[function(require,module,exports){
+},{"./Ticker":126}],129:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29741,7 +27698,7 @@ function canUploadSameBuffer() {
 	return !ios;
 }
 
-},{}],148:[function(require,module,exports){
+},{}],130:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -29775,7 +27732,7 @@ function createIndicesForQuads(size) {
     return indices;
 }
 
-},{}],149:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -29831,7 +27788,7 @@ function determineCrossOrigin(url) {
     return '';
 }
 
-},{"url":8}],150:[function(require,module,exports){
+},{"url":8}],132:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30305,7 +28262,7 @@ function premultiplyTintToRgba(tint, alpha, out, premultiply) {
     return out;
 }
 
-},{"../const":71,"../settings":126,"./mapPremultipliedBlendModes":151,"./mixin":153,"./pluginTarget":154,"eventemitter3":13,"ismobilejs":15,"remove-array-items":214}],151:[function(require,module,exports){
+},{"../const":53,"../settings":108,"./mapPremultipliedBlendModes":133,"./mixin":135,"./pluginTarget":136,"eventemitter3":13,"ismobilejs":15,"remove-array-items":213}],133:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30348,7 +28305,7 @@ function mapPremultipliedBlendModes() {
     return array;
 }
 
-},{"../const":71}],152:[function(require,module,exports){
+},{"../const":53}],134:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30370,7 +28327,7 @@ function maxRecommendedTextures(max) {
     return max;
 }
 
-},{"ismobilejs":15}],153:[function(require,module,exports){
+},{"ismobilejs":15}],135:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -30432,7 +28389,7 @@ function performMixins() {
     mixins.length = 0;
 }
 
-},{}],154:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -30498,7 +28455,7 @@ exports.default = {
     }
 };
 
-},{}],155:[function(require,module,exports){
+},{}],137:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -30574,7 +28531,7 @@ function trimCanvas(canvas) {
     };
 }
 
-},{}],156:[function(require,module,exports){
+},{}],138:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31718,7 +29675,7 @@ function deprecation(core) {
     }
 }
 
-},{}],157:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31898,7 +29855,7 @@ exports.default = CanvasExtract;
 
 core.CanvasRenderer.registerPlugin('extract', CanvasExtract);
 
-},{"../../core":90}],158:[function(require,module,exports){
+},{"../../core":72}],140:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -31923,7 +29880,7 @@ Object.defineProperty(exports, 'canvas', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./canvas/CanvasExtract":157,"./webgl/WebGLExtract":159}],159:[function(require,module,exports){
+},{"./canvas/CanvasExtract":139,"./webgl/WebGLExtract":141}],141:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32146,7 +30103,7 @@ exports.default = WebGLExtract;
 
 core.WebGLRenderer.registerPlugin('extract', WebGLExtract);
 
-},{"../../core":90}],160:[function(require,module,exports){
+},{"../../core":72}],142:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -32555,7 +30512,7 @@ var AnimatedSprite = function (_core$Sprite) {
 
 exports.default = AnimatedSprite;
 
-},{"../core":90}],161:[function(require,module,exports){
+},{"../core":72}],143:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33146,7 +31103,7 @@ exports.default = BitmapText;
 
 BitmapText.fonts = {};
 
-},{"../core":90,"../core/math/ObservablePoint":93,"../core/settings":126,"../core/utils":150}],162:[function(require,module,exports){
+},{"../core":72,"../core/math/ObservablePoint":75,"../core/settings":108,"../core/utils":132}],144:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -33592,7 +31549,7 @@ var TilingSprite = function (_core$Sprite) {
 
 exports.default = TilingSprite;
 
-},{"../core":90,"../core/sprites/canvas/CanvasTinter":129}],163:[function(require,module,exports){
+},{"../core":72,"../core/sprites/canvas/CanvasTinter":111}],145:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -33996,7 +31953,7 @@ DisplayObject.prototype._cacheAsBitmapDestroy = function _cacheAsBitmapDestroy(o
     this.destroy(options);
 };
 
-},{"../core":90,"../core/textures/BaseTexture":137,"../core/textures/Texture":140,"../core/utils":150}],164:[function(require,module,exports){
+},{"../core":72,"../core/textures/BaseTexture":119,"../core/textures/Texture":122,"../core/utils":132}],146:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -34030,7 +31987,7 @@ core.Container.prototype.getChildByName = function getChildByName(name) {
     return null;
 };
 
-},{"../core":90}],165:[function(require,module,exports){
+},{"../core":72}],147:[function(require,module,exports){
 'use strict';
 
 var _core = require('../core');
@@ -34063,7 +32020,7 @@ core.DisplayObject.prototype.getGlobalPosition = function getGlobalPosition() {
     return point;
 };
 
-},{"../core":90}],166:[function(require,module,exports){
+},{"../core":72}],148:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34115,7 +32072,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // imported for side effect of extending the prototype only, contains no exports
 
-},{"./AnimatedSprite":160,"./BitmapText":161,"./TilingSprite":162,"./cacheAsBitmap":163,"./getChildByName":164,"./getGlobalPosition":165,"./webgl/TilingSpriteRenderer":167}],167:[function(require,module,exports){
+},{"./AnimatedSprite":142,"./BitmapText":143,"./TilingSprite":144,"./cacheAsBitmap":145,"./getChildByName":146,"./getGlobalPosition":147,"./webgl/TilingSpriteRenderer":149}],149:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34277,7 +32234,7 @@ exports.default = TilingSpriteRenderer;
 
 core.WebGLRenderer.registerPlugin('tilingSprite', TilingSpriteRenderer);
 
-},{"../../core":90,"../../core/const":71,"path":2}],168:[function(require,module,exports){
+},{"../../core":72,"../../core/const":53,"path":2}],150:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34361,7 +32318,7 @@ var AlphaFilter = function (_core$Filter) {
 
 exports.default = AlphaFilter;
 
-},{"../../core":90,"path":2}],169:[function(require,module,exports){
+},{"../../core":72,"path":2}],151:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34535,7 +32492,7 @@ var BlurFilter = function (_core$Filter) {
 
 exports.default = BlurFilter;
 
-},{"../../core":90,"./BlurXFilter":170,"./BlurYFilter":171}],170:[function(require,module,exports){
+},{"../../core":72,"./BlurXFilter":152,"./BlurYFilter":153}],152:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34701,7 +32658,7 @@ var BlurXFilter = function (_core$Filter) {
 
 exports.default = BlurXFilter;
 
-},{"../../core":90,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],171:[function(require,module,exports){
+},{"../../core":72,"./generateBlurFragSource":154,"./generateBlurVertSource":155,"./getMaxBlurKernelSize":156}],153:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34866,7 +32823,7 @@ var BlurYFilter = function (_core$Filter) {
 
 exports.default = BlurYFilter;
 
-},{"../../core":90,"./generateBlurFragSource":172,"./generateBlurVertSource":173,"./getMaxBlurKernelSize":174}],172:[function(require,module,exports){
+},{"../../core":72,"./generateBlurFragSource":154,"./generateBlurVertSource":155,"./getMaxBlurKernelSize":156}],154:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34913,7 +32870,7 @@ function generateFragBlurSource(kernelSize) {
     return fragSource;
 }
 
-},{}],173:[function(require,module,exports){
+},{}],155:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -34957,7 +32914,7 @@ function generateVertBlurSource(kernelSize, x) {
     return vertSource;
 }
 
-},{}],174:[function(require,module,exports){
+},{}],156:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -34973,7 +32930,7 @@ function getMaxKernelSize(gl) {
     return kernelSize;
 }
 
-},{}],175:[function(require,module,exports){
+},{}],157:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35524,7 +33481,7 @@ var ColorMatrixFilter = function (_core$Filter) {
 exports.default = ColorMatrixFilter;
 ColorMatrixFilter.prototype.grayscale = ColorMatrixFilter.prototype.greyscale;
 
-},{"../../core":90,"path":2}],176:[function(require,module,exports){
+},{"../../core":72,"path":2}],158:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35634,7 +33591,7 @@ var DisplacementFilter = function (_core$Filter) {
 
 exports.default = DisplacementFilter;
 
-},{"../../core":90,"path":2}],177:[function(require,module,exports){
+},{"../../core":72,"path":2}],159:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35688,7 +33645,7 @@ var FXAAFilter = function (_core$Filter) {
 
 exports.default = FXAAFilter;
 
-},{"../../core":90,"path":2}],178:[function(require,module,exports){
+},{"../../core":72,"path":2}],160:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35767,7 +33724,7 @@ Object.defineProperty(exports, 'AlphaFilter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./alpha/AlphaFilter":168,"./blur/BlurFilter":169,"./blur/BlurXFilter":170,"./blur/BlurYFilter":171,"./colormatrix/ColorMatrixFilter":175,"./displacement/DisplacementFilter":176,"./fxaa/FXAAFilter":177,"./noise/NoiseFilter":179}],179:[function(require,module,exports){
+},{"./alpha/AlphaFilter":150,"./blur/BlurFilter":151,"./blur/BlurXFilter":152,"./blur/BlurYFilter":153,"./colormatrix/ColorMatrixFilter":157,"./displacement/DisplacementFilter":158,"./fxaa/FXAAFilter":159,"./noise/NoiseFilter":161}],161:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -35864,7 +33821,7 @@ var NoiseFilter = function (_core$Filter) {
 
 exports.default = NoiseFilter;
 
-},{"../../core":90,"path":2}],180:[function(require,module,exports){
+},{"../../core":72,"path":2}],162:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -35978,7 +33935,7 @@ if (typeof _deprecation2.default === 'function') {
 global.PIXI = exports; // eslint-disable-line
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./accessibility":67,"./core":90,"./deprecation":156,"./extract":158,"./extras":166,"./filters":178,"./interaction":185,"./loaders":188,"./mesh":197,"./particles":200,"./polyfill":206,"./prepare":210}],181:[function(require,module,exports){
+},{"./accessibility":49,"./core":72,"./deprecation":138,"./extract":140,"./extras":148,"./filters":160,"./interaction":167,"./loaders":170,"./mesh":179,"./particles":182,"./polyfill":188,"./prepare":192}],163:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -36202,7 +34159,7 @@ var InteractionData = function () {
 
 exports.default = InteractionData;
 
-},{"../core":90}],182:[function(require,module,exports){
+},{"../core":72}],164:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -36287,7 +34244,7 @@ var InteractionEvent = function () {
 
 exports.default = InteractionEvent;
 
-},{}],183:[function(require,module,exports){
+},{}],165:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -37003,7 +34960,6 @@ var InteractionManager = function (_EventEmitter) {
      *
      * @param {HTMLCanvasElement} element - the DOM element which will receive mouse and touch events.
      * @param {number} [resolution=1] - The resolution / device pixel ratio of the new element (relative to the canvas).
-     * @private
      */
 
 
@@ -38047,7 +36003,7 @@ exports.default = InteractionManager;
 core.WebGLRenderer.registerPlugin('interaction', InteractionManager);
 core.CanvasRenderer.registerPlugin('interaction', InteractionManager);
 
-},{"../core":90,"./InteractionData":181,"./InteractionEvent":182,"./InteractionTrackingData":184,"./interactiveTarget":186,"eventemitter3":13}],184:[function(require,module,exports){
+},{"../core":72,"./InteractionData":163,"./InteractionEvent":164,"./InteractionTrackingData":166,"./interactiveTarget":168,"eventemitter3":13}],166:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -38223,7 +36179,7 @@ InteractionTrackingData.FLAGS = Object.freeze({
     RIGHT_DOWN: 1 << 2
 });
 
-},{}],185:[function(require,module,exports){
+},{}],167:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38275,7 +36231,7 @@ Object.defineProperty(exports, 'InteractionEvent', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./InteractionData":181,"./InteractionEvent":182,"./InteractionManager":183,"./InteractionTrackingData":184,"./interactiveTarget":186}],186:[function(require,module,exports){
+},{"./InteractionData":163,"./InteractionEvent":164,"./InteractionManager":165,"./InteractionTrackingData":166,"./interactiveTarget":168}],168:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38392,7 +36348,7 @@ exports.default = {
   _trackedPointers: undefined
 };
 
-},{}],187:[function(require,module,exports){
+},{}],169:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38484,7 +36440,7 @@ function parse(resource, texture) {
     resource.bitmapFont = _extras.BitmapText.registerFont(resource.data, texture);
 }
 
-},{"../core":90,"../extras":166,"path":2,"resource-loader":219}],188:[function(require,module,exports){
+},{"../core":72,"../extras":148,"path":2,"resource-loader":218}],170:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38612,7 +36568,7 @@ AppPrototype.destroy = function destroy(removeView) {
     this._parentDestroy(removeView);
 };
 
-},{"../core/Application":68,"./bitmapFontParser":187,"./loader":189,"./spritesheetParser":190,"./textureParser":191,"resource-loader":219}],189:[function(require,module,exports){
+},{"../core/Application":50,"./bitmapFontParser":169,"./loader":171,"./spritesheetParser":172,"./textureParser":173,"resource-loader":218}],171:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38783,7 +36739,7 @@ var Resource = _resourceLoader2.default.Resource;
 
 Resource.setExtensionXhrType('fnt', Resource.XHR_RESPONSE_TYPE.DOCUMENT);
 
-},{"./bitmapFontParser":187,"./spritesheetParser":190,"./textureParser":191,"eventemitter3":13,"resource-loader":219,"resource-loader/lib/middlewares/parsing/blob":220}],190:[function(require,module,exports){
+},{"./bitmapFontParser":169,"./spritesheetParser":172,"./textureParser":173,"eventemitter3":13,"resource-loader":218,"resource-loader/lib/middlewares/parsing/blob":219}],172:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38842,7 +36798,7 @@ function getResourcePath(resource, baseUrl) {
     return _url2.default.resolve(resource.url.replace(baseUrl, ''), resource.data.meta.image);
 }
 
-},{"../core":90,"resource-loader":219,"url":8}],191:[function(require,module,exports){
+},{"../core":72,"resource-loader":218,"url":8}],173:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -38865,7 +36821,7 @@ var _Texture2 = _interopRequireDefault(_Texture);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"../core/textures/Texture":140,"resource-loader":219}],192:[function(require,module,exports){
+},{"../core/textures/Texture":122,"resource-loader":218}],174:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39234,7 +37190,7 @@ Mesh.DRAW_MODES = {
   TRIANGLES: 1
 };
 
-},{"../core":90,"../core/textures/Texture":140}],193:[function(require,module,exports){
+},{"../core":72,"../core/textures/Texture":122}],175:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39620,7 +37576,7 @@ var NineSlicePlane = function (_Plane) {
 
 exports.default = NineSlicePlane;
 
-},{"./Plane":194}],194:[function(require,module,exports){
+},{"./Plane":176}],176:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39761,7 +37717,7 @@ var Plane = function (_Mesh) {
 
 exports.default = Plane;
 
-},{"./Mesh":192}],195:[function(require,module,exports){
+},{"./Mesh":174}],177:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -39997,7 +37953,7 @@ var Rope = function (_Mesh) {
 
 exports.default = Rope;
 
-},{"./Mesh":192}],196:[function(require,module,exports){
+},{"./Mesh":174}],178:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40280,7 +38236,7 @@ exports.default = MeshSpriteRenderer;
 
 core.CanvasRenderer.registerPlugin('mesh', MeshSpriteRenderer);
 
-},{"../../core":90,"../Mesh":192}],197:[function(require,module,exports){
+},{"../../core":72,"../Mesh":174}],179:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40341,7 +38297,7 @@ Object.defineProperty(exports, 'Rope', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./Mesh":192,"./NineSlicePlane":193,"./Plane":194,"./Rope":195,"./canvas/CanvasMeshRenderer":196,"./webgl/MeshRenderer":198}],198:[function(require,module,exports){
+},{"./Mesh":174,"./NineSlicePlane":175,"./Plane":176,"./Rope":177,"./canvas/CanvasMeshRenderer":178,"./webgl/MeshRenderer":180}],180:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40492,7 +38448,7 @@ exports.default = MeshRenderer;
 
 core.WebGLRenderer.registerPlugin('mesh', MeshRenderer);
 
-},{"../../core":90,"../Mesh":192,"path":2,"pixi-gl-core":37}],199:[function(require,module,exports){
+},{"../../core":72,"../Mesh":174,"path":2,"pixi-gl-core":202}],181:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40515,9 +38471,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 /**
  * The ParticleContainer class is a really fast version of the Container built solely for speed,
- * so use when you need a lot of sprites or particles. The tradeoff of the ParticleContainer is that advanced
- * functionality will not work. ParticleContainer implements only the basic object transform (position, scale, rotation).
- * Any other functionality like tinting, masking, etc will not work on sprites in this batch.
+ * so use when you need a lot of sprites or particles. The tradeoff of the ParticleContainer is that most advanced
+ * functionality will not work. ParticleContainer implements the basic object transform (position, scale, rotation)
+ * and some advanced functionality like tint (as of v4.5.6).
+ * Other more advanced functionality like masking, children, filters, etc will not work on sprites in this batch.
  *
  * It's extremely easy to use :
  *
@@ -40870,7 +38827,7 @@ var ParticleContainer = function (_core$Container) {
 
 exports.default = ParticleContainer;
 
-},{"../core":90,"../core/utils":150}],200:[function(require,module,exports){
+},{"../core":72,"../core/utils":132}],182:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -40895,7 +38852,7 @@ Object.defineProperty(exports, 'ParticleRenderer', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./ParticleContainer":199,"./webgl/ParticleRenderer":202}],201:[function(require,module,exports){
+},{"./ParticleContainer":181,"./webgl/ParticleRenderer":184}],183:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41142,7 +39099,7 @@ var ParticleBuffer = function () {
 
 exports.default = ParticleBuffer;
 
-},{"../../core/utils/createIndicesForQuads":148,"pixi-gl-core":37}],202:[function(require,module,exports){
+},{"../../core/utils/createIndicesForQuads":130,"pixi-gl-core":202}],184:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41618,7 +39575,7 @@ exports.default = ParticleRenderer;
 
 core.WebGLRenderer.registerPlugin('particle', ParticleRenderer);
 
-},{"../../core":90,"../../core/utils":150,"./ParticleBuffer":201,"./ParticleShader":203}],203:[function(require,module,exports){
+},{"../../core":72,"../../core/utils":132,"./ParticleBuffer":183,"./ParticleShader":185}],185:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -41661,7 +39618,7 @@ var ParticleShader = function (_Shader) {
 
 exports.default = ParticleShader;
 
-},{"../../core/Shader":69}],204:[function(require,module,exports){
+},{"../../core/Shader":51}],186:[function(require,module,exports){
 "use strict";
 
 // References:
@@ -41679,7 +39636,7 @@ if (!Math.sign) {
     };
 }
 
-},{}],205:[function(require,module,exports){
+},{}],187:[function(require,module,exports){
 'use strict';
 
 var _objectAssign = require('object-assign');
@@ -41694,7 +39651,7 @@ if (!Object.assign) {
 // https://github.com/sindresorhus/object-assign
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign
 
-},{"object-assign":17}],206:[function(require,module,exports){
+},{"object-assign":17}],188:[function(require,module,exports){
 'use strict';
 
 require('./Object.assign');
@@ -41719,7 +39676,7 @@ if (!window.Uint16Array) {
     window.Uint16Array = Array;
 }
 
-},{"./Math.sign":204,"./Object.assign":205,"./requestAnimationFrame":207}],207:[function(require,module,exports){
+},{"./Math.sign":186,"./Object.assign":187,"./requestAnimationFrame":189}],189:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -41796,7 +39753,7 @@ if (!global.cancelAnimationFrame) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],208:[function(require,module,exports){
+},{}],190:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42284,7 +40241,7 @@ function findTextStyle(item, queue) {
     return false;
 }
 
-},{"../core":90,"./limiters/CountLimiter":211}],209:[function(require,module,exports){
+},{"../core":72,"./limiters/CountLimiter":193}],191:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42404,7 +40361,7 @@ function uploadBaseTextures(prepare, item) {
 
 core.CanvasRenderer.registerPlugin('prepare', CanvasPrepare);
 
-},{"../../core":90,"../BasePrepare":208}],210:[function(require,module,exports){
+},{"../../core":72,"../BasePrepare":190}],192:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42456,7 +40413,7 @@ Object.defineProperty(exports, 'TimeLimiter', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./BasePrepare":208,"./canvas/CanvasPrepare":209,"./limiters/CountLimiter":211,"./limiters/TimeLimiter":212,"./webgl/WebGLPrepare":213}],211:[function(require,module,exports){
+},{"./BasePrepare":190,"./canvas/CanvasPrepare":191,"./limiters/CountLimiter":193,"./limiters/TimeLimiter":194,"./webgl/WebGLPrepare":195}],193:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -42514,7 +40471,7 @@ var CountLimiter = function () {
 
 exports.default = CountLimiter;
 
-},{}],212:[function(require,module,exports){
+},{}],194:[function(require,module,exports){
 "use strict";
 
 exports.__esModule = true;
@@ -42572,7 +40529,7 @@ var TimeLimiter = function () {
 
 exports.default = TimeLimiter;
 
-},{}],213:[function(require,module,exports){
+},{}],195:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -42694,7 +40651,1649 @@ function findGraphics(item, queue) {
 
 core.WebGLRenderer.registerPlugin('prepare', WebGLPrepare);
 
-},{"../../core":90,"../BasePrepare":208}],214:[function(require,module,exports){
+},{"../../core":72,"../BasePrepare":190}],196:[function(require,module,exports){
+var EMPTY_ARRAY_BUFFER = new ArrayBuffer(0);
+
+/**
+ * Helper class to create a webGL buffer
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param type {gl.ARRAY_BUFFER | gl.ELEMENT_ARRAY_BUFFER} @mat
+ * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+ * @param drawType {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
+ */
+var Buffer = function(gl, type, data, drawType)
+{
+
+	/**
+     * The current WebGL rendering context
+     *
+     * @member {WebGLRenderingContext}
+     */
+	this.gl = gl;
+
+	/**
+     * The WebGL buffer, created upon instantiation
+     *
+     * @member {WebGLBuffer}
+     */
+	this.buffer = gl.createBuffer();
+
+	/**
+     * The type of the buffer
+     *
+     * @member {gl.ARRAY_BUFFER|gl.ELEMENT_ARRAY_BUFFER}
+     */
+	this.type = type || gl.ARRAY_BUFFER;
+
+	/**
+     * The draw type of the buffer
+     *
+     * @member {gl.STATIC_DRAW|gl.DYNAMIC_DRAW|gl.STREAM_DRAW}
+     */
+	this.drawType = drawType || gl.STATIC_DRAW;
+
+	/**
+     * The data in the buffer, as a typed array
+     *
+     * @member {ArrayBuffer| SharedArrayBuffer|ArrayBufferView}
+     */
+	this.data = EMPTY_ARRAY_BUFFER;
+
+	if(data)
+	{
+		this.upload(data);
+	}
+
+	this._updateID = 0;
+};
+
+/**
+ * Uploads the buffer to the GPU
+ * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data to upload
+ * @param offset {Number} if only a subset of the data should be uploaded, this is the amount of data to subtract
+ * @param dontBind {Boolean} whether to bind the buffer before uploading it
+ */
+Buffer.prototype.upload = function(data, offset, dontBind)
+{
+	// todo - needed?
+	if(!dontBind) this.bind();
+
+	var gl = this.gl;
+
+	data = data || this.data;
+	offset = offset || 0;
+
+	if(this.data.byteLength >= data.byteLength)
+	{
+		gl.bufferSubData(this.type, offset, data);
+	}
+	else
+	{
+		gl.bufferData(this.type, data, this.drawType);
+	}
+
+	this.data = data;
+};
+/**
+ * Binds the buffer
+ *
+ */
+Buffer.prototype.bind = function()
+{
+	var gl = this.gl;
+	gl.bindBuffer(this.type, this.buffer);
+};
+
+Buffer.createVertexBuffer = function(gl, data, drawType)
+{
+	return new Buffer(gl, gl.ARRAY_BUFFER, data, drawType);
+};
+
+Buffer.createIndexBuffer = function(gl, data, drawType)
+{
+	return new Buffer(gl, gl.ELEMENT_ARRAY_BUFFER, data, drawType);
+};
+
+Buffer.create = function(gl, type, data, drawType)
+{
+	return new Buffer(gl, type, data, drawType);
+};
+
+/**
+ * Destroys the buffer
+ *
+ */
+Buffer.prototype.destroy = function(){
+	this.gl.deleteBuffer(this.buffer);
+};
+
+module.exports = Buffer;
+
+},{}],197:[function(require,module,exports){
+
+var Texture = require('./GLTexture');
+
+/**
+ * Helper class to create a webGL Framebuffer
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param width {Number} the width of the drawing area of the frame buffer
+ * @param height {Number} the height of the drawing area of the frame buffer
+ */
+var Framebuffer = function(gl, width, height)
+{
+    /**
+     * The current WebGL rendering context
+     *
+     * @member {WebGLRenderingContext}
+     */
+    this.gl = gl;
+
+    /**
+     * The frame buffer
+     *
+     * @member {WebGLFramebuffer}
+     */
+    this.framebuffer = gl.createFramebuffer();
+
+    /**
+     * The stencil buffer
+     *
+     * @member {WebGLRenderbuffer}
+     */
+    this.stencil = null;
+
+    /**
+     * The stencil buffer
+     *
+     * @member {PIXI.glCore.GLTexture}
+     */
+    this.texture = null;
+
+    /**
+     * The width of the drawing area of the buffer
+     *
+     * @member {Number}
+     */
+    this.width = width || 100;
+    /**
+     * The height of the drawing area of the buffer
+     *
+     * @member {Number}
+     */
+    this.height = height || 100;
+};
+
+/**
+ * Adds a texture to the frame buffer
+ * @param texture {PIXI.glCore.GLTexture}
+ */
+Framebuffer.prototype.enableTexture = function(texture)
+{
+    var gl = this.gl;
+
+    this.texture = texture || new Texture(gl);
+
+    this.texture.bind();
+
+    //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,  this.width, this.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+    this.bind();
+
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.texture.texture, 0);
+};
+
+/**
+ * Initialises the stencil buffer
+ */
+Framebuffer.prototype.enableStencil = function()
+{
+    if(this.stencil)return;
+
+    var gl = this.gl;
+
+    this.stencil = gl.createRenderbuffer();
+
+    gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
+
+    // TODO.. this is depth AND stencil?
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, this.stencil);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL,  this.width  , this.height );
+
+
+};
+
+/**
+ * Erases the drawing area and fills it with a colour
+ * @param  r {Number} the red value of the clearing colour
+ * @param  g {Number} the green value of the clearing colour
+ * @param  b {Number} the blue value of the clearing colour
+ * @param  a {Number} the alpha value of the clearing colour
+ */
+Framebuffer.prototype.clear = function( r, g, b, a )
+{
+    this.bind();
+
+    var gl = this.gl;
+
+    gl.clearColor(r, g, b, a);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+};
+
+/**
+ * Binds the frame buffer to the WebGL context
+ */
+Framebuffer.prototype.bind = function()
+{
+    var gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer );
+};
+
+/**
+ * Unbinds the frame buffer to the WebGL context
+ */
+Framebuffer.prototype.unbind = function()
+{
+    var gl = this.gl;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null );
+};
+/**
+ * Resizes the drawing area of the buffer to the given width and height
+ * @param  width  {Number} the new width
+ * @param  height {Number} the new height
+ */
+Framebuffer.prototype.resize = function(width, height)
+{
+    var gl = this.gl;
+
+    this.width = width;
+    this.height = height;
+
+    if ( this.texture )
+    {
+        this.texture.uploadData(null, width, height);
+    }
+
+    if ( this.stencil )
+    {
+        // update the stencil buffer width and height
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.stencil);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_STENCIL, width, height);
+    }
+};
+
+/**
+ * Destroys this buffer
+ */
+Framebuffer.prototype.destroy = function()
+{
+    var gl = this.gl;
+
+    //TODO
+    if(this.texture)
+    {
+        this.texture.destroy();
+    }
+
+    gl.deleteFramebuffer(this.framebuffer);
+
+    this.gl = null;
+
+    this.stencil = null;
+    this.texture = null;
+};
+
+/**
+ * Creates a frame buffer with a texture containing the given data
+ * @static
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param width {Number} the width of the drawing area of the frame buffer
+ * @param height {Number} the height of the drawing area of the frame buffer
+ * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+ */
+Framebuffer.createRGBA = function(gl, width, height, data)
+{
+    var texture = Texture.fromData(gl, null, width, height);
+    texture.enableNearestScaling();
+    texture.enableWrapClamp();
+
+    //now create the framebuffer object and attach the texture to it.
+    var fbo = new Framebuffer(gl, width, height);
+    fbo.enableTexture(texture);
+    //fbo.enableStencil(); // get this back on soon!
+
+    //fbo.enableStencil(); // get this back on soon!
+
+    fbo.unbind();
+
+    return fbo;
+};
+
+/**
+ * Creates a frame buffer with a texture containing the given data
+ * @static
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param width {Number} the width of the drawing area of the frame buffer
+ * @param height {Number} the height of the drawing area of the frame buffer
+ * @param data {ArrayBuffer| SharedArrayBuffer|ArrayBufferView} an array of data
+ */
+Framebuffer.createFloat32 = function(gl, width, height, data)
+{
+    // create a new texture..
+    var texture = new Texture.fromData(gl, data, width, height);
+    texture.enableNearestScaling();
+    texture.enableWrapClamp();
+
+    //now create the framebuffer object and attach the texture to it.
+    var fbo = new Framebuffer(gl, width, height);
+    fbo.enableTexture(texture);
+
+    fbo.unbind();
+
+    return fbo;
+};
+
+module.exports = Framebuffer;
+
+},{"./GLTexture":199}],198:[function(require,module,exports){
+
+var compileProgram = require('./shader/compileProgram'),
+	extractAttributes = require('./shader/extractAttributes'),
+	extractUniforms = require('./shader/extractUniforms'),
+	setPrecision = require('./shader/setPrecision'),
+	generateUniformAccessObject = require('./shader/generateUniformAccessObject');
+
+/**
+ * Helper class to create a webGL Shader
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param gl {WebGLRenderingContext}
+ * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+ * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
+ * @param precision {string} The float precision of the shader. Options are 'lowp', 'mediump' or 'highp'.
+ * @param attributeLocations {object} A key value pair showing which location eact attribute should sit eg {position:0, uvs:1}
+ */
+var Shader = function(gl, vertexSrc, fragmentSrc, precision, attributeLocations)
+{
+	/**
+	 * The current WebGL rendering context
+	 *
+	 * @member {WebGLRenderingContext}
+	 */
+	this.gl = gl;
+
+	if(precision)
+	{
+		vertexSrc = setPrecision(vertexSrc, precision);
+		fragmentSrc = setPrecision(fragmentSrc, precision);
+	}
+
+	/**
+	 * The shader program
+	 *
+	 * @member {WebGLProgram}
+	 */
+	// First compile the program..
+	this.program = compileProgram(gl, vertexSrc, fragmentSrc, attributeLocations);
+
+	/**
+	 * The attributes of the shader as an object containing the following properties
+	 * {
+	 * 	type,
+	 * 	size,
+	 * 	location,
+	 * 	pointer
+	 * }
+	 * @member {Object}
+	 */
+	// next extract the attributes
+	this.attributes = extractAttributes(gl, this.program);
+
+    this.uniformData = extractUniforms(gl, this.program);
+
+	/**
+	 * The uniforms of the shader as an object containing the following properties
+	 * {
+	 * 	gl,
+	 * 	data
+	 * }
+	 * @member {Object}
+	 */
+	this.uniforms = generateUniformAccessObject( gl, this.uniformData );
+
+};
+/**
+ * Uses this shader
+ * 
+ * @return {PIXI.glCore.GLShader} Returns itself.
+ */
+Shader.prototype.bind = function()
+{
+	this.gl.useProgram(this.program);
+	return this;
+};
+
+/**
+ * Destroys this shader
+ * TODO
+ */
+Shader.prototype.destroy = function()
+{
+	this.attributes = null;
+	this.uniformData = null;
+	this.uniforms = null;
+
+	var gl = this.gl;
+	gl.deleteProgram(this.program);
+};
+
+
+module.exports = Shader;
+
+},{"./shader/compileProgram":204,"./shader/extractAttributes":206,"./shader/extractUniforms":207,"./shader/generateUniformAccessObject":208,"./shader/setPrecision":212}],199:[function(require,module,exports){
+
+/**
+ * Helper class to create a WebGL Texture
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param gl {WebGLRenderingContext} The current WebGL context
+ * @param width {number} the width of the texture
+ * @param height {number} the height of the texture
+ * @param format {number} the pixel format of the texture. defaults to gl.RGBA
+ * @param type {number} the gl type of the texture. defaults to gl.UNSIGNED_BYTE
+ */
+var Texture = function(gl, width, height, format, type)
+{
+	/**
+	 * The current WebGL rendering context
+	 *
+	 * @member {WebGLRenderingContext}
+	 */
+	this.gl = gl;
+
+
+	/**
+	 * The WebGL texture
+	 *
+	 * @member {WebGLTexture}
+	 */
+	this.texture = gl.createTexture();
+
+	/**
+	 * If mipmapping was used for this texture, enable and disable with enableMipmap()
+	 *
+	 * @member {Boolean}
+	 */
+	// some settings..
+	this.mipmap = false;
+
+
+	/**
+	 * Set to true to enable pre-multiplied alpha
+	 *
+	 * @member {Boolean}
+	 */
+	this.premultiplyAlpha = false;
+
+	/**
+	 * The width of texture
+	 *
+	 * @member {Number}
+	 */
+	this.width = width || -1;
+	/**
+	 * The height of texture
+	 *
+	 * @member {Number}
+	 */
+	this.height = height || -1;
+
+	/**
+	 * The pixel format of the texture. defaults to gl.RGBA
+	 *
+	 * @member {Number}
+	 */
+	this.format = format || gl.RGBA;
+
+	/**
+	 * The gl type of the texture. defaults to gl.UNSIGNED_BYTE
+	 *
+	 * @member {Number}
+	 */
+	this.type = type || gl.UNSIGNED_BYTE;
+
+
+};
+
+/**
+ * Uploads this texture to the GPU
+ * @param source {HTMLImageElement|ImageData|HTMLVideoElement} the source image of the texture
+ */
+Texture.prototype.upload = function(source)
+{
+	this.bind();
+
+	var gl = this.gl;
+
+
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+
+	var newWidth = source.videoWidth || source.width;
+	var newHeight = source.videoHeight || source.height;
+
+	if(newHeight !== this.height || newWidth !== this.width)
+	{
+		gl.texImage2D(gl.TEXTURE_2D, 0, this.format, this.format, this.type, source);
+	}
+	else
+	{
+    	gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, this.format, this.type, source);
+	}
+
+	// if the source is a video, we need to use the videoWidth / videoHeight properties as width / height will be incorrect.
+	this.width = newWidth;
+	this.height = newHeight;
+
+};
+
+var FLOATING_POINT_AVAILABLE = false;
+
+/**
+ * Use a data source and uploads this texture to the GPU
+ * @param data {TypedArray} the data to upload to the texture
+ * @param width {number} the new width of the texture
+ * @param height {number} the new height of the texture
+ */
+Texture.prototype.uploadData = function(data, width, height)
+{
+	this.bind();
+
+	var gl = this.gl;
+
+
+	if(data instanceof Float32Array)
+	{
+		if(!FLOATING_POINT_AVAILABLE)
+		{
+			var ext = gl.getExtension("OES_texture_float");
+
+			if(ext)
+			{
+				FLOATING_POINT_AVAILABLE = true;
+			}
+			else
+			{
+				throw new Error('floating point textures not available');
+			}
+		}
+
+		this.type = gl.FLOAT;
+	}
+	else
+	{
+		// TODO support for other types
+		this.type = this.type || gl.UNSIGNED_BYTE;
+	}
+
+	// what type of data?
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+
+
+	if(width !== this.width || height !== this.height)
+	{
+		gl.texImage2D(gl.TEXTURE_2D, 0, this.format,  width, height, 0, this.format, this.type, data || null);
+	}
+	else
+	{
+		gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, width, height, this.format, this.type, data || null);
+	}
+
+	this.width = width;
+	this.height = height;
+
+
+//	texSubImage2D
+};
+
+/**
+ * Binds the texture
+ * @param  location
+ */
+Texture.prototype.bind = function(location)
+{
+	var gl = this.gl;
+
+	if(location !== undefined)
+	{
+		gl.activeTexture(gl.TEXTURE0 + location);
+	}
+
+	gl.bindTexture(gl.TEXTURE_2D, this.texture);
+};
+
+/**
+ * Unbinds the texture
+ */
+Texture.prototype.unbind = function()
+{
+	var gl = this.gl;
+	gl.bindTexture(gl.TEXTURE_2D, null);
+};
+
+/**
+ * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
+ */
+Texture.prototype.minFilter = function( linear )
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	if(this.mipmap)
+	{
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_NEAREST);
+	}
+	else
+	{
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, linear ? gl.LINEAR : gl.NEAREST);
+	}
+};
+
+/**
+ * @param linear {Boolean} if we want to use linear filtering or nearest neighbour interpolation
+ */
+Texture.prototype.magFilter = function( linear )
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, linear ? gl.LINEAR : gl.NEAREST);
+};
+
+/**
+ * Enables mipmapping
+ */
+Texture.prototype.enableMipmap = function()
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	this.mipmap = true;
+
+	gl.generateMipmap(gl.TEXTURE_2D);
+};
+
+/**
+ * Enables linear filtering
+ */
+Texture.prototype.enableLinearScaling = function()
+{
+	this.minFilter(true);
+	this.magFilter(true);
+};
+
+/**
+ * Enables nearest neighbour interpolation
+ */
+Texture.prototype.enableNearestScaling = function()
+{
+	this.minFilter(false);
+	this.magFilter(false);
+};
+
+/**
+ * Enables clamping on the texture so WebGL will not repeat it
+ */
+Texture.prototype.enableWrapClamp = function()
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+};
+
+/**
+ * Enable tiling on the texture
+ */
+Texture.prototype.enableWrapRepeat = function()
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+};
+
+Texture.prototype.enableWrapMirrorRepeat = function()
+{
+	var gl = this.gl;
+
+	this.bind();
+
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+};
+
+
+/**
+ * Destroys this texture
+ */
+Texture.prototype.destroy = function()
+{
+	var gl = this.gl;
+	//TODO
+	gl.deleteTexture(this.texture);
+};
+
+/**
+ * @static
+ * @param gl {WebGLRenderingContext} The current WebGL context
+ * @param source {HTMLImageElement|ImageData} the source image of the texture
+ * @param premultiplyAlpha {Boolean} If we want to use pre-multiplied alpha
+ */
+Texture.fromSource = function(gl, source, premultiplyAlpha)
+{
+	var texture = new Texture(gl);
+	texture.premultiplyAlpha = premultiplyAlpha || false;
+	texture.upload(source);
+
+	return texture;
+};
+
+/**
+ * @static
+ * @param gl {WebGLRenderingContext} The current WebGL context
+ * @param data {TypedArray} the data to upload to the texture
+ * @param width {number} the new width of the texture
+ * @param height {number} the new height of the texture
+ */
+Texture.fromData = function(gl, data, width, height)
+{
+	//console.log(data, width, height);
+	var texture = new Texture(gl);
+	texture.uploadData(data, width, height);
+
+	return texture;
+};
+
+
+module.exports = Texture;
+
+},{}],200:[function(require,module,exports){
+
+// state object//
+var setVertexAttribArrays = require( './setVertexAttribArrays' );
+
+/**
+ * Helper class to work with WebGL VertexArrayObjects (vaos)
+ * Only works if WebGL extensions are enabled (they usually are)
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ */
+function VertexArrayObject(gl, state)
+{
+    this.nativeVaoExtension = null;
+
+    if(!VertexArrayObject.FORCE_NATIVE)
+    {
+        this.nativeVaoExtension = gl.getExtension('OES_vertex_array_object') ||
+                                  gl.getExtension('MOZ_OES_vertex_array_object') ||
+                                  gl.getExtension('WEBKIT_OES_vertex_array_object');
+    }
+
+    this.nativeState = state;
+
+    if(this.nativeVaoExtension)
+    {
+        this.nativeVao = this.nativeVaoExtension.createVertexArrayOES();
+
+        var maxAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
+
+        // VAO - overwrite the state..
+        this.nativeState = {
+            tempAttribState: new Array(maxAttribs),
+            attribState: new Array(maxAttribs)
+        };
+    }
+
+    /**
+     * The current WebGL rendering context
+     *
+     * @member {WebGLRenderingContext}
+     */
+    this.gl = gl;
+
+    /**
+     * An array of attributes
+     *
+     * @member {Array}
+     */
+    this.attributes = [];
+
+    /**
+     * @member {PIXI.glCore.GLBuffer}
+     */
+    this.indexBuffer = null;
+
+    /**
+     * A boolean flag
+     *
+     * @member {Boolean}
+     */
+    this.dirty = false;
+}
+
+VertexArrayObject.prototype.constructor = VertexArrayObject;
+module.exports = VertexArrayObject;
+
+/**
+* Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
+* If you find on older devices that things have gone a bit weird then set this to true.
+*/
+/**
+ * Lets the VAO know if you should use the WebGL extension or the native methods.
+ * Some devices behave a bit funny when using the newer extensions (im looking at you ipad 2!)
+ * If you find on older devices that things have gone a bit weird then set this to true.
+ * @static
+ * @property {Boolean} FORCE_NATIVE
+ */
+VertexArrayObject.FORCE_NATIVE = false;
+
+/**
+ * Binds the buffer
+ */
+VertexArrayObject.prototype.bind = function()
+{
+    if(this.nativeVao)
+    {
+        this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
+
+        if(this.dirty)
+        {
+            this.dirty = false;
+            this.activate();
+            return this;
+        }
+        if (this.indexBuffer)
+        {
+            this.indexBuffer.bind();
+        }
+    }
+    else
+    {
+        this.activate();
+    }
+
+    return this;
+};
+
+/**
+ * Unbinds the buffer
+ */
+VertexArrayObject.prototype.unbind = function()
+{
+    if(this.nativeVao)
+    {
+        this.nativeVaoExtension.bindVertexArrayOES(null);
+    }
+
+    return this;
+};
+
+/**
+ * Uses this vao
+ */
+VertexArrayObject.prototype.activate = function()
+{
+
+    var gl = this.gl;
+    var lastBuffer = null;
+
+    for (var i = 0; i < this.attributes.length; i++)
+    {
+        var attrib = this.attributes[i];
+
+        if(lastBuffer !== attrib.buffer)
+        {
+            attrib.buffer.bind();
+            lastBuffer = attrib.buffer;
+        }
+
+        gl.vertexAttribPointer(attrib.attribute.location,
+                               attrib.attribute.size,
+                               attrib.type || gl.FLOAT,
+                               attrib.normalized || false,
+                               attrib.stride || 0,
+                               attrib.start || 0);
+    }
+
+    setVertexAttribArrays(gl, this.attributes, this.nativeState);
+
+    if(this.indexBuffer)
+    {
+        this.indexBuffer.bind();
+    }
+
+    return this;
+};
+
+/**
+ *
+ * @param buffer     {PIXI.gl.GLBuffer}
+ * @param attribute  {*}
+ * @param type       {String}
+ * @param normalized {Boolean}
+ * @param stride     {Number}
+ * @param start      {Number}
+ */
+VertexArrayObject.prototype.addAttribute = function(buffer, attribute, type, normalized, stride, start)
+{
+    this.attributes.push({
+        buffer:     buffer,
+        attribute:  attribute,
+
+        location:   attribute.location,
+        type:       type || this.gl.FLOAT,
+        normalized: normalized || false,
+        stride:     stride || 0,
+        start:      start || 0
+    });
+
+    this.dirty = true;
+
+    return this;
+};
+
+/**
+ *
+ * @param buffer   {PIXI.gl.GLBuffer}
+ */
+VertexArrayObject.prototype.addIndex = function(buffer/*, options*/)
+{
+    this.indexBuffer = buffer;
+
+    this.dirty = true;
+
+    return this;
+};
+
+/**
+ * Unbinds this vao and disables it
+ */
+VertexArrayObject.prototype.clear = function()
+{
+    // var gl = this.gl;
+
+    // TODO - should this function unbind after clear?
+    // for now, no but lets see what happens in the real world!
+    if(this.nativeVao)
+    {
+        this.nativeVaoExtension.bindVertexArrayOES(this.nativeVao);
+    }
+
+    this.attributes.length = 0;
+    this.indexBuffer = null;
+
+    return this;
+};
+
+/**
+ * @param type  {Number}
+ * @param size  {Number}
+ * @param start {Number}
+ */
+VertexArrayObject.prototype.draw = function(type, size, start)
+{
+    var gl = this.gl;
+
+    if(this.indexBuffer)
+    {
+        gl.drawElements(type, size || this.indexBuffer.data.length, gl.UNSIGNED_SHORT, (start || 0) * 2 );
+    }
+    else
+    {
+        // TODO need a better way to calculate size..
+        gl.drawArrays(type, start, size || this.getSize());
+    }
+
+    return this;
+};
+
+/**
+ * Destroy this vao
+ */
+VertexArrayObject.prototype.destroy = function()
+{
+    // lose references
+    this.gl = null;
+    this.indexBuffer = null;
+    this.attributes = null;
+    this.nativeState = null;
+
+    if(this.nativeVao)
+    {
+        this.nativeVaoExtension.deleteVertexArrayOES(this.nativeVao);
+    }
+
+    this.nativeVaoExtension = null;
+    this.nativeVao = null;
+};
+
+VertexArrayObject.prototype.getSize = function()
+{
+    var attrib = this.attributes[0];
+    return attrib.buffer.data.length / (( attrib.stride/4 ) || attrib.attribute.size);
+};
+
+},{"./setVertexAttribArrays":203}],201:[function(require,module,exports){
+
+/**
+ * Helper class to create a webGL Context
+ *
+ * @class
+ * @memberof PIXI.glCore
+ * @param canvas {HTMLCanvasElement} the canvas element that we will get the context from
+ * @param options {Object} An options object that gets passed in to the canvas element containing the context attributes,
+ *                         see https://developer.mozilla.org/en/docs/Web/API/HTMLCanvasElement/getContext for the options available
+ * @return {WebGLRenderingContext} the WebGL context
+ */
+var createContext = function(canvas, options)
+{
+    var gl = canvas.getContext('webgl', options) || 
+         canvas.getContext('experimental-webgl', options);
+
+    if (!gl)
+    {
+        // fail, not able to get a context
+        throw new Error('This browser does not support webGL. Try using the canvas renderer');
+    }
+
+    return gl;
+};
+
+module.exports = createContext;
+
+},{}],202:[function(require,module,exports){
+var gl = {
+    createContext:          require('./createContext'),
+    setVertexAttribArrays:  require('./setVertexAttribArrays'),
+    GLBuffer:               require('./GLBuffer'),
+    GLFramebuffer:          require('./GLFramebuffer'),
+    GLShader:               require('./GLShader'),
+    GLTexture:              require('./GLTexture'),
+    VertexArrayObject:      require('./VertexArrayObject'),
+    shader:                 require('./shader')
+};
+
+// Export for Node-compatible environments
+if (typeof module !== 'undefined' && module.exports)
+{
+    // Export the module
+    module.exports = gl;
+}
+
+// Add to the browser window pixi.gl
+if (typeof window !== 'undefined')
+{
+    // add the window object
+    window.PIXI = window.PIXI || {};
+    window.PIXI.glCore = gl;
+}
+
+},{"./GLBuffer":196,"./GLFramebuffer":197,"./GLShader":198,"./GLTexture":199,"./VertexArrayObject":200,"./createContext":201,"./setVertexAttribArrays":203,"./shader":209}],203:[function(require,module,exports){
+// var GL_MAP = {};
+
+/**
+ * @param gl {WebGLRenderingContext} The current WebGL context
+ * @param attribs {*}
+ * @param state {*}
+ */
+var setVertexAttribArrays = function (gl, attribs, state)
+{
+    var i;
+    if(state)
+    {
+        var tempAttribState = state.tempAttribState,
+            attribState = state.attribState;
+
+        for (i = 0; i < tempAttribState.length; i++)
+        {
+            tempAttribState[i] = false;
+        }
+
+        // set the new attribs
+        for (i = 0; i < attribs.length; i++)
+        {
+            tempAttribState[attribs[i].attribute.location] = true;
+        }
+
+        for (i = 0; i < attribState.length; i++)
+        {
+            if (attribState[i] !== tempAttribState[i])
+            {
+                attribState[i] = tempAttribState[i];
+
+                if (state.attribState[i])
+                {
+                    gl.enableVertexAttribArray(i);
+                }
+                else
+                {
+                    gl.disableVertexAttribArray(i);
+                }
+            }
+        }
+
+    }
+    else
+    {
+        for (i = 0; i < attribs.length; i++)
+        {
+            var attrib = attribs[i];
+            gl.enableVertexAttribArray(attrib.attribute.location);
+        }
+    }
+};
+
+module.exports = setVertexAttribArrays;
+
+},{}],204:[function(require,module,exports){
+
+/**
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
+ * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+ * @param fragmentSrc {string|string[]} The fragment shader source as an array of strings.
+ * @param attributeLocations {Object} An attribute location map that lets you manually set the attribute locations
+ * @return {WebGLProgram} the shader program
+ */
+var compileProgram = function(gl, vertexSrc, fragmentSrc, attributeLocations)
+{
+    var glVertShader = compileShader(gl, gl.VERTEX_SHADER, vertexSrc);
+    var glFragShader = compileShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
+
+    var program = gl.createProgram();
+
+    gl.attachShader(program, glVertShader);
+    gl.attachShader(program, glFragShader);
+
+    // optionally, set the attributes manually for the program rather than letting WebGL decide..
+    if(attributeLocations)
+    {
+        for(var i in attributeLocations)
+        {
+            gl.bindAttribLocation(program, attributeLocations[i], i);
+        }
+    }
+
+
+    gl.linkProgram(program);
+
+    // if linking fails, then log and cleanup
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS))
+    {
+        console.error('Pixi.js Error: Could not initialize shader.');
+        console.error('gl.VALIDATE_STATUS', gl.getProgramParameter(program, gl.VALIDATE_STATUS));
+        console.error('gl.getError()', gl.getError());
+
+        // if there is a program info log, log it
+        if (gl.getProgramInfoLog(program) !== '')
+        {
+            console.warn('Pixi.js Warning: gl.getProgramInfoLog()', gl.getProgramInfoLog(program));
+        }
+
+        gl.deleteProgram(program);
+        program = null;
+    }
+
+    // clean up some shaders
+    gl.deleteShader(glVertShader);
+    gl.deleteShader(glFragShader);
+
+    return program;
+};
+
+/**
+ * @private
+ * @param gl {WebGLRenderingContext} The current WebGL context {WebGLProgram}
+ * @param type {Number} the type, can be either VERTEX_SHADER or FRAGMENT_SHADER
+ * @param vertexSrc {string|string[]} The vertex shader source as an array of strings.
+ * @return {WebGLShader} the shader
+ */
+var compileShader = function (gl, type, src)
+{
+    var shader = gl.createShader(type);
+
+    gl.shaderSource(shader, src);
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+    {
+        console.log(gl.getShaderInfoLog(shader));
+        return null;
+    }
+
+    return shader;
+};
+
+module.exports = compileProgram;
+
+},{}],205:[function(require,module,exports){
+/**
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param type {String} Type of value
+ * @param size {Number}
+ */
+var defaultValue = function(type, size) 
+{
+    switch (type)
+    {
+        case 'float':
+            return 0;
+
+        case 'vec2': 
+            return new Float32Array(2 * size);
+
+        case 'vec3':
+            return new Float32Array(3 * size);
+
+        case 'vec4':     
+            return new Float32Array(4 * size);
+            
+        case 'int':
+        case 'sampler2D':
+            return 0;
+
+        case 'ivec2':   
+            return new Int32Array(2 * size);
+
+        case 'ivec3':
+            return new Int32Array(3 * size);
+
+        case 'ivec4': 
+            return new Int32Array(4 * size);
+
+        case 'bool':     
+            return false;
+
+        case 'bvec2':
+
+            return booleanArray( 2 * size);
+
+        case 'bvec3':
+            return booleanArray(3 * size);
+
+        case 'bvec4':
+            return booleanArray(4 * size);
+
+        case 'mat2':
+            return new Float32Array([1, 0,
+                                     0, 1]);
+
+        case 'mat3': 
+            return new Float32Array([1, 0, 0,
+                                     0, 1, 0,
+                                     0, 0, 1]);
+
+        case 'mat4':
+            return new Float32Array([1, 0, 0, 0,
+                                     0, 1, 0, 0,
+                                     0, 0, 1, 0,
+                                     0, 0, 0, 1]);
+    }
+};
+
+var booleanArray = function(size)
+{
+    var array = new Array(size);
+
+    for (var i = 0; i < array.length; i++) 
+    {
+        array[i] = false;
+    }
+
+    return array;
+};
+
+module.exports = defaultValue;
+
+},{}],206:[function(require,module,exports){
+
+var mapType = require('./mapType');
+var mapSize = require('./mapSize');
+
+/**
+ * Extracts the attributes
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param program {WebGLProgram} The shader program to get the attributes from
+ * @return attributes {Object}
+ */
+var extractAttributes = function(gl, program)
+{
+    var attributes = {};
+
+    var totalAttributes = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
+
+    for (var i = 0; i < totalAttributes; i++)
+    {
+        var attribData = gl.getActiveAttrib(program, i);
+        var type = mapType(gl, attribData.type);
+
+        attributes[attribData.name] = {
+            type:type,
+            size:mapSize(type),
+            location:gl.getAttribLocation(program, attribData.name),
+            //TODO - make an attribute object
+            pointer: pointer
+        };
+    }
+
+    return attributes;
+};
+
+var pointer = function(type, normalized, stride, start){
+    // console.log(this.location)
+    gl.vertexAttribPointer(this.location,this.size, type || gl.FLOAT, normalized || false, stride || 0, start || 0);
+};
+
+module.exports = extractAttributes;
+
+},{"./mapSize":210,"./mapType":211}],207:[function(require,module,exports){
+var mapType = require('./mapType');
+var defaultValue = require('./defaultValue');
+
+/**
+ * Extracts the uniforms
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param program {WebGLProgram} The shader program to get the uniforms from
+ * @return uniforms {Object}
+ */
+var extractUniforms = function(gl, program)
+{
+	var uniforms = {};
+
+    var totalUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+
+    for (var i = 0; i < totalUniforms; i++)
+    {
+    	var uniformData = gl.getActiveUniform(program, i);
+    	var name = uniformData.name.replace(/\[.*?\]/, "");
+        var type = mapType(gl, uniformData.type );
+
+    	uniforms[name] = {
+    		type:type,
+    		size:uniformData.size,
+    		location:gl.getUniformLocation(program, name),
+    		value:defaultValue(type, uniformData.size)
+    	};
+    }
+
+	return uniforms;
+};
+
+module.exports = extractUniforms;
+
+},{"./defaultValue":205,"./mapType":211}],208:[function(require,module,exports){
+/**
+ * Extracts the attributes
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param gl {WebGLRenderingContext} The current WebGL rendering context
+ * @param uniforms {Array} @mat ?
+ * @return attributes {Object}
+ */
+var generateUniformAccessObject = function(gl, uniformData)
+{
+    // this is the object we will be sending back.
+    // an object hierachy will be created for structs
+    var uniforms = {data:{}};
+
+    uniforms.gl = gl;
+
+    var uniformKeys= Object.keys(uniformData);
+
+    for (var i = 0; i < uniformKeys.length; i++)
+    {
+        var fullName = uniformKeys[i];
+
+        var nameTokens = fullName.split('.');
+        var name = nameTokens[nameTokens.length - 1];
+
+
+        var uniformGroup = getUniformGroup(nameTokens, uniforms);
+
+        var uniform =  uniformData[fullName];
+        uniformGroup.data[name] = uniform;
+
+        uniformGroup.gl = gl;
+
+        Object.defineProperty(uniformGroup, name, {
+            get: generateGetter(name),
+            set: generateSetter(name, uniform)
+        });
+    }
+
+    return uniforms;
+};
+
+var generateGetter = function(name)
+{
+    return function() {
+        return this.data[name].value;
+    };
+};
+
+var GLSL_SINGLE_SETTERS = {
+    float: function setSingleFloat(gl, location, value) { gl.uniform1f(location, value); },
+    vec2: function setSingleVec2(gl, location, value) { gl.uniform2f(location, value[0], value[1]); },
+    vec3: function setSingleVec3(gl, location, value) { gl.uniform3f(location, value[0], value[1], value[2]); },
+    vec4: function setSingleVec4(gl, location, value) { gl.uniform4f(location, value[0], value[1], value[2], value[3]); },
+
+    int: function setSingleInt(gl, location, value) { gl.uniform1i(location, value); },
+    ivec2: function setSingleIvec2(gl, location, value) { gl.uniform2i(location, value[0], value[1]); },
+    ivec3: function setSingleIvec3(gl, location, value) { gl.uniform3i(location, value[0], value[1], value[2]); },
+    ivec4: function setSingleIvec4(gl, location, value) { gl.uniform4i(location, value[0], value[1], value[2], value[3]); },
+
+    bool: function setSingleBool(gl, location, value) { gl.uniform1i(location, value); },
+    bvec2: function setSingleBvec2(gl, location, value) { gl.uniform2i(location, value[0], value[1]); },
+    bvec3: function setSingleBvec3(gl, location, value) { gl.uniform3i(location, value[0], value[1], value[2]); },
+    bvec4: function setSingleBvec4(gl, location, value) { gl.uniform4i(location, value[0], value[1], value[2], value[3]); },
+
+    mat2: function setSingleMat2(gl, location, value) { gl.uniformMatrix2fv(location, false, value); },
+    mat3: function setSingleMat3(gl, location, value) { gl.uniformMatrix3fv(location, false, value); },
+    mat4: function setSingleMat4(gl, location, value) { gl.uniformMatrix4fv(location, false, value); },
+
+    sampler2D: function setSingleSampler2D(gl, location, value) { gl.uniform1i(location, value); },
+};
+
+var GLSL_ARRAY_SETTERS = {
+    float: function setFloatArray(gl, location, value) { gl.uniform1fv(location, value); },
+    vec2: function setVec2Array(gl, location, value) { gl.uniform2fv(location, value); },
+    vec3: function setVec3Array(gl, location, value) { gl.uniform3fv(location, value); },
+    vec4: function setVec4Array(gl, location, value) { gl.uniform4fv(location, value); },
+    int: function setIntArray(gl, location, value) { gl.uniform1iv(location, value); },
+    ivec2: function setIvec2Array(gl, location, value) { gl.uniform2iv(location, value); },
+    ivec3: function setIvec3Array(gl, location, value) { gl.uniform3iv(location, value); },
+    ivec4: function setIvec4Array(gl, location, value) { gl.uniform4iv(location, value); },
+    bool: function setBoolArray(gl, location, value) { gl.uniform1iv(location, value); },
+    bvec2: function setBvec2Array(gl, location, value) { gl.uniform2iv(location, value); },
+    bvec3: function setBvec3Array(gl, location, value) { gl.uniform3iv(location, value); },
+    bvec4: function setBvec4Array(gl, location, value) { gl.uniform4iv(location, value); },
+    sampler2D: function setSampler2DArray(gl, location, value) { gl.uniform1iv(location, value); },
+};
+
+function generateSetter(name, uniform)
+{
+    return function(value) {
+        this.data[name].value = value;
+        var location = this.data[name].location;
+        if (uniform.size === 1)
+        {
+            GLSL_SINGLE_SETTERS[uniform.type](this.gl, location, value);
+        }
+        else
+        {
+            // glslSetArray(gl, location, type, value) {
+            GLSL_ARRAY_SETTERS[uniform.type](this.gl, location, value);
+        }
+    };
+}
+
+function getUniformGroup(nameTokens, uniform)
+{
+    var cur = uniform;
+
+    for (var i = 0; i < nameTokens.length - 1; i++)
+    {
+        var o = cur[nameTokens[i]] || {data:{}};
+        cur[nameTokens[i]] = o;
+        cur = o;
+    }
+
+    return cur;
+}
+
+
+module.exports = generateUniformAccessObject;
+
+},{}],209:[function(require,module,exports){
+module.exports = {
+    compileProgram: require('./compileProgram'),
+    defaultValue: require('./defaultValue'),
+    extractAttributes: require('./extractAttributes'),
+    extractUniforms: require('./extractUniforms'),
+    generateUniformAccessObject: require('./generateUniformAccessObject'),
+    setPrecision: require('./setPrecision'),
+    mapSize: require('./mapSize'),
+    mapType: require('./mapType')
+};
+},{"./compileProgram":204,"./defaultValue":205,"./extractAttributes":206,"./extractUniforms":207,"./generateUniformAccessObject":208,"./mapSize":210,"./mapType":211,"./setPrecision":212}],210:[function(require,module,exports){
+/**
+ * @class
+ * @memberof PIXI.glCore.shader
+ * @param type {String}
+ * @return {Number}
+ */
+var mapSize = function(type) 
+{ 
+    return GLSL_TO_SIZE[type];
+};
+
+
+var GLSL_TO_SIZE = {
+    'float':    1,
+    'vec2':     2,
+    'vec3':     3,
+    'vec4':     4,
+
+    'int':      1,
+    'ivec2':    2,
+    'ivec3':    3,
+    'ivec4':    4,
+
+    'bool':     1,
+    'bvec2':    2,
+    'bvec3':    3,
+    'bvec4':    4,
+
+    'mat2':     4,
+    'mat3':     9,
+    'mat4':     16,
+
+    'sampler2D':  1
+};
+
+module.exports = mapSize;
+
+},{}],211:[function(require,module,exports){
+
+
+var mapType = function(gl, type) 
+{
+    if(!GL_TABLE) 
+    {
+        var typeNames = Object.keys(GL_TO_GLSL_TYPES);
+
+        GL_TABLE = {};
+
+        for(var i = 0; i < typeNames.length; ++i) 
+        {
+            var tn = typeNames[i];
+            GL_TABLE[ gl[tn] ] = GL_TO_GLSL_TYPES[tn];
+        }
+    }
+
+  return GL_TABLE[type];
+};
+
+var GL_TABLE = null;
+
+var GL_TO_GLSL_TYPES = {
+  'FLOAT':       'float',
+  'FLOAT_VEC2':  'vec2',
+  'FLOAT_VEC3':  'vec3',
+  'FLOAT_VEC4':  'vec4',
+
+  'INT':         'int',
+  'INT_VEC2':    'ivec2',
+  'INT_VEC3':    'ivec3',
+  'INT_VEC4':    'ivec4',
+  
+  'BOOL':        'bool',
+  'BOOL_VEC2':   'bvec2',
+  'BOOL_VEC3':   'bvec3',
+  'BOOL_VEC4':   'bvec4',
+  
+  'FLOAT_MAT2':  'mat2',
+  'FLOAT_MAT3':  'mat3',
+  'FLOAT_MAT4':  'mat4',
+  
+  'SAMPLER_2D':  'sampler2D'  
+};
+
+module.exports = mapType;
+
+},{}],212:[function(require,module,exports){
+/**
+ * Sets the float precision on the shader. If the precision is already present this function will do nothing
+ * @param {string} src       the shader source
+ * @param {string} precision The float precision of the shader. Options are 'lowp', 'mediump' or 'highp'.
+ *
+ * @return {string} modified shader source
+ */
+var setPrecision = function(src, precision)
+{
+    if(src.substring(0, 9) !== 'precision')
+    {
+        return 'precision ' + precision + ' float;\n' + src;
+    }
+
+    return src;
+};
+
+module.exports = setPrecision;
+
+},{}],213:[function(require,module,exports){
 'use strict'
 
 /**
@@ -42724,7 +42323,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
   arr.length = len
 }
 
-},{}],215:[function(require,module,exports){
+},{}],214:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -43342,7 +42941,7 @@ var Loader = function () {
 
 exports.default = Loader;
 
-},{"./Resource":216,"./async":217,"mini-signals":16,"parse-uri":18}],216:[function(require,module,exports){
+},{"./Resource":215,"./async":216,"mini-signals":16,"parse-uri":18}],215:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44498,7 +44097,7 @@ function reqType(xhr) {
     return xhr.toString().replace('object ', '');
 }
 
-},{"mini-signals":16,"parse-uri":18}],217:[function(require,module,exports){
+},{"mini-signals":16,"parse-uri":18}],216:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44707,7 +44306,7 @@ function queue(worker, concurrency) {
     return q;
 }
 
-},{}],218:[function(require,module,exports){
+},{}],217:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44775,7 +44374,7 @@ function encodeBinary(input) {
     return output;
 }
 
-},{}],219:[function(require,module,exports){
+},{}],218:[function(require,module,exports){
 'use strict';
 
 // import Loader from './Loader';
@@ -44799,7 +44398,7 @@ module.exports = Loader;
 // export default Loader;
 module.exports.default = Loader;
 
-},{"./Loader":215,"./Resource":216,"./async":217,"./b64":218}],220:[function(require,module,exports){
+},{"./Loader":214,"./Resource":215,"./async":216,"./b64":217}],219:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
@@ -44887,7 +44486,7 @@ function blobMiddlewareFactory() {
     };
 }
 
-},{"../../Resource":216,"../../b64":218}],221:[function(require,module,exports){
+},{"../../Resource":215,"../../b64":217}],220:[function(require,module,exports){
 // A library of seedable RNGs implemented in Javascript.
 //
 // Usage:
@@ -44949,7 +44548,7 @@ sr.tychei = tychei;
 
 module.exports = sr;
 
-},{"./lib/alea":222,"./lib/tychei":223,"./lib/xor128":224,"./lib/xor4096":225,"./lib/xorshift7":226,"./lib/xorwow":227,"./seedrandom":228}],222:[function(require,module,exports){
+},{"./lib/alea":221,"./lib/tychei":222,"./lib/xor128":223,"./lib/xor4096":224,"./lib/xorshift7":225,"./lib/xorwow":226,"./seedrandom":227}],221:[function(require,module,exports){
 // A port of an algorithm by Johannes Baagøe <baagoe@baagoe.com>, 2010
 // http://baagoe.com/en/RandomMusings/javascript/
 // https://github.com/nquinlan/better-random-numbers-for-javascript-mirror
@@ -45065,7 +44664,7 @@ if (module && module.exports) {
 
 
 
-},{}],223:[function(require,module,exports){
+},{}],222:[function(require,module,exports){
 // A Javascript implementaion of the "Tyche-i" prng algorithm by
 // Samuel Neves and Filipe Araujo.
 // See https://eden.dei.uc.pt/~sneves/pubs/2011-snfa2.pdf
@@ -45170,7 +44769,7 @@ if (module && module.exports) {
 
 
 
-},{}],224:[function(require,module,exports){
+},{}],223:[function(require,module,exports){
 // A Javascript implementaion of the "xor128" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -45253,7 +44852,7 @@ if (module && module.exports) {
 
 
 
-},{}],225:[function(require,module,exports){
+},{}],224:[function(require,module,exports){
 // A Javascript implementaion of Richard Brent's Xorgens xor4096 algorithm.
 //
 // This fast non-cryptographic random number generator is designed for
@@ -45401,7 +45000,7 @@ if (module && module.exports) {
   (typeof define) == 'function' && define   // present with an AMD loader
 );
 
-},{}],226:[function(require,module,exports){
+},{}],225:[function(require,module,exports){
 // A Javascript implementaion of the "xorshift7" algorithm by
 // François Panneton and Pierre L'ecuyer:
 // "On the Xorgshift Random Number Generators"
@@ -45500,7 +45099,7 @@ if (module && module.exports) {
 );
 
 
-},{}],227:[function(require,module,exports){
+},{}],226:[function(require,module,exports){
 // A Javascript implementaion of the "xorwow" prng algorithm by
 // George Marsaglia.  See http://www.jstatsoft.org/v08/i14/paper
 
@@ -45588,7 +45187,7 @@ if (module && module.exports) {
 
 
 
-},{}],228:[function(require,module,exports){
+},{}],227:[function(require,module,exports){
 /*
 Copyright 2014 David Bau.
 
@@ -45837,7 +45436,7 @@ if ((typeof module) == 'object' && module.exports) {
   Math    // math: package containing random, pow, and seedrandom
 );
 
-},{"crypto":1}],229:[function(require,module,exports){
+},{"crypto":1}],228:[function(require,module,exports){
 // angle.js <https://github.com/davidfig/anglejs>
 // Released under MIT license <https://github.com/davidfig/angle/blob/master/LICENSE>
 // Author: David Figatner
@@ -46113,7 +45712,7 @@ module.exports = {
     equals,
     explain
 }
-},{}],230:[function(require,module,exports){
+},{}],229:[function(require,module,exports){
 /**
  * @file color.js
  * @author David Figatner
@@ -46422,7 +46021,436 @@ class Color
 };
 
 module.exports = new Color();
-},{"yy-random":234}],231:[function(require,module,exports){
+},{"yy-random":234}],230:[function(require,module,exports){
+/* Copyright (c) 2017 YOPEY YOPEY LLC */
+
+const EventEmitter = require('eventemitter3')
+
+module.exports = class Input extends EventEmitter
+{
+    /**
+     * basic input support for touch, mouse, and keyboard
+     *
+     * @param {object} [options]
+     * @param {HTMLElement} [options.div=document] object to attach listener to
+     * @param {boolean} [options.noPointers] turns off mouse/touch/pen listeners
+     * @param {boolean} [options.noKeyboard] turns off key listener
+     * @param {boolean} [options.chromeDebug] ignore chrome debug keys, and force page reload with ctrl/cmd+r
+     * @param {number} [options.threshold=5] maximum number of pixels to move while mouse/touch downbefore cancelling 'click'
+     * @param {boolean} [options.preventDefault] call on handle, otherwise let client handle
+     *
+     * @event down(x, y, { input, event, id }) emits when touch or mouse is first down
+     * @event up(x, y, { input, event, id }) emits when touch or mouse is up or cancelled
+     * @event move(x, y, { input, event, id }) emits when touch or mouse moves (even if mouse is still up)
+     * @event click(x, y, { input, event, id }) emits when "click" for touch or mouse
+     * @event wheel(dx, dy, dz, { event, id, x, y }) emits when "wheel" scroll for mouse
+     *
+     * @event keydown(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is pressed
+     * @event keyup(keyCode:number, {shift:boolean, meta:boolean, ctrl: boolean}, { event, input }) emits when key is released
+     */
+    constructor(options)
+    {
+        super()
+        options = options || {}
+        this.threshold = typeof options.threshold === 'undefined' ? 5 : options.threshold
+        this.chromeDebug = options.chromeDebug
+        this.preventDefault = options.preventDefault
+
+        this.pointers = []
+        this.keys = {}
+        this.input = []
+
+        this.div = options.div || document
+        this.options = options
+        this.callbacks = [
+            this.mouseDown.bind(this),
+            this.mouseMove.bind(this),
+            this.mouseUp.bind(this), // 2
+            this.touchStart.bind(this),
+            this.touchMove.bind(this),
+            this.touchEnd.bind(this),
+            this.keydown.bind(this), // 6
+            this.keyup.bind(this),
+            this.wheel.bind(this) // 8
+        ]
+        if (!options.noPointers)
+        {
+            this.addPointers()
+        }
+        if (!options.noKeyboard)
+        {
+            this.addKeyboard()
+        }
+    }
+
+    /**
+     * remove all listeners
+     */
+    destroy()
+    {
+        this.removePointers()
+        this.removeKeyboard()
+    }
+
+    /**
+     * turns on pointer listeners (on by default); can be used after removePointers()
+     */
+    addPointers()
+    {
+        if (!this.listeningPointer)
+        {
+            const div = this.div
+            div.addEventListener('mousedown', this.callbacks[0])
+            div.addEventListener('mousemove', this.callbacks[1])
+            div.addEventListener('mouseup', this.callbacks[2])
+            div.addEventListener('mouseout', this.callbacks[2])
+            div.addEventListener('wheel', this.callbacks[8])
+
+            div.addEventListener('touchstart', this.callbacks[3])
+            div.addEventListener('touchmove', this.callbacks[4])
+            div.addEventListener('touchend', this.callbacks[5])
+            div.addEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = true
+        }
+    }
+
+    /**
+     * remove pointers listener
+     */
+    removePointers()
+    {
+        if (this.listeningPointer)
+        {
+            const div = this.div
+            div.removeEventListener('mousedown', this.callbacks[0])
+            div.removeEventListener('mousemove', this.callbacks[1])
+            div.removeEventListener('mouseup', this.callbacks[2])
+            div.removeEventListener('mouseout', this.callbacks[2])
+            div.removeEventListener('wheel', this.callbacks[8])
+
+            div.removeEventListener('touchstart', this.callbacks[3])
+            div.removeEventListener('touchmove', this.callbacks[4])
+            div.removeEventListener('touchend', this.callbacks[5])
+            div.removeEventListener('touchcancel', this.callbacks[5])
+            this.listeningPointer = false
+        }
+    }
+
+    /**
+     * turns on keyboard listener (off by default); can be used after removeKeyboard()
+     */
+    addKeyboard()
+    {
+        if (!this.listeningKeyboard)
+        {
+            document.addEventListener('keydown', this.callbacks[6])
+            document.addEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = true
+        }
+    }
+
+    /**
+     * removes keyboard listener
+     */
+    removeKeyboard()
+    {
+        if (this.listeningKeyboard)
+        {
+            document.removeEventListener('keydown', this.callbacks[6])
+            document.removeEventListener('keyup', this.callbacks[7])
+            this.listeningKeyboard = false
+        }
+    }
+
+    /**
+     * helper function to find touch from list based on id
+     * @private
+     * @param  {number} id for saved touch
+     * @return {object}
+     */
+    findTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                return this.pointers[i]
+            }
+        }
+        return null
+    }
+
+    /**
+     * helper function to remove touch from touch list
+     * @private
+     * @param  {object} touch object
+     */
+    removeTouch(id)
+    {
+        for (let i = 0; i < this.pointers.length; i++)
+        {
+            if (this.pointers[i].identifier === id)
+            {
+                this.pointers.splice(i, 1)
+                return
+            }
+        }
+    }
+
+    /**
+     * Handle touch start
+     * @private
+     * @param  {object} e touch event
+     */
+    touchStart(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const touches = e.changedTouches
+        for (let i = 0; i < touches.length; i++)
+        {
+            const touch = touches[i]
+            const x = touch.clientX
+            const y = touch.clientY
+            if (this.clamp)
+            {
+                if (this.outsideClamp(x, y))
+                {
+                    continue
+                }
+            }
+            const entry = {
+                identifier: touch.identifier,
+                x,
+                y
+            }
+            this.pointers.push(entry)
+            this.handleDown(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch move
+     * @private
+     * @param  {object} e touch event
+     */
+    touchMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            if (this.clamp && !this.findTouch(touch.identifier))
+            {
+                continue
+            }
+            this.handleMove(touch.clientX, touch.clientY, e, touch.identifier)
+        }
+    }
+
+    /**
+     * Handle touch end
+     * @private
+     * @param  {object} e touch event
+     */
+    touchEnd(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        for (let i = 0; i < e.changedTouches.length; i++)
+        {
+            const touch = e.changedTouches[i]
+            const previous = this.findTouch(touch.identifier)
+            if (previous !== null)
+            {
+                this.removeTouch(touch.identifier)
+                this.handleUp(touch.clientX, touch.clientY, e, touch.identifier)
+            }
+        }
+    }
+
+    /**
+     * Handle mouse down
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseDown(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        while (this.pointers.length)
+        {
+            this.pointers.pop()
+        }
+        this.pointers.push({id: 'mouse'})
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        if (!this.clamp || !this.outsideClamp(x, y))
+        {
+            this.handleDown(x, y, e, 'mouse')
+        }
+    }
+
+    /**
+     * Handle mouse move
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseMove(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.handleMove(x, y, e, 'mouse')
+    }
+
+    /**
+     * Handle mouse up
+     * @private
+     * @param  {object} e touch event
+     */
+    mouseUp(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        const x = window.navigator.msPointerEnabled ? e.offsetX : e.clientX
+        const y = window.navigator.msPointerEnabled ? e.offsetY : e.clientY
+        this.pointers.pop()
+        this.handleUp(x, y, e, 'mouse')
+    }
+
+    handleDown(x, y, e, id)
+    {
+        this.emit('down', x, y, { event: e, input: this, id })
+        if (!this.threshold || this.pointers > 1)
+        {
+            this.start = null
+        }
+        else
+        {
+            this.start = { x, y }
+        }
+    }
+
+    handleUp(x, y, e, id)
+    {
+        if (this.start)
+        {
+            this.start = null
+            this.emit('click', x, y, { event: e, input: this, id })
+        }
+        this.emit('up', x, y, { event: e, input: this, id })
+    }
+
+    handleMove(x, y, e, id)
+    {
+        if (this.start)
+        {
+            if (Math.abs(this.start.x - x) > this.threshold || Math.abs(this.start.y - y) > this.threshold)
+            {
+                this.start = null
+            }
+        }
+        this.emit('move', x, y, { event: e, input: this, id })
+    }
+
+    wheel(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('wheel', e.deltaX, e.deltaY, e.deltaZ, { event: e, id: 'mouse', x: e.clientX, y: e.clientY })
+    }
+
+    /**
+     * Sets event listener for keyboard
+     * @private
+     */
+    keysListener()
+    {
+    }
+
+    /**
+     * @private
+     * @param  {object} e
+     */
+    keydown(e)
+    {
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        if (this.chromeDebug)
+        {
+            // allow chrome to open developer console
+            if (this.keys.shift && this.keys.ctrl && code === 73)
+            {
+                return
+            }
+
+            // reload page with meta + r
+            if (code === 82 && this.keys.ctrl)
+            {
+                window.location.reload()
+                return
+            }
+        }
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.emit('keydown', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * Handle key up
+     * @private
+     * @param  {object}
+     */
+    keyup(e)
+    {
+        if (this.preventDefault)
+        {
+            e.preventDefault()
+        }
+        this.keys.shift = e.shiftKey
+        this.keys.meta = e.metaKey
+        this.keys.ctrl = e.ctrlKey
+        const code = (typeof e.which === 'number') ? e.which : e.keyCode
+        this.emit('keyup', code, this.keys, { event: e, input: this })
+    }
+
+    /**
+     * clamp screen to only accept pointers in rectangle in the down event
+     * @param {number} x
+     * @param {number} y
+     */
+    clampDown(x, y, width, height)
+    {
+        this.clamp = { x, y, width, height }
+    }
+
+    outsideClamp(x, y)
+    {
+        return x < this.clamp.x || x > this.clamp.x + this.clamp.width || y < this.clamp.y || y > this.clamp.y + this.clamp.height
+    }
+}
+},{"eventemitter3":13}],231:[function(require,module,exports){
 module.exports = require('./src/loop')
 },{"./src/loop":233}],232:[function(require,module,exports){
 const Events = require('eventemitter3')
@@ -47130,4 +47158,4 @@ class Random
 }
 
 module.exports = new Random()
-},{"seedrandom":221}]},{},[10]);
+},{"seedrandom":220}]},{},[10]);
