@@ -188,7 +188,7 @@ function onLoad(loader, resources) {
     var style = {
         fontFamily: 'Verdana',
         fontSize: textSize,
-        fill: Colour.dark10
+        fill: Colour.white
     };
 
     pixelText = new PIXI.Text('Pixels: 0', style)
@@ -680,12 +680,14 @@ var drawLinesFrom
 var drawLines
 
 function goToSendShipsScreen(fromPlanet, amount) {
-    updateLines = ticksPerCollideUpdate
-    drawLinesFrom = fromPlanet
-    sendShipsAmount = amount
-    viewport.pausePlugin('drag')
-    viewport.pausePlugin('wheel')
-    centerView()
+    if (ships >= amount) {
+        updateLines = ticksPerCollideUpdate
+        drawLinesFrom = fromPlanet
+        sendShipsAmount = amount
+        viewport.pausePlugin('drag')
+        viewport.pausePlugin('wheel')
+        centerView()
+    }
 }
 
 function cancelSendShips() {
@@ -941,10 +943,15 @@ function gameLoop() {
     if (pixels != lastPixels) {
         lastPixels = pixels
         pixelText.text = 'Pixels: ' + pixels
+
+        buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
+        buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
+        buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
     }
     if (ships != lastShips) {
         lastShips = ships
         shipsText.text = 'Ships: ' + ships
+        sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
     }
 
     if (focusPlanet && focusPlanet == myPlanet) {
