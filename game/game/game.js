@@ -31,6 +31,7 @@ class Ship extends Object {
         this.sprite = game.stage.addChild(new PIXI.Sprite(shipTexture))
         this.sprite.pivot.set(0.5, 0.5)
         this.sprite.anchor.set(0.5, 0.5)
+        this.sprite.scale.set(0.5)
         this.sprite.position.set(fromX, fromY)
         this.sprite.tint = tint
 
@@ -130,6 +131,7 @@ PIXI.loader
     .add('planet2', 'game/assets/planet2.png')
     .add('ship', 'game/assets/ship.png')
     .add('spawn', 'game/assets/spawn.png')
+    .add('infantry', 'game/assets/infantry.png')
     .load(onLoad)
 
 //  _____       _ _   
@@ -149,9 +151,14 @@ var hud
 
 var shipTexture
 var spawnTexture
+var infantryTexture
 
 function onLoad(loader, resources) {
 
+    shipTexture = resources.ship.texture
+    spawnTexture = resources.spawn.texture
+    infantryTexture = resources.infantry.texture
+    
     const stage = game.stage
 
     const orbit1 = game.stage.addChild(createOrbit(0, 0, 150, 25))
@@ -212,9 +219,6 @@ function onLoad(loader, resources) {
     sendShipText = new PIXI.Text('Send Ships (100 ships)', style)
     hud.addChild(sendShipText)
 
-    shipTexture = resources.ship.texture
-    spawnTexture = resources.spawn.texture
-
     resize()
 
     for (i in planets) {
@@ -230,6 +234,9 @@ function onLoad(loader, resources) {
     planet2b.outline.tint = planet2b.tint
     //planet3.tint = 0xCCCCFF
     //planet4.tint = 0xFAFACC
+
+    createSpawn(planet2a, true)
+    createSpawn(planet2b, true)
 }
 
 //  _____                   _   
@@ -514,6 +521,13 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     planet.orbit = orbit
     planet.pivot.set(planet.radius, planet.radius)
 
+    // Infantry
+    planet.infantry = new PIXI.particles.Emitter(planet, infantryTexture, infantryParticle)
+    planet.infantry.updateSpawnPos(planet.radius, planet.radius)
+    planet.infantry.emit = true
+    planet.infantry.spawnRate = 0
+    planet.infantry.spawnCounter = 0
+    
     // Selection ring
     var ring = new PIXI.Graphics()
     ring.lineStyle(dashThickness * 46, Colour.dark8)
@@ -538,7 +552,7 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     var ghost = new PIXI.Graphics()
     ghost.lineStyle(dashThickness * 2, Colour.dark8)
     ghost.arc(planet.radius, planet.radius, planet.radius, 0, 7)
-    ghost.visible = true
+    ghost.visible = false
     ghost.pivot.set(planet.radius, planet.radius)
     ghost.outline = ghost.addChild(gring)
     planet.ghost = game.stage.addChild(ghost)
@@ -546,9 +560,11 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     // The rotation speed in radians/second
     planet.speed = opm * (1 / 60) * 2 * Math.PI
     planet.rotationConstant = rotationConstant
+    planet.age = startAngle / planet.speed
+
     planet.ships = []
     planet.spawns = []
-    planet.age = startAngle / planet.speed
+
     return planet
 }
 
@@ -601,9 +617,12 @@ function removeShips(planet, n) {
     ships = Math.max(0, ships - n)
 }
 
-function createSpawn(planet) {
-    if (pixels >= 1000 && planet.spawns.length < maxSpawns) {
-        pixels -= 1000
+function createSpawn(planet, force) {
+    if (force || (pixels >= 1000 && planet.spawns.length < maxSpawns)) {
+
+        if (!force) {
+            pixels -= 1000
+        }
 
         var spawn = new PIXI.Sprite(spawnTexture)
 
@@ -627,6 +646,13 @@ function createSpawn(planet) {
         spawn.rotation = angle + (Math.PI / 2)
         planet.addChild(spawn)
         planet.spawns.push(spawn)
+        
+        let spawnsSqr = planet.spawns.length * planet.spawns.length
+        
+        planet.infantry.spawnRate = spawnsSqr
+        
+        planet.infantry.maxParticles = spawnsSqr
+        planet.infantry.frequency = 1 / spawnsSqr
     }
 }
 
@@ -729,7 +755,7 @@ function resizeHud(width, height) {
         width = window.innerWidth
         height = window.innerHeight
     }
-    
+
     pixelText.position.set(hudMargin, hudMargin)
     shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
 
@@ -982,6 +1008,7 @@ var sendingShips
 var planets
 var myPlanet
 var focusPlanet
+var spawnRate = 0
 
 function gameLoop() {
 
@@ -1004,10 +1031,22 @@ function gameLoop() {
         planets[i].rotation = planets[i].age * planets[i].rotationConstant
         // Rotate the orbits (purely for visual effects)
         planets[i].orbit.rotation = -planets[i].age * planets[i].speed / 8
+        // Updates infantry
+        planets[i].infantry.update(eTime)
+        
+        planets[i].infantry.spawnCounter += planets[i].infantry.spawnRate * eTime
+        
+        // Adds the accumulated number of pixels to a user
+        let toAdd = Math.floor(planets[i].infantry.spawnCounter)
+        if (toAdd > 0) {
+            planets[i].infantry.spawnCounter = 0
+            pixels += toAdd
+        }
     }
 
     viewport.update()
 
+    // If the number of pixels has been updated
     if (pixels != lastPixels) {
         lastPixels = pixels
         pixelText.text = 'Pixels: ' + pixels
@@ -1022,7 +1061,7 @@ function gameLoop() {
             buySpawnText.text = '1 Spawn (1000 pixels)'
         }
         resizeHud()
-        
+
         buySpawnText.tint = pixels < 1000 || myPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
     }
     if (ships != lastShips) {
