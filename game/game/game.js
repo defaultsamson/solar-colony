@@ -226,6 +226,7 @@ function onLoad(loader, resources) {
 
     // Setup for testing the game
     myPlanets = [planet2a]
+    yourPlanets = [planet2b]
     //planet1.tint = 0xFFCCCC
     planet2a.tint = 0xFFAAAA
     planet2a.outline.tint = planet2a.tint
@@ -523,7 +524,7 @@ function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) 
     // Infantry
     planet.infantry = new PIXI.particles.Emitter(planet, infantryTexture, infantryParticle)
     planet.infantry.updateSpawnPos(planet.radius, planet.radius)
-    planet.infantry.emit = true
+    planet.infantry.emit = false
     planet.infantry.spawnRate = 0
     planet.infantry.spawnCounter = 0
 
@@ -647,12 +648,7 @@ function createSpawn(planet, force) {
         planet.addChild(spawn)
         planet.spawns.push(spawn)
 
-        let spawnsSqr = planet.spawns.length * planet.spawns.length
-
-        planet.infantry.spawnRate = spawnsSqr
-
-        planet.infantry.maxParticles = spawnsSqr
-        planet.infantry.frequency = 1 / spawnsSqr
+        updateInfantry(planet)
     }
 }
 
@@ -669,7 +665,20 @@ function removeSpawn(planet, n) {
         // Removes the ships from the array
         planet.spawns.splice(removeTo, n)
         updatePurchaseHud()
+
+        updateInfantry(planet)
     }
+}
+
+function updateInfantry(planet) {
+    let spawnsSqr = planet.spawns.length * planet.spawns.length
+
+    planet.infantry.spawnRate = spawnsSqr
+
+    planet.infantry.maxParticles = spawnsSqr
+    planet.infantry.frequency = 1 / spawnsSqr
+
+    planet.infantry.emit = spawnsSqr > 0
 }
 
 //  _    _ _   _ _ 
@@ -991,6 +1000,15 @@ function isMyPlanet(planet) {
     return false
 }
 
+function isYourPlanet(planet) {
+    for (i in yourPlanets) {
+        if (planet == yourPlanets[i]) {
+            return true
+        }
+    }
+    return false
+}
+
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -1015,8 +1033,8 @@ var ships = 0
 // Planet vars
 var planets
 var myPlanets
+var yourPlanets
 var focusPlanet
-var spawnRate = 0
 
 function gameLoop() {
 
@@ -1041,43 +1059,45 @@ function gameLoop() {
         planets[i].orbit.rotation = -planets[i].age * planets[i].speed / 8
         // Updates infantry
         planets[i].infantry.update(eTime)
-
-        planets[i].infantry.spawnCounter += planets[i].infantry.spawnRate * eTime
+    }
+    for (i in myPlanets) {
+        myPlanets[i].infantry.spawnCounter += myPlanets[i].infantry.spawnRate * eTime
 
         // Adds the accumulated number of pixels to a user
-        let toAdd = Math.floor(planets[i].infantry.spawnCounter)
+        let toAdd = Math.floor(myPlanets[i].infantry.spawnCounter)
         if (toAdd > 0) {
-            planets[i].infantry.spawnCounter = 0
+            myPlanets[i].infantry.spawnCounter = 0
             pixels += toAdd
         }
     }
 
     viewport.update()
 
+    if (ships != lastShips) {
+        lastShips = ships
+        shipsText.text = 'Ships: ' + ships
+    }
+    if (pixels != lastPixels) {
+        lastPixels = pixels
+        pixelText.text = 'Pixels: ' + pixels
+    }
+
     if (focusPlanet && isMyPlanet(focusPlanet)) {
         // If the number of pixels has been updated
-        if (pixels != lastPixels) {
-            lastPixels = pixels
-            pixelText.text = 'Pixels: ' + pixels
+        buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
+        buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
+        buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
 
-            buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
-            buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
-            buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
-
-            if (focusPlanet.spawns.length >= maxSpawns) {
-                buySpawnText.text = 'MAX SPAWNS'
-            } else {
-                buySpawnText.text = '1 Spawn (1000 pixels)'
-            }
-            resizeHud()
-
-            buySpawnText.tint = pixels < 1000 || focusPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
+        if (focusPlanet.spawns.length >= maxSpawns) {
+            buySpawnText.text = 'MAX SPAWNS'
+        } else {
+            buySpawnText.text = '1 Spawn (1000 pixels)'
         }
-        if (ships != lastShips) {
-            lastShips = ships
-            shipsText.text = 'Ships: ' + ships
-            sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
-        }
+        resizeHud()
+
+        buySpawnText.tint = pixels < 1000 || focusPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
+
+        sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
 
         buy1ShipText.visible = true
         buy10ShipText.visible = true
