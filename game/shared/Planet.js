@@ -1,3 +1,8 @@
+// (Client) The max number of ships to display in storage per planet
+const maxShips = 100
+// (Shared) The max number of spawns permitted
+const maxSpawns = 10
+
 class Planet extends(isServer ? Object : PIXI.Sprite) {
     constructor(texture, orbit, scale, rotationConstant, startAngle, opm) {
         super(texture)

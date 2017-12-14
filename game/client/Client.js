@@ -234,8 +234,13 @@ class System extends Object {
 //             | |              
 //             |_|              
 
+// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
+const clickThreshold = 40
+// The animation time (in milliseconds) for zooming, panning, etc.
 const animTime = 300
+// The height of the viewport after zooming on a planet
 const zoomHeight = 250
+// The height of the viewport after zooming back out to the sun
 const centerHeight = 800
 var snappingToPlanet = false
 var snappingToCenter = false
@@ -456,29 +461,12 @@ viewport.on('snap-end', function () {
     snappingToCenter = false
 })
 
-//   _____                _       
-//  / ____|              | |      
-// | |     _ __ ___  __ _| |_ ___ 
-// | |    | '__/ _ \/ _` | __/ _ \
-// | |____| | |  __/ (_| | ||  __/
-//  \_____|_|  \___|\__,_|\__\___|
-
-const minDashes = 2
-const dashThickness = 1.4
-
-// The max number of ships to display in storage per planet
-const maxShips = 100
-const maxSpawns = 10
-
 //  _    _ _   _ _ 
 // | |  | | | (_) |
 // | |  | | |_ _| |
 // | |  | | __| | |
 // | |__| | |_| | |
 //  \____/ \__|_|_|
-
-// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
-const clickThreshold = 40
 
 function distSqr(x1, y1, x2, y2) {
     let x = (x2 - x1)
