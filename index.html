@@ -1,5 +1,5 @@
 <head>
-    <title>Viewport Test</title>
+    <title>space-territory</title>
     <style>
         body {
             margin: 0;
@@ -8,13 +8,20 @@
         }
 
     </style>
-    <script src="game/lib/key.js"></script>
-    <script src="game/lib/colours.js"></script>
-    <script src="game/lib/particle.js"></script>
-    <script src="game/lib/libraries.js"></script>
+    <script src="game/client/lib/key.js"></script>
+    <script src="game/client/lib/colours.js"></script>
+    <script src="game/client/lib/particle.js"></script>
+    <script src="game/client/lib/libraries.js"></script>
+
+    <script src="game/shared/IsServer.js"></script>
+    <script src="game/shared/Orbit.js"></script>
+    <script src="game/shared/Planet.js"></script>
+    <script src="game/shared/Ship.js"></script>
+
+    <script src="game/client/Line.js"></script>
 </head>
 
 <body>
     <!-- Keep something in the body so that it isn't null -->
-    <script src="game/game/game.js"></script>
+    <script src="game/client/Client.js"></script>
 </body>
