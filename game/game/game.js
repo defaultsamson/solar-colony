@@ -24,16 +24,15 @@ class Line extends PIXI.Graphics {
     }
 }
 
-class Ship extends Object {
+class Ship extends PIXI.Sprite {
     constructor(fromX, fromY, toX, toY, speed, amount, tint, planet, duration) {
-        super()
+        super(shipTexture)
 
-        this.sprite = game.stage.addChild(new PIXI.Sprite(shipTexture))
-        this.sprite.pivot.set(0.5, 0.5)
-        this.sprite.anchor.set(0.5, 0.5)
-        this.sprite.scale.set(0.5)
-        this.sprite.position.set(fromX, fromY)
-        this.sprite.tint = tint
+        this.pivot.set(0.5, 0.5)
+        this.anchor.set(0.5, 0.5)
+        this.scale.set(0.5)
+        this.position.set(fromX, fromY)
+        this.tint = tint
 
         this.amount = amount
         this.planet = planet
@@ -51,7 +50,7 @@ class Ship extends Object {
         this.vX = dX * speed / dnet
         this.vY = dY * speed / dnet
 
-        this.sprite.rotation = (this.vX > 0 ? 1 : -1) * (Math.PI / 2 + Math.asin(this.vY / speed))
+        this.rotation = (this.vX > 0 ? 1 : -1) * (Math.PI / 2 + Math.asin(this.vY / speed))
     }
 
     update(delta) {
@@ -59,13 +58,197 @@ class Ship extends Object {
         if (this.cumulativeDuration >= this.duration) {
             this.arrive()
         } else {
-            this.sprite.position.x += this.vX * delta
-            this.sprite.position.y += this.vY * delta
+            this.position.x += this.vX * delta
+            this.position.y += this.vY * delta
         }
     }
 
     arrive() {
-        game.stage.removeChild(this.sprite)
+        game.stage.removeChild(this)
+    }
+}
+
+class Orbit extends PIXI.Graphics {
+    constructor(x, y, radius, dashLength) {
+        super()
+
+        var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
+        var dashRadians = dashLength / radius
+        var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
+
+        this.radius = radius
+
+        // If it's a full circle, draw it full (more optimised)
+        if (spacingRadians <= 0) {
+            this.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+            this.arc(x, y, radius, 0, 2 * Math.PI)
+        } else { // Else, draw it dashed
+            for (var i = 0; i < numOfDashes; i++) {
+                var start = i * (dashRadians + spacingRadians)
+                var end1 = start + dashRadians
+                var end2 = end1 + spacingRadians
+                this.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+                this.arc(x, y, radius, start, end1)
+                this.lineStyle(dashThickness, Colour.background, 0)
+                this.arc(x, y, radius, end1, end2)
+            }
+        }
+
+        // disgusting
+        // this.cacheAsBitmap = true
+    }
+}
+
+class Planet extends PIXI.Sprite {
+    constructor(texture, orbit, scale, rotationConstant, startAngle, opm) {
+        super(texture)
+
+        this.radius = 0.5 * this.width
+        this.orbit = orbit
+        this.pivot.set(this.radius, this.radius)
+
+        // Infantry
+        this.infantry = new PIXI.particles.Emitter(this, infantryTexture, infantryParticle)
+        this.infantry.updateSpawnPos(this.radius, this.radius)
+        this.infantry.emit = false
+        this.infantry.spawnRate = 0
+        this.infantry.spawnCounter = 0
+
+        // Selection ring
+        var ring = new PIXI.Graphics()
+        ring.lineStyle(dashThickness * 46, Colour.dark8)
+        ring.arc(this.radius, this.radius, this.radius * 3, 0, 7)
+        ring.visible = false
+        this.outline = this.addChild(ring)
+
+        // Ghost selection ring
+        var gring = new PIXI.Graphics()
+        gring.lineStyle(scale * dashThickness * 46, Colour.dark8)
+        gring.arc(scale * this.radius, scale * this.radius, scale * this.radius * 3, 0, 7)
+        gring.visible = false
+
+        // Set the scale
+        this.scale.set(scale)
+        this.radius = this.radius * this.scale.x
+
+        // orbits per minute
+        this.opm = opm
+
+        // Ghosting ring
+        var ghost = new PIXI.Graphics()
+        ghost.lineStyle(dashThickness * 2, Colour.dark8)
+        ghost.arc(this.radius, this.radius, this.radius, 0, 7)
+        ghost.visible = false
+        ghost.pivot.set(this.radius, this.radius)
+        ghost.outline = ghost.addChild(gring)
+        this.ghost = game.stage.addChild(ghost)
+
+        // The rotation speed in radians/second
+        this.speed = opm * (1 / 60) * 2 * Math.PI
+        this.rotationConstant = rotationConstant
+        this.age = startAngle / this.speed
+
+        this.ships = []
+        this.sendingShips = []
+        this.spawns = []
+    }
+
+    update(delta) {
+        // Age the planet
+        this.age += delta;
+        var pos = this.calcPosition()
+        this.position.set(pos.x, pos.y)
+        // Rotate the planet (purely for visual effects)
+        this.rotation = this.age * this.rotationConstant
+        // Rotate the orbits (purely for visual effects)
+        this.orbit.rotation = -this.age * this.speed / 8
+        // Updates infantry
+        this.infantry.update(delta)
+
+        if (this.isMyPlanet()) {
+            this.infantry.spawnCounter += this.infantry.spawnRate * delta
+
+            // Adds the accumulated number of pixels to a user
+            let toAdd = Math.floor(this.infantry.spawnCounter)
+            if (toAdd > 0) {
+                this.infantry.spawnCounter = 0
+                pixels += toAdd
+            }
+        }
+    }
+
+    timeToFastestIntersect(to) {
+        // Can be ound on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
+
+        let r = to.orbit.radius
+        let x1 = this.position.x
+        let y1 = this.position.y
+        let s1Sqr = shipSpeed * shipSpeed
+
+        // The first part of the equation
+        let frst = (r * r) + (x1 * x1) + (y1 * y1)
+
+        var time = 0
+        var iterations = 0
+
+        do {
+            iterations++
+            let pos = to.calcPosition(time)
+
+            let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
+
+            let delta = d - time
+
+            // The smaller the right side of the < is, the more accurate, but also the more
+            if (delta < 0.5) {
+                return time
+            } else if (delta < 2) {
+                time += 0.1
+            } else if (delta < 4) {
+                time += 0.5
+            } else {
+                time += 1
+            }
+
+            let desired
+        } while (iterations < 1000)
+
+        return {
+            x: 0,
+            y: 0
+        }
+    }
+
+    calcPosition(additionalAge) {
+        if (!additionalAge)
+            additionalAge = 0
+
+        let radius = this.orbit.radius
+        let age = this.age + additionalAge
+        let x = Math.cos(age * this.speed) * radius
+        let y = Math.sin(age * this.speed) * radius
+        return {
+            x: x,
+            y: y
+        }
+    }
+
+    isMyPlanet() {
+        for (i in system.myPlanets) {
+            if (this == system.myPlanets[i]) {
+                return true
+            }
+        }
+        return false
+    }
+
+    isYourPlanet() {
+        for (i in system.yourPlanets) {
+            if (this == system.yourPlanets[i]) {
+                return true
+            }
+        }
+        return false
     }
 }
 
@@ -144,16 +327,18 @@ PIXI.loader
 const hudMargin = 20
 const textSize = 30
 
-var planets
-var sun
+var system
 
 var hud
+
+var resources
 
 var shipTexture
 var spawnTexture
 var infantryTexture
 
-function onLoad(loader, resources) {
+function onLoad(loader, res) {
+    resources = res
 
     shipTexture = resources.ship.texture
     spawnTexture = resources.spawn.texture
@@ -161,22 +346,22 @@ function onLoad(loader, resources) {
 
     const stage = game.stage
 
-    const orbit1 = game.stage.addChild(createOrbit(0, 0, 150, 25))
-    const orbit2 = game.stage.addChild(createOrbit(0, 0, 220, 25))
-    const orbit3 = game.stage.addChild(createOrbit(0, 0, 270, 25))
-    const orbit4 = game.stage.addChild(createOrbit(0, 0, 360, 25))
+    const orbit1 = game.stage.addChild(new Orbit(0, 0, 150, 25))
+    const orbit2 = game.stage.addChild(new Orbit(0, 0, 220, 25))
+    const orbit3 = game.stage.addChild(new Orbit(0, 0, 270, 25))
+    const orbit4 = game.stage.addChild(new Orbit(0, 0, 360, 25))
 
-    sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
+    var sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
     sun.emit = true
 
-    const planet1 = createPlanet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
-    const planet2a = createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1)
-    const planet2b = createPlanet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1)
-    const planet3 = createPlanet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
-    const planet4 = createPlanet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
+    const planet1 = new Planet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
+    const planet2a = new Planet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1)
+    const planet2b = new Planet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1)
+    const planet3 = new Planet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
+    const planet4 = new Planet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
 
-    planets = [planet1, planet2a, planet2b, planet3, planet4]
-    drawLines = []
+    var planets = [planet1, planet2a, planet2b, planet3, planet4]
+    var drawLines = []
     for (i in planets) {
         drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
     }
@@ -225,8 +410,8 @@ function onLoad(loader, resources) {
     }
 
     // Setup for testing the game
-    myPlanets = [planet2a]
-    yourPlanets = [planet2b]
+    var myPlanets = [planet2a]
+    var yourPlanets = [planet2b]
     //planet1.tint = 0xFFCCCC
     planet2a.tint = 0xFFAAAA
     planet2a.outline.tint = planet2a.tint
@@ -237,6 +422,41 @@ function onLoad(loader, resources) {
 
     createSpawn(planet2a, true)
     createSpawn(planet2b, true)
+    
+    system = new System(sun, planets, drawLines, myPlanets, yourPlanets)
+}
+
+class System extends Object {
+    constructor(sun, planets, drawLines, myPlanets, yourPlanets) {
+        super()
+        
+        this.sun = sun
+        this.planets = planets
+        this.drawLines = drawLines
+        this.myPlanets = myPlanets
+        this.yourPlanets = yourPlanets
+    }
+
+    update(delta) {
+        // Update the sun particle emitter
+        this.sun.update(delta)
+
+        for (i in this.planets) {
+            this.planets[i].update(delta)
+        }
+
+        // If drawing the ship travel lines
+        if (isSendingShips()) {
+            updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
+        }
+
+        // Move into Game class
+        for (i in this.planets) {
+            for (var k in this.planets[i].sendingShips) {
+                this.planets[i].sendingShips[k].update(delta)
+            }
+        }
+    }
 }
 
 //  _____                   _   
@@ -356,8 +576,8 @@ function onMouseClick(e) {
         updateSelectedPlanet(e.world.x, e.world.y)
 
         if (selectedPlanet) {
-            let duration = timeToFastestIntersect(drawLinesFrom, selectedPlanet)
-            var pos = calcPlanetPosition(selectedPlanet, duration)
+            let duration = drawLinesFrom.timeToFastestIntersect(selectedPlanet)
+            var pos = selectedPlanet.calcPosition(duration)
             // console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
             sendShips(drawLinesFrom, pos.x, pos.y, selectedPlanet, sendShipsAmount, duration)
         }
@@ -424,7 +644,7 @@ function onMouseClick(e) {
         snappingToPlanet = planet
 
         // The calculated future positions of the planet
-        var pos = calcPlanetPosition(planet, (animTime / 1000))
+        var pos = planet.calcPosition(animTime / 1000)
 
         // Snap to that position
         viewport.snap(pos.x, pos.y, {
@@ -483,91 +703,6 @@ const dashThickness = 1.4
 // The max number of ships to display in storage per planet
 const maxShips = 100
 const maxSpawns = 10
-
-function createOrbit(x, y, radius, dashLength) {
-
-    var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
-    var dashRadians = dashLength / radius
-    var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
-
-    var pixiCircle = new PIXI.Graphics()
-    pixiCircle.radius = radius
-
-    // If it's a full circle, draw it full (more optimised)
-    if (spacingRadians <= 0) {
-        pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
-        pixiCircle.arc(x, y, radius, 0, 2 * Math.PI)
-    } else { // Else, draw it dashed
-        for (i = 0; i < numOfDashes; i++) {
-            var start = i * (dashRadians + spacingRadians)
-            var end1 = start + dashRadians
-            var end2 = end1 + spacingRadians
-            pixiCircle.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
-            pixiCircle.arc(x, y, radius, start, end1)
-            pixiCircle.lineStyle(dashThickness, Colour.background, 0)
-            pixiCircle.arc(x, y, radius, end1, end2)
-        }
-    }
-
-    // disgusting
-    // pixiCircle.cacheAsBitmap = true
-
-    return pixiCircle
-}
-
-function createPlanet(texture, orbit, scale, rotationConstant, startAngle, opm) {
-    var planet = new PIXI.Sprite(texture)
-    planet.radius = 0.5 * planet.width
-    planet.orbit = orbit
-    planet.pivot.set(planet.radius, planet.radius)
-
-    // Infantry
-    planet.infantry = new PIXI.particles.Emitter(planet, infantryTexture, infantryParticle)
-    planet.infantry.updateSpawnPos(planet.radius, planet.radius)
-    planet.infantry.emit = false
-    planet.infantry.spawnRate = 0
-    planet.infantry.spawnCounter = 0
-
-    // Selection ring
-    var ring = new PIXI.Graphics()
-    ring.lineStyle(dashThickness * 46, Colour.dark8)
-    ring.arc(planet.radius, planet.radius, planet.radius * 3, 0, 7)
-    ring.visible = false
-    planet.outline = planet.addChild(ring)
-
-    // Ghost selection ring
-    var gring = new PIXI.Graphics()
-    gring.lineStyle(scale * dashThickness * 46, Colour.dark8)
-    gring.arc(scale * planet.radius, scale * planet.radius, scale * planet.radius * 3, 0, 7)
-    gring.visible = false
-
-    // Set the scale
-    planet.scale.set(scale)
-    planet.radius = planet.radius * planet.scale.x
-
-    // orbits per minute
-    planet.opm = opm
-
-    // Ghosting ring
-    var ghost = new PIXI.Graphics()
-    ghost.lineStyle(dashThickness * 2, Colour.dark8)
-    ghost.arc(planet.radius, planet.radius, planet.radius, 0, 7)
-    ghost.visible = false
-    ghost.pivot.set(planet.radius, planet.radius)
-    ghost.outline = ghost.addChild(gring)
-    planet.ghost = game.stage.addChild(ghost)
-
-    // The rotation speed in radians/second
-    planet.speed = opm * (1 / 60) * 2 * Math.PI
-    planet.rotationConstant = rotationConstant
-    planet.age = startAngle / planet.speed
-
-    planet.ships = []
-    planet.sendingShips = []
-    planet.spawns = []
-
-    return planet
-}
 
 function createShips(planet, n, cost) {
     if (pixels >= cost) {
@@ -692,10 +827,10 @@ function updateInfantry(planet) {
 const clickThreshold = 40
 
 function getPlanet(x, y) {
-    for (var i in planets) {
-        let clickThresh = (planets[i].radius + clickThreshold)
-        if (distSqr(x, y, planets[i].x, planets[i].y) < clickThresh * clickThresh) {
-            return planets[i]
+    for (var i in system.planets) {
+        let clickThresh = (system.planets[i].radius + clickThreshold)
+        if (distSqr(x, y, system.planets[i].x, system.planets[i].y) < clickThresh * clickThresh) {
+            return system.planets[i]
         }
     }
 
@@ -710,20 +845,6 @@ function distSqr(x1, y1, x2, y2) {
 
 function exists(n) {
     return typeof n !== 'undefined' && n !== null
-}
-
-function calcPlanetPosition(planet, additionalAge) {
-    if (!additionalAge)
-        additionalAge = 0
-
-    let radius = planet.orbit.radius
-    let age = planet.age + additionalAge
-    let x = Math.cos(age * planet.speed) * radius
-    let y = Math.sin(age * planet.speed) * radius
-    return {
-        x: x,
-        y: y
-    }
 }
 
 function resize() {
@@ -778,7 +899,6 @@ function resizeHud(width, height) {
 }
 
 var drawLinesFrom
-var drawLines
 
 function goToSendShipsScreen(fromPlanet, amount) {
     if (ships >= amount) {
@@ -792,13 +912,13 @@ function goToSendShipsScreen(fromPlanet, amount) {
 }
 
 function cancelSendShips() {
-    for (i in drawLines) {
-        drawLines[i].visible = false
+    for (i in system.drawLines) {
+        system.drawLines[i].visible = false
     }
-    for (i in planets) {
-        planets[i].outline.visible = false
-        planets[i].ghost.visible = false
-        planets[i].ghost.outline.visible = false
+    for (i in system.planets) {
+        system.planets[i].outline.visible = false
+        system.planets[i].ghost.visible = false
+        system.planets[i].ghost.outline.visible = false
     }
     drawLinesFrom = null
     sendShipsAmount = 0
@@ -822,53 +942,10 @@ function isBetween(x, y, z, error) {
 function sendShips(fromPlanet, toX, toY, toPlanet, amount, duration) {
     removeShips(fromPlanet, amount)
 
-    var ship = fromPlanet.sendingShips.push(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet, duration))
+    var ship = fromPlanet.sendingShips.push(game.stage.addChild(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet, duration)))
 }
 
 const shipSpeed = 15 // units per second
-
-function timeToFastestIntersect(from, to) {
-
-    // Found on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
-
-    let r = to.orbit.radius
-    let x1 = from.position.x
-    let y1 = from.position.y
-    let s1Sqr = shipSpeed * shipSpeed
-
-    // The first part of the equation
-    let frst = (r * r) + (x1 * x1) + (y1 * y1)
-
-    var time = 0
-    var iterations = 0
-
-    do {
-        iterations++
-        let pos = calcPlanetPosition(to, time)
-
-        let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
-
-        let delta = d - time
-
-        // The smaller the right side of the < is, the more accurate, but also the more
-        if (delta < 0.5) {
-            return time
-        } else if (delta < 2) {
-            time += 0.1
-        } else if (delta < 4) {
-            time += 0.5
-        } else {
-            time += 1
-        }
-
-        let desired
-    } while (iterations < 1000)
-
-    return {
-        x: 0,
-        y: 0
-    }
-}
 
 function updateSelectedPlanet(mouse) {
     updateLines++
@@ -879,12 +956,12 @@ function updateSelectedPlanet(mouse) {
     }
 
     // For each planet, draw a line from the drawLinesFrom planet to it
-    for (i in planets) {
+    for (i in system.planets) {
         // Don't draw a line from the drawLinesFrom planet to itself
-        if (planets[i] != drawLinesFrom) {
+        if (system.planets[i] != drawLinesFrom) {
             // Only draw lines every update cycle
             if (updateLines == 0) {
-                let planet = planets[i]
+                let planet = system.planets[i]
                 planet.outline.visible = false
                 planet.ghost.outline.visible = false
 
@@ -892,8 +969,8 @@ function updateSelectedPlanet(mouse) {
                 let pX = drawLinesFrom.position.x
                 let pY = drawLinesFrom.position.y
 
-                let targetTime = timeToFastestIntersect(drawLinesFrom, planet)
-                let target = calcPlanetPosition(planet, targetTime)
+                let targetTime = drawLinesFrom.timeToFastestIntersect(planet)
+                let target = planet.calcPosition(targetTime)
 
                 // Line Slope (origin is the Planet Player pos)
                 let mX = target.x - pX
@@ -917,11 +994,11 @@ function updateSelectedPlanet(mouse) {
 
                 // If it doesn't collide with the sun, test if it collides with a planet
                 if (!collides) {
-                    for (n in planets) {
-                        if (planets[n] != drawLinesFrom && planets[n] != planet) {
+                    for (n in system.planets) {
+                        if (system.planets[n] != drawLinesFrom && system.planets[n] != planet) {
                             // current planet of interest
-                            let current = planets[n]
-                            let cPos = calcPlanetPosition(current, targetTime)
+                            let current = system.planets[n]
+                            let cPos = current.calcPosition(targetTime)
                             // If the target is within the bounds of the two planets
                             if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
                                 // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
@@ -941,7 +1018,7 @@ function updateSelectedPlanet(mouse) {
                     }
                 }
 
-                drawLines[i].visible = !collides
+                system.drawLines[i].visible = !collides
                 planet.ghost.visible = !collides
 
                 if (planet.ghost.visible = !collides) {
@@ -972,8 +1049,8 @@ function updateSelectedPlanet(mouse) {
                 }
             }
 
-            drawLines[i].setPoints([planets[i].ghost.position.x,
-                                       planets[i].ghost.position.y,
+            system.drawLines[i].setPoints([system.planets[i].ghost.position.x,
+                                       system.planets[i].ghost.position.y,
                                        drawLinesFrom.position.x,
                                        drawLinesFrom.position.y])
         }
@@ -989,24 +1066,6 @@ function updateSelectedPlanet(mouse) {
 
 function updatePurchaseHud() {
     lastPixels = -1
-}
-
-function isMyPlanet(planet) {
-    for (i in myPlanets) {
-        if (planet == myPlanets[i]) {
-            return true
-        }
-    }
-    return false
-}
-
-function isYourPlanet(planet) {
-    for (i in yourPlanets) {
-        if (planet == yourPlanets[i]) {
-            return true
-        }
-    }
-    return false
 }
 
 //   _____                      
@@ -1031,9 +1090,6 @@ var lastShips = 1
 var ships = 0
 
 // Planet vars
-var planets
-var myPlanets
-var yourPlanets
 var focusPlanet
 
 function gameLoop() {
@@ -1045,31 +1101,7 @@ function gameLoop() {
     lastElapsed = now
     let eTime = (elasped * 0.001)
 
-    // Update the particle emitter
-    sun.update(eTime)
-
-    for (i in planets) {
-        // Age the planet
-        planets[i].age += eTime;
-        var pos = calcPlanetPosition(planets[i])
-        planets[i].position.set(pos.x, pos.y)
-        // Rotate the planet (purely for visual effects)
-        planets[i].rotation = planets[i].age * planets[i].rotationConstant
-        // Rotate the orbits (purely for visual effects)
-        planets[i].orbit.rotation = -planets[i].age * planets[i].speed / 8
-        // Updates infantry
-        planets[i].infantry.update(eTime)
-    }
-    for (i in myPlanets) {
-        myPlanets[i].infantry.spawnCounter += myPlanets[i].infantry.spawnRate * eTime
-
-        // Adds the accumulated number of pixels to a user
-        let toAdd = Math.floor(myPlanets[i].infantry.spawnCounter)
-        if (toAdd > 0) {
-            myPlanets[i].infantry.spawnCounter = 0
-            pixels += toAdd
-        }
-    }
+    system.update(eTime)
 
     viewport.update()
 
@@ -1082,7 +1114,7 @@ function gameLoop() {
         pixelText.text = 'Pixels: ' + pixels
     }
 
-    if (focusPlanet && isMyPlanet(focusPlanet)) {
+    if (focusPlanet && focusPlanet.isMyPlanet()) {
         // If the number of pixels has been updated
         buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
         buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
@@ -1110,17 +1142,6 @@ function gameLoop() {
         buy100ShipText.visible = false
         sendShipText.visible = false
         buySpawnText.visible = false
-    }
-
-    // If drawing the ship travel lines
-    if (isSendingShips()) {
-        updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
-    }
-
-    for (i in planets) {
-        for (k in planets[i].sendingShips) {
-            planets[i].sendingShips[k].update(eTime)
-        }
     }
 
     updateHud()
