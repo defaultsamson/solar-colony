@@ -1,4 +1,4 @@
-//   _____      _               
+`` //   _____      _               
 //  / ____|    | |              
 // | (___   ___| |_ _   _ _ __  
 //  \___ \ / _ \ __| | | | '_ \ 
@@ -130,7 +130,7 @@ function onLoad(loader, res) {
     viewport.fitHeight(centerHeight)
     viewport.moveCenter(0, 0)
 
-    hud = new PIXI.Container()
+    hud = new Hud()
     stage.addChild(hud)
 
     var style = {
@@ -181,50 +181,6 @@ function onLoad(loader, res) {
     system = new System(sun, planets, drawLines, myPlanets, yourPlanets)
 }
 
-class System extends Object {
-    constructor(sun, planets, drawLines, myPlanets, yourPlanets) {
-        super()
-
-        this.sun = sun
-        this.planets = planets
-        this.drawLines = drawLines
-        this.myPlanets = myPlanets
-        this.yourPlanets = yourPlanets
-    }
-
-    update(delta) {
-        // Update the sun particle emitter
-        this.sun.update(delta)
-
-        for (i in this.planets) {
-            this.planets[i].update(delta)
-        }
-
-        // If drawing the ship travel lines
-        if (isSendingShips()) {
-            updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
-        }
-
-        // Move into Game class
-        for (i in this.planets) {
-            for (var k in this.planets[i].sendingShips) {
-                this.planets[i].sendingShips[k].update(delta)
-            }
-        }
-    }
-
-    getPlanet(x, y) {
-        for (var i in this.planets) {
-            let clickThresh = (this.planets[i].radius + clickThreshold)
-            if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickThresh * clickThresh) {
-                return this.planets[i]
-            }
-        }
-
-        return null
-    }
-}
-
 //  _____                   _   
 // |_   _|                 | |  
 //   | |  _ __  _ __  _   _| |_ 
@@ -234,8 +190,7 @@ class System extends Object {
 //             | |              
 //             |_|              
 
-// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
-const clickThreshold = 40
+
 // The animation time (in milliseconds) for zooming, panning, etc.
 const animTime = 300
 // The height of the viewport after zooming on a planet
@@ -324,7 +279,7 @@ function updateKeyboard() {
 
     if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
 
-        if (isSendingShips()) {
+        if (isChoosingShipSend()) {
             cancelSendShips()
         } else {
             centerView()
@@ -343,14 +298,11 @@ viewport.on('wheel', stopSnap)
 viewport.on('click', onMouseClick)
 
 function onMouseClick(e) {
-    if (isSendingShips()) {
-        updateSelectedPlanet(e.world.x, e.world.y)
+    if (isChoosingShipSend()) {
+        // updateSelectedPlanet(e.world.x, e.world.y)
 
         if (selectedPlanet) {
-            let duration = drawLinesFrom.timeToFastestIntersect(selectedPlanet)
-            var pos = selectedPlanet.calcPosition(duration)
-            // console.log('closest intersect: (' + pos.x + ', ' + pos.y + ')')
-            sendShips(drawLinesFrom, pos.x, pos.y, selectedPlanet, sendShipsAmount, duration)
+            sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
         }
         cancelSendShips()
 
@@ -456,9 +408,8 @@ viewport.on('snap-end', function () {
     if (snappingToPlanet) {
         viewport.follow(snappingToPlanet)
         focusPlanet = snappingToPlanet
-        snappingToPlanet = false
     }
-    snappingToCenter = false
+    stopSnap()
 })
 
 //  _    _ _   _ _ 
@@ -467,16 +418,6 @@ viewport.on('snap-end', function () {
 // | |  | | __| | |
 // | |__| | |_| | |
 //  \____/ \__|_|_|
-
-function distSqr(x1, y1, x2, y2) {
-    let x = (x2 - x1)
-    let y = (y2 - y1)
-    return (x * x) + (y * y)
-}
-
-function exists(n) {
-    return typeof n !== 'undefined' && n !== null
-}
 
 function resize() {
     window.scrollTo(0, 0)
@@ -503,197 +444,10 @@ function resize() {
     }
 
     stopSnap()
-    resizeHud(width, height)
-}
-
-function updateHud() {
-    hud.position.copy(viewport.toWorld(0, 0))
-    hud.scale.set(1 / game.stage.scale.x)
-}
-
-function resizeHud(width, height) {
-    if (!exists(width)) {
-        width = window.innerWidth
-        height = window.innerHeight
-    }
-
-    pixelText.position.set(hudMargin, hudMargin)
-    shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
-
-    buy1ShipText.position.set(width / 2 - buy1ShipText.width - 100, (height - buy1ShipText.height) / 2 + buy10ShipText.height + 2)
-    buy10ShipText.position.set(width / 2 - buy10ShipText.width - 100, (height - buy10ShipText.height) / 2)
-    buy100ShipText.position.set(width / 2 - buy100ShipText.width - 100, (height - buy100ShipText.height) / 2 - buy10ShipText.height - 2)
-
-    sendShipText.position.set(width / 2 + 100, (height - buy10ShipText.height) / 2)
-
-    buySpawnText.position.set(width / 2 - (buySpawnText.width / 2), -100 + (height - buySpawnText.height) / 2)
-}
-
-var drawLinesFrom
-
-function goToSendShipsScreen(fromPlanet, amount) {
-    if (ships >= amount) {
-        updateLines = ticksPerCollideUpdate
-        drawLinesFrom = fromPlanet
-        sendShipsAmount = amount
-        viewport.pausePlugin('drag')
-        viewport.pausePlugin('wheel')
-        centerView()
-    }
-}
-
-function cancelSendShips() {
-    for (i in system.drawLines) {
-        system.drawLines[i].visible = false
-    }
-    for (i in system.planets) {
-        system.planets[i].outline.visible = false
-        system.planets[i].ghost.visible = false
-        system.planets[i].ghost.outline.visible = false
-    }
-    drawLinesFrom = null
-    sendShipsAmount = 0
-    viewport.resumePlugin('drag')
-    viewport.resumePlugin('wheel')
-}
-
-function isSendingShips() {
-    return drawLinesFrom
-}
-
-// Tells if the value x is between or equal to y and z within the error margin (error should be positive)
-function isBetween(x, y, z, error) {
-    if (y > z) {
-        return z - error < x && x < y + error
-    } else {
-        return y - error < x && x < z + error
-    }
-}
-
-function sendShips(fromPlanet, toX, toY, toPlanet, amount, duration) {
-    fromPlanet.removeShips(amount)
-
-    var ship = fromPlanet.sendingShips.push(game.stage.addChild(new Ship(fromPlanet.position.x, fromPlanet.position.y, toX, toY, shipSpeed, amount, fromPlanet.tint, toPlanet, duration)))
+    hud.resize(width, height)
 }
 
 const shipSpeed = 15 // units per second
-
-function updateSelectedPlanet(mouse) {
-    updateLines++
-
-    if (updateLines > ticksPerCollideUpdate) {
-        updateLines = 0
-        selectedPlanet = null
-    }
-
-    // For each planet, draw a line from the drawLinesFrom planet to it
-    for (i in system.planets) {
-        // Don't draw a line from the drawLinesFrom planet to itself
-        if (system.planets[i] != drawLinesFrom) {
-            // Only draw lines every update cycle
-            if (updateLines == 0) {
-                let planet = system.planets[i]
-                planet.outline.visible = false
-                planet.ghost.outline.visible = false
-
-                // Player Planet
-                let pX = drawLinesFrom.position.x
-                let pY = drawLinesFrom.position.y
-
-                let targetTime = drawLinesFrom.timeToFastestIntersect(planet)
-                let target = planet.calcPosition(targetTime)
-
-                // Line Slope (origin is the Planet Player pos)
-                let mX = target.x - pX
-                let mY = target.y - pY
-
-                var collides = false
-
-                // Tests collision for the sun (same as above with planets)
-                if (isBetween(0, pX, target.x, sunCollisionRadius) && isBetween(0, pY, target.y, sunCollisionRadius)) {
-                    // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-                    let a = -mY
-                    let b = mX
-                    let c = (pX * mY) - (mX * pY)
-                    var distSquared = (c * c) / (a * a + b * b)
-
-                    // if the tradjectory intersects with a planet
-                    if (distSquared < sunCollisionRadius * sunCollisionRadius) {
-                        collides = true
-                    }
-                }
-
-                // If it doesn't collide with the sun, test if it collides with a planet
-                if (!collides) {
-                    for (n in system.planets) {
-                        if (system.planets[n] != drawLinesFrom && system.planets[n] != planet) {
-                            // current planet of interest
-                            let current = system.planets[n]
-                            let cPos = current.calcPosition(targetTime)
-                            // If the target is within the bounds of the two planets
-                            if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
-                                // https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
-                                let a = -mY
-                                let b = mX
-                                let c = (pX * mY) - (mX * pY)
-                                let numerator = (a * cPos.x + b * cPos.y + c)
-                                var distSquared = (numerator * numerator) / (a * a + b * b)
-
-                                // if the tradjectory intersects with a planet
-                                if (distSquared < current.radius * current.radius) {
-                                    collides = true
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-
-                system.drawLines[i].visible = !collides
-                planet.ghost.visible = !collides
-
-                if (planet.ghost.visible = !collides) {
-                    planet.ghost.position.set(target.x, target.y)
-                }
-
-                // Planet selection via mouse
-                if (!collides) {
-                    let targetDist = distSqr(mouse.x, mouse.y, target.x, target.y)
-                    let planetDist = distSqr(mouse.x, mouse.y, planet.position.x, planet.position.y)
-
-                    let radSqr = distSqr(0, 0, 0, selectPlanetRadius + planet.radius)
-
-                    if (targetDist < radSqr || planetDist < radSqr) {
-                        if (!selectedPlanet) {
-                            selectedPlanet = planet
-                        } else {
-                            // if the mouse is within the selection radius of the planet
-
-                            let selectedDist = distSqr(mouse.x, mouse.y, selectedPlanet.position.x, selectedPlanet.position.y)
-                            let selectedGhostDist = distSqr(mouse.x, mouse.y, selectedPlanet.ghost.position.x, selectedPlanet.ghost.position.y)
-
-                            if ((targetDist < selectedDist && targetDist < selectedGhostDist) || (planetDist < selectedDist && planetDist < selectedGhostDist)) {
-                                selectedPlanet = planet
-                            }
-                        }
-                    }
-                }
-            }
-
-            system.drawLines[i].setPoints(system.planets[i].ghost.position.x,
-                system.planets[i].ghost.position.y,
-                drawLinesFrom.position.x,
-                drawLinesFrom.position.y)
-        }
-    }
-
-    if (updateLines == 0) {
-        if (selectedPlanet) {
-            selectedPlanet.outline.visible = true
-            selectedPlanet.ghost.outline.visible = true
-        }
-    }
-}
 
 function updatePurchaseHud() {
     lastPixels = -1
@@ -705,14 +459,6 @@ function updatePurchaseHud() {
 // | | |_ |/ _` | '_ ` _ \ / _ \
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
-
-// Variables for sending ships
-const sunCollisionRadius = 30
-const ticksPerCollideUpdate = 10
-var updateLines = ticksPerCollideUpdate
-const selectPlanetRadius = 55
-var selectedPlanet
-var sendShipsAmount = 0
 
 // Stats
 var lastPixels = 1
@@ -756,7 +502,7 @@ function gameLoop() {
         } else {
             buySpawnText.text = '1 Spawn (1000 pixels)'
         }
-        resizeHud()
+        hud.resize()
 
         buySpawnText.tint = pixels < 1000 || focusPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
 
@@ -775,5 +521,5 @@ function gameLoop() {
         buySpawnText.visible = false
     }
 
-    updateHud()
+    hud.update()
 }

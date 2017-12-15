@@ -202,6 +202,15 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         ships = Math.max(0, ships - n)
     }
 
+    sendShipsTo(toPlanet, amount) {
+        this.removeShips(amount)
+
+        let duration = this.timeToFastestIntersect(selectedPlanet)
+        var pos = selectedPlanet.calcPosition(duration)
+
+        var ship = this.sendingShips.push(game.stage.addChild(new Ship(this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
+    }
+
     createSpawn(force) {
         if (force || (pixels >= 1000 && this.spawns.length < maxSpawns)) {
 
