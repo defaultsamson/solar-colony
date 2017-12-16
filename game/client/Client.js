@@ -1,4 +1,4 @@
-`` //   _____      _               
+//   _____      _               
 //  / ____|    | |              
 // | (___   ___| |_ _   _ _ __  
 //  \___ \ / _ \ __| | | | '_ \ 
@@ -79,25 +79,13 @@ PIXI.loader
 //  _| |_| | | | | |_ 
 // |_____|_| |_|_|\__|
 
-const hudMargin = 20
-const textSize = 30
-
 var system
-
 var hud
 
 var resources
 
-var shipTexture
-var spawnTexture
-var infantryTexture
-
 function onLoad(loader, res) {
     resources = res
-
-    shipTexture = resources.ship.texture
-    spawnTexture = resources.spawn.texture
-    infantryTexture = resources.infantry.texture
 
     const stage = game.stage
 
@@ -130,33 +118,30 @@ function onLoad(loader, res) {
     viewport.fitHeight(centerHeight)
     viewport.moveCenter(0, 0)
 
-    hud = new Hud()
-    stage.addChild(hud)
-
     var style = {
         fontFamily: 'Verdana',
-        fontSize: textSize,
-        fill: Colour.white
+        fontSize: 28,
+        fill: Colour.white,
+        disabledFill: Colour.greyText
     };
 
-    pixelText = new PIXI.Text('Pixels: 0', style)
-    hud.addChild(pixelText)
+    hud = stage.addChild(new Hud())
 
-    shipsText = new PIXI.Text('Ships: 0', style)
-    hud.addChild(shipsText)
+    pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
+    shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
 
-    buy1ShipText = new PIXI.Text('1 Ship (10 pixels)', style)
-    hud.addChild(buy1ShipText)
-    buy10ShipText = new PIXI.Text('10 Ship (90 pixels)', style)
-    hud.addChild(buy10ShipText)
-    buy100ShipText = new PIXI.Text('100 Ship (800 pixels)', style)
-    hud.addChild(buy100ShipText)
+    buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
+    buy10ShipText.anchor.set(1, 0.5)
+    buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
+    buy1ShipText.anchor.set(1, 0.5)
+    buy100ShipText = hud.addChild(new TextButton('100 Ship (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
+    buy100ShipText.anchor.set(1, 0.5)
 
-    buySpawnText = new PIXI.Text('1 Spawn (1000 pixels)', style)
-    hud.addChild(buySpawnText)
+    buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
+    buySpawnText.anchor.set(0.5, 1)
 
-    sendShipText = new PIXI.Text('Send Ships (100 ships)', style)
-    hud.addChild(sendShipText)
+    sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
+    sendShipText.anchor.set(0, 0.5)
 
     resize()
 
@@ -190,6 +175,7 @@ function onLoad(loader, res) {
 //             | |              
 //             |_|              
 
+const sunClickRadiusSqr = 100 * 100
 
 // The animation time (in milliseconds) for zooming, panning, etc.
 const animTime = 300
@@ -238,10 +224,12 @@ function updateKeyboard() {
 
     if (PIXI.keyboardManager.isPressed(Key.P)) {
         pixels += 5000
+        hud.updateText()
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
         // removeShips(myPlanet, 10)
         focusPlanet.removeSpawn(1)
+        hud.updateText()
     }
 
     let screenPoint = game.renderer.plugins.interaction.mouse.global
@@ -313,27 +301,27 @@ function onMouseClick(e) {
 
     var point = new PIXI.Point(e.screen.x, e.screen.y)
 
-    if (buy1ShipText.visible && buy1ShipText.containsPoint(point)) {
+    if (buy1ShipText.clicked(point)) {
         focusPlanet.createShips(1, 10)
         return
     }
 
-    if (buy10ShipText.visible && buy10ShipText.containsPoint(point)) {
+    if (buy10ShipText.clicked(point)) {
         focusPlanet.createShips(10, 90)
         return
     }
 
-    if (buy100ShipText.visible && buy100ShipText.containsPoint(point)) {
+    if (buy100ShipText.clicked(point)) {
         focusPlanet.createShips(100, 800)
         return
     }
 
-    if (sendShipText.visible && sendShipText.containsPoint(point)) {
+    if (sendShipText.clicked(point)) {
         goToSendShipsScreen(focusPlanet, 100)
         return
     }
 
-    if (buySpawnText.visible && buySpawnText.containsPoint(point)) {
+    if (buySpawnText.clicked(point)) {
         focusPlanet.createSpawn()
         return
     }
@@ -386,21 +374,12 @@ function onMouseClick(e) {
             })
         }
 
-    } else {
-        // If nothing was clicked on, remove the follow plugin
-        stopFollow()
-
-        if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-            centerView()
-            return
-        }
-
-        const sunRadiusSqr = 100 * 100
-
-        if (distSqr(e.world.x, e.world.y, 0, 0) < sunRadiusSqr) {
-            centerView()
-        }
+        return
     }
+
+    // If nothing was clicked on, remove the follow plugin
+    stopFollow()
+    centerView()
 }
 
 // Upon ending of the snap, if it was just snapping to a planet, begin to follow it
@@ -449,10 +428,6 @@ function resize() {
 
 const shipSpeed = 15 // units per second
 
-function updatePurchaseHud() {
-    lastPixels = -1
-}
-
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -467,6 +442,7 @@ var lastShips = 1
 var ships = 0
 
 // Planet vars
+var lastFocus = true
 var focusPlanet
 
 function gameLoop() {
@@ -491,34 +467,19 @@ function gameLoop() {
         pixelText.text = 'Pixels: ' + pixels
     }
 
-    if (focusPlanet && focusPlanet.isMyPlanet()) {
-        // If the number of pixels has been updated
-        buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
-        buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
-        buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
+    var focussed = focusPlanet && focusPlanet.isMyPlanet()
 
-        if (focusPlanet.spawns.length >= maxSpawns) {
-            buySpawnText.text = 'MAX SPAWNS'
-        } else {
-            buySpawnText.text = '1 Spawn (1000 pixels)'
-        }
-        hud.resize()
+    if (focussed != lastFocus) {
+        lastFocus = focussed
 
-        buySpawnText.tint = pixels < 1000 || focusPlanet.spawns.length >= maxSpawns ? Colour.greyText : Colour.white
-
-        sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
-
-        buy1ShipText.visible = true
-        buy10ShipText.visible = true
-        buy100ShipText.visible = true
-        sendShipText.visible = true
-        buySpawnText.visible = true
-    } else {
-        buy1ShipText.visible = false
-        buy10ShipText.visible = false
-        buy100ShipText.visible = false
-        sendShipText.visible = false
-        buySpawnText.visible = false
+        buy1ShipText.visible = focussed
+        buy10ShipText.visible = focussed
+        buy100ShipText.visible = focussed
+        sendShipText.visible = focussed
+        buySpawnText.visible = focussed
+    }
+    if (focussed) {
+        hud.updateText()
     }
 
     hud.update()

@@ -1,3 +1,5 @@
+const hudMargin = 20
+
 class Hud extends PIXI.Container {
     constructor() {
         super()
@@ -8,21 +10,78 @@ class Hud extends PIXI.Container {
         hud.scale.set(1 / game.stage.scale.x)
     }
 
+    updateText() {
+        // If the number of pixels has been updated
+        buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
+        buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
+        buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
+
+        if (focusPlanet && focusPlanet.spawns.length >= maxSpawns) {
+            buySpawnText.text = 'MAX SPAWNS'
+        } else {
+            buySpawnText.text = '1 Spawn (1000 pixels)'
+        }
+
+        buySpawnText.tint = pixels < 1000 || (focusPlanet && focusPlanet.spawns.length >= maxSpawns) ? Colour.greyText : Colour.white
+
+        sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
+
+        hud.resize()
+    }
+
     resize(width, height) {
         if (!exists(width)) {
             width = window.innerWidth
             height = window.innerHeight
         }
 
-        pixelText.position.set(hudMargin, hudMargin)
-        shipsText.position.set(hudMargin, hudMargin + pixelText.height + 2)
+        // Updates all the hud components based on the new screen width and height
+        for (i in this.children) {
+            if (this.children[i].updatePos) {
+                this.children[i].updatePos(width, height)
+            }
+        }
+    }
+}
 
-        buy1ShipText.position.set(width / 2 - buy1ShipText.width - 100, (height - buy1ShipText.height) / 2 + buy10ShipText.height + 2)
-        buy10ShipText.position.set(width / 2 - buy10ShipText.width - 100, (height - buy10ShipText.height) / 2)
-        buy100ShipText.position.set(width / 2 - buy100ShipText.width - 100, (height - buy100ShipText.height) / 2 - buy10ShipText.height - 2)
+class TextButton extends PIXI.Text {
+    constructor(text, style, screenWidthProp, screenHeightProp, constantX, constantY, relativeTo, relativeToWidthProp, relativeToHeightProp) {
+        super(text, style)
 
-        sendShipText.position.set(width / 2 + 100, (height - buy10ShipText.height) / 2)
+        this.screenWidthProp = screenWidthProp
+        this.screenHeightProp = screenHeightProp
+        this.constantX = constantX
+        this.constantY = constantY
+        this.relativeTo = relativeTo
+        this.relativeToWidthProp = relativeToWidthProp
+        this.relativeToHeightProp = relativeToHeightProp
 
-        buySpawnText.position.set(width / 2 - (buySpawnText.width / 2), -100 + (height - buySpawnText.height) / 2)
+        this.regularFill = style.fill
+        this.disabledFill = style.disabledFill
+
+        this.setEnabled()
+    }
+
+    setEnabled(isEnabled) {
+        this.enabled = exists(isEnabled) ? isEnabled : true
+        this.tint = this.enabled ? this.regularFill : this.disabledFill
+    }
+
+    updatePos(width, height) {
+        // First set the position relative to the screen dimensions
+        var x = (this.screenWidthProp * width) + this.constantX
+        var y = (this.screenHeightProp * height) + this.constantY
+
+        // Then set the position relative to the relativeTo object's position and dimensions
+        if (this.relativeTo) {
+            x += this.relativeTo.x + (this.relativeTo.width * this.relativeToWidthProp)
+            y += this.relativeTo.y + (this.relativeTo.height * this.relativeToHeightProp)
+        }
+
+        this.position.set(x, y)
+    }
+
+    clicked(point) {
+        return this.visible && this.enabled && this.containsPoint(point)
     }
 }

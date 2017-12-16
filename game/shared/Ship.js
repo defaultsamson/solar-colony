@@ -14,7 +14,7 @@ class Ship extends(isServer ? Object : PIXI.Sprite) {
             this.position.set = setter
 
         } else {
-            super(shipTexture)
+            super(resources.ship.texture)
 
             this.pivot.set(0.5, 0.5)
             this.anchor.set(0.5, 0.5)

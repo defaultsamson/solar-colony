@@ -11,7 +11,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         this.pivot.set(this.radius, this.radius)
 
         // Infantry
-        this.infantry = new PIXI.particles.Emitter(this, infantryTexture, infantryParticle)
+        this.infantry = new PIXI.particles.Emitter(this, resources.infantry.texture, infantryParticle)
         this.infantry.updateSpawnPos(this.radius, this.radius)
         this.infantry.emit = false
         this.infantry.spawnRate = 0
@@ -116,10 +116,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
             let desired
         } while (iterations < 1000)
 
-        return {
-            x: 0,
-            y: 0
-        }
+        return 0
     }
 
     calcPosition(additionalAge) {
@@ -158,8 +155,8 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         if (pixels >= cost) {
             pixels -= cost
             for (var i = 0; i < n; i++) {
-                if (ships < maxShips) {
-                    var ship = new PIXI.Sprite(shipTexture)
+                if (!isServer && ships < maxShips) {
+                    var ship = new PIXI.Sprite(resources.ship.texture)
 
                     // The position on the planet's surface to place the ship (the angle)
                     // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
@@ -187,16 +184,18 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
     }
 
     removeShips(n) {
-        var visualsToRemove = Math.min(n, Math.max(0, maxShips - ships + n))
+        if (!isServer) {
+            var visualsToRemove = Math.min(n, Math.max(0, maxShips - ships + n))
 
-        if (visualsToRemove > 0) {
-            // Removes the ships from the world
-            for (var i = 0; i < visualsToRemove && i < this.ships.length; i++) {
-                this.removeChild(this.ships[i])
+            if (visualsToRemove > 0) {
+                // Removes the ships from the world
+                for (var i = 0; i < visualsToRemove && i < this.ships.length; i++) {
+                    this.removeChild(this.ships[i])
+                }
+
+                // Removes the ships from the array
+                this.ships.splice(0, visualsToRemove)
             }
-
-            // Removes the ships from the array
-            this.ships.splice(0, visualsToRemove)
         }
 
         ships = Math.max(0, ships - n)
@@ -218,7 +217,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                 pixels -= 1000
             }
 
-            var spawn = new PIXI.Sprite(spawnTexture)
+            var spawn = new PIXI.Sprite(resources.spawn.texture)
 
             // The position on this planet's surface to place the spawn (the angle)
             // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
