@@ -29,6 +29,12 @@ class Hud extends PIXI.Container {
         hud.resize()
     }
 
+    hideAll() {
+        for (var i in this.children) {
+            this.children[i].visible = false
+        }
+    }
+
     resize(width, height) {
         if (!exists(width)) {
             width = window.innerWidth
@@ -36,7 +42,7 @@ class Hud extends PIXI.Container {
         }
 
         // Updates all the hud components based on the new screen width and height
-        for (i in this.children) {
+        for (var i in this.children) {
             if (this.children[i].updatePos) {
                 this.children[i].updatePos(width, height)
             }

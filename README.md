@@ -21,3 +21,18 @@ build_libraries.bat
 -- or --
 build_libraries.sh
 ```
+
+## Server
+
+### 1. Install required modules
+```
+npm i ws fs express node-gameloop
+```
+
+### 2. Modify ./game/server/Server.js  
+Change the file paths of the secure websocket's `key` and `cert` to point to your SSL certificates.
+
+### 3. Run server
+```
+node Server.js
+```

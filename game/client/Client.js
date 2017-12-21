@@ -82,6 +82,8 @@ PIXI.loader
 var system
 var hud
 
+var socket
+
 var resources
 
 function onLoad(loader, res) {
@@ -89,6 +91,7 @@ function onLoad(loader, res) {
 
     const stage = game.stage
 
+    /*
     const orbit1 = game.stage.addChild(new Orbit(0, 0, 150, 25))
     const orbit2 = game.stage.addChild(new Orbit(0, 0, 220, 25))
     const orbit3 = game.stage.addChild(new Orbit(0, 0, 270, 25))
@@ -112,39 +115,6 @@ function onLoad(loader, res) {
         game.stage.addChild(planets[i])
     }
 
-    lastElapsed = Date.now()
-    game.ticker.add(gameLoop)
-
-    viewport.fitHeight(centerHeight)
-    viewport.moveCenter(0, 0)
-
-    var style = {
-        fontFamily: 'Verdana',
-        fontSize: 28,
-        fill: Colour.white,
-        disabledFill: Colour.greyText
-    };
-
-    hud = stage.addChild(new Hud())
-
-    pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
-    shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
-
-    buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
-    buy10ShipText.anchor.set(1, 0.5)
-    buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
-    buy1ShipText.anchor.set(1, 0.5)
-    buy100ShipText = hud.addChild(new TextButton('100 Ship (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
-    buy100ShipText.anchor.set(1, 0.5)
-
-    buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
-    buySpawnText.anchor.set(0.5, 1)
-
-    sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
-    sendShipText.anchor.set(0, 0.5)
-
-    resize()
-
     for (i in planets) {
         planets[i].tint = 0xFFFFFF
     }
@@ -164,6 +134,129 @@ function onLoad(loader, res) {
     planet2b.createSpawn(true)
 
     system = new System(sun, planets, drawLines, myPlanets, yourPlanets)
+    */
+
+    lastElapsed = Date.now()
+    game.ticker.add(gameLoop)
+
+    viewport.fitHeight(centerHeight)
+    viewport.moveCenter(0, 0)
+
+    var style = {
+        fontFamily: 'Verdana',
+        fontSize: 28,
+        fill: Colour.white,
+        disabledFill: Colour.greyText
+    }
+
+    var smallStyle = {
+        fontFamily: 'Verdana',
+        fontSize: 18,
+        fill: Colour.white,
+        disabledFill: Colour.greyText
+    }
+
+    var largeStyle = {
+        fontFamily: 'Verdana',
+        fontSize: 48,
+        fill: Colour.white,
+        disabledFill: Colour.greyText
+    }
+
+    hud = stage.addChild(new Hud())
+
+    pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
+    shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
+
+    buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
+    buy10ShipText.anchor.set(1, 0.5)
+    buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
+    buy1ShipText.anchor.set(1, 0.5)
+    buy100ShipText = hud.addChild(new TextButton('100 Ship (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
+    buy100ShipText.anchor.set(1, 0.5)
+
+    buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
+    buySpawnText.anchor.set(0.5, 1)
+
+    sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
+    sendShipText.anchor.set(0, 0.5)
+
+    // The menu texts
+
+    connectionText = hud.addChild(new TextButton('Connecting to Server...', style, 0.5, 0.5, 0, 0))
+    connectionText.anchor.set(0.5, 0.5)
+
+    couldntReachText = hud.addChild(new TextButton('Couldn\'t establish connection, retrying... []', smallStyle, 0.5, 0.5, 0, 50))
+    couldntReachText.anchor.set(0.5, 0.5)
+
+    joinGameText = hud.addChild(new TextButton('Join Game', style, 0.5, 0.5, -40, -170))
+    joinGameText.anchor.set(1, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-joinGameText.width - 10, -5, joinGameText.width + 20, joinGameText.height + 10)
+        outline.visible = false
+        joinGameText.addChild(outline)
+        joinGameText.box = outline
+    }
+
+    createGameText = hud.addChild(new TextButton('Create Game', style, 0.5, 0.5, 40, -170))
+    createGameText.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics();
+        outline.lineStyle(3, 0xFFFFFF);
+        outline.drawRect(-10, -5, createGameText.width + 20, createGameText.height + 10)
+        outline.visible = false
+        createGameText.addChild(outline)
+        createGameText.box = outline
+    }
+
+    joinRandomGameText = hud.addChild(new TextButton('With Random Player', style, 0.5, 0.5, -40, -100))
+    joinRandomGameText.anchor.set(1, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-joinRandomGameText.width - 10, -5, joinRandomGameText.width + 20, joinRandomGameText.height + 10)
+        outline.visible = false
+        joinRandomGameText.addChild(outline)
+        joinRandomGameText.box = outline
+    }
+
+    joinFriendsGameText = hud.addChild(new TextButton('With a Friend', style, 0.5, 0.5, 40, -100))
+    joinFriendsGameText.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics();
+        outline.lineStyle(3, 0xFFFFFF);
+        outline.drawRect(-10, -5, joinFriendsGameText.width + 20, joinFriendsGameText.height + 10)
+        outline.visible = false
+        joinFriendsGameText.addChild(outline)
+        joinFriendsGameText.box = outline
+    }
+
+    usernameEntry = hud.addChild(new TextButton('Username:', style, 0.5, 0.5, -40, -30))
+    usernameEntry.anchor.set(1, 0)
+
+    idEntry = hud.addChild(new TextButton('Game ID:', style, 0.5, 0.5, -40, 40))
+    idEntry.anchor.set(1, 0)
+
+    goText = hud.addChild(new TextButton('Start!', largeStyle, 0.5, 0.5, 0, 110))
+    goText.anchor.set(0.5, 0)
+
+    sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
+    sendingFormText.anchor.set(0.5, 0)
+
+    resize()
+
+    hud.update()
+
+    socket = new SocketManager()
+
+    removeGameFeatures()
+    gotoConnecting()
 }
 
 //  _____                   _   
@@ -228,7 +321,7 @@ function updateKeyboard() {
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
         // removeShips(myPlanet, 10)
-        focusPlanet.removeSpawn(1)
+        //focusPlanet.removeSpawn(1)
         hud.updateText()
     }
 
@@ -286,61 +379,87 @@ viewport.on('wheel', stopSnap)
 viewport.on('click', onMouseClick)
 
 function onMouseClick(e) {
-    if (isChoosingShipSend()) {
-        // updateSelectedPlanet(e.world.x, e.world.y)
+    if (system) {
+        if (isChoosingShipSend()) {
+            // updateSelectedPlanet(e.world.x, e.world.y)
 
-        if (selectedPlanet) {
-            sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
+            if (selectedPlanet) {
+                sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
+            }
+            cancelSendShips()
+
+            return
         }
-        cancelSendShips()
 
-        return
-    }
+        stopSnap()
 
-    stopSnap()
+        var point = new PIXI.Point(e.screen.x, e.screen.y)
 
-    var point = new PIXI.Point(e.screen.x, e.screen.y)
+        if (buy1ShipText.clicked(point)) {
+            focusPlanet.createShips(1, 10)
+            return
+        }
 
-    if (buy1ShipText.clicked(point)) {
-        focusPlanet.createShips(1, 10)
-        return
-    }
+        if (buy10ShipText.clicked(point)) {
+            focusPlanet.createShips(10, 90)
+            return
+        }
 
-    if (buy10ShipText.clicked(point)) {
-        focusPlanet.createShips(10, 90)
-        return
-    }
+        if (buy100ShipText.clicked(point)) {
+            focusPlanet.createShips(100, 800)
+            return
+        }
 
-    if (buy100ShipText.clicked(point)) {
-        focusPlanet.createShips(100, 800)
-        return
-    }
+        if (sendShipText.clicked(point)) {
+            goToSendShipsScreen(focusPlanet, 100)
+            return
+        }
 
-    if (sendShipText.clicked(point)) {
-        goToSendShipsScreen(focusPlanet, 100)
-        return
-    }
+        if (buySpawnText.clicked(point)) {
+            focusPlanet.createSpawn()
+            return
+        }
 
-    if (buySpawnText.clicked(point)) {
-        focusPlanet.createSpawn()
-        return
-    }
+        var planet = system.getPlanet(e.world.x, e.world.y)
+        if (planet) {
 
-    var planet = system.getPlanet(e.world.x, e.world.y)
-    if (planet) {
+            // If the viewport is already following the planet that was clicked on, then don't do anything
+            var follow = viewport.plugins['follow']
+            if (follow && (follow.target == planet)) {
+                // Do the zoom if holding shift
+                if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
+                    viewport.snapZoom({
+                        height: centerHeight,
+                        time: animTime,
+                        removeOnComplete: true,
+                        ease: 'easeInOutSine'
+                    })
+                } else {
+                    viewport.snapZoom({
+                        height: zoomHeight,
+                        time: animTime,
+                        removeOnComplete: true,
+                        ease: 'easeInOutSine'
+                    })
+                }
 
-        // If the viewport is already following the planet that was clicked on, then don't do anything
-        var follow = viewport.plugins['follow']
-        if (follow && (follow.target == planet)) {
-            // Do the zoom if holding shift
-            if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
-                viewport.snapZoom({
-                    height: centerHeight,
-                    time: animTime,
-                    removeOnComplete: true,
-                    ease: 'easeInOutSine'
-                })
-            } else {
+                return
+            }
+
+            snappingToPlanet = planet
+
+            // The calculated future positions of the planet
+            var pos = planet.calcPosition(animTime / 1000)
+
+            // Snap to that position
+            viewport.snap(pos.x, pos.y, {
+                time: animTime,
+                removeOnComplete: true,
+                ease: 'easeOutQuart'
+            })
+
+            // Do the zoom if not holding shift
+            if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
                 viewport.snapZoom({
                     height: zoomHeight,
                     time: animTime,
@@ -352,34 +471,15 @@ function onMouseClick(e) {
             return
         }
 
-        snappingToPlanet = planet
+        // If nothing was clicked on, remove the follow plugin
+        stopFollow()
+        centerView()
+    } else {
+        // Spaghetti Main Menu code
+        var point = new PIXI.Point(e.screen.x, e.screen.y)
 
-        // The calculated future positions of the planet
-        var pos = planet.calcPosition(animTime / 1000)
-
-        // Snap to that position
-        viewport.snap(pos.x, pos.y, {
-            time: animTime,
-            removeOnComplete: true,
-            ease: 'easeOutQuart'
-        })
-
-        // Do the zoom if not holding shift
-        if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-            viewport.snapZoom({
-                height: zoomHeight,
-                time: animTime,
-                removeOnComplete: true,
-                ease: 'easeInOutSine'
-            })
-        }
-
-        return
+        menuSpaghetti(point)
     }
-
-    // If nothing was clicked on, remove the follow plugin
-    stopFollow()
-    centerView()
 }
 
 // Upon ending of the snap, if it was just snapping to a planet, begin to follow it
@@ -454,33 +554,221 @@ function gameLoop() {
     lastElapsed = now
     let eTime = (elasped * 0.001)
 
-    system.update(eTime)
-
     viewport.update()
 
-    if (ships != lastShips) {
-        lastShips = ships
-        shipsText.text = 'Ships: ' + ships
-    }
-    if (pixels != lastPixels) {
-        lastPixels = pixels
-        pixelText.text = 'Pixels: ' + pixels
-    }
+    if (system) {
+        system.update(eTime)
 
-    var focussed = focusPlanet && focusPlanet.isMyPlanet()
+        if (ships != lastShips) {
+            lastShips = ships
+            shipsText.text = 'Ships: ' + ships
+        }
+        if (pixels != lastPixels) {
+            lastPixels = pixels
+            pixelText.text = 'Pixels: ' + pixels
+        }
 
-    if (focussed != lastFocus) {
-        lastFocus = focussed
+        var focussed = focusPlanet && focusPlanet.isMyPlanet()
 
-        buy1ShipText.visible = focussed
-        buy10ShipText.visible = focussed
-        buy100ShipText.visible = focussed
-        sendShipText.visible = focussed
-        buySpawnText.visible = focussed
-    }
-    if (focussed) {
-        hud.updateText()
+        if (focussed != lastFocus) {
+            lastFocus = focussed
+
+            buy1ShipText.visible = focussed
+            buy10ShipText.visible = focussed
+            buy100ShipText.visible = focussed
+            sendShipText.visible = focussed
+            buySpawnText.visible = focussed
+        }
+        if (focussed) {
+            hud.updateText()
+        }
     }
 
     hud.update()
+}
+
+function removeGameFeatures() {
+    viewport.pausePlugin('drag')
+    viewport.pausePlugin('zoom')
+    viewport.pausePlugin('wheel')
+
+    viewport.removePlugin('follow')
+    viewport.removePlugin('snap')
+
+    game.stage.removeChild(system)
+    system = null
+
+    hud.hideAll()
+}
+
+var connectionAttempts = -1
+
+function gotoConnecting() {
+
+    connectionText.visible = true
+
+    var ws = socket.connect()
+
+    ws.onerror = function (evt) {
+        console.log('The WebSocket experienced an error')
+    }
+
+    ws.onclose = function (evt) {
+        console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
+
+        removeGameFeatures()
+        connectionAttempts++
+
+        couldntReachText.visible = true
+        couldntReachText.text = 'Couldn\'t establish connection, retrying... [' + connectionAttempts + ']'
+
+        gotoConnecting()
+    }
+
+    ws.onopen = function (evt) {
+        console.log('The WebSocket was opened succesfully!');
+
+        connectionAttempts = -1
+
+        gotoTitle()
+    }
+
+    ws.onmessage = function (evt) {
+        console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
+    }
+}
+
+var usernameSelected = false
+var flashingInput = 0
+
+function gotoTitle() {
+    removeGameFeatures()
+
+    joinGameText.visible = true
+    joinGameText.box.visible = false
+    createGameText.visible = true
+    createGameText.box.visible = false
+
+    joinRandomGameText.visible = true
+    joinRandomGameText.box.visible = false
+    joinRandomGameText.setEnabled(false)
+    joinFriendsGameText.visible = true
+    joinFriendsGameText.box.visible = false
+    joinFriendsGameText.setEnabled(false)
+
+    usernameEntry.visible = true
+
+    document.getElementById('nameInput').style.visibility = 'visible'
+    document.getElementById('idInput').style.visibility = 'hidden'
+
+    goText.visible = true
+    updateStartButton()
+}
+
+function gotoGame(system) {
+    viewport.resumePlugin('drag')
+    viewport.resumePlugin('zoom')
+    viewport.resumePlugin('wheel')
+
+    game.stage.addChild(system)
+}
+
+function updateStartButton() {
+    if ((joinGameText.box.visible || createGameText.box.visible) && (joinRandomGameText.box.visible || joinFriendsGameText.box.visible)) {
+        if (/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {
+            if (!(joinGameText.box.visible && joinFriendsGameText.box.visible) || /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {
+                goText.setEnabled()
+                return true
+            }
+        }
+    }
+    goText.setEnabled(false)
+    return false
+}
+
+document.onkeypress = keyDownTextField
+
+function keyDownTextField(e) {
+    var keyCode = e.keyCode;
+    if (keyCode == Key.ENTER && goText.visible) {
+        if (updateStartButton()) {
+            sendForm()
+        }
+        return false
+    }
+}
+
+function failSendForm(message) {
+    sendingFormText.text = message
+    sendingFormText.visible = true
+}
+
+function sendForm() {
+    sendingFormText.text = 'Please wait while you are connected...'
+    sendingFormText.visible = true
+
+    let host = createGameText.box.visible
+    let doID = joinFriendsGameText.box.visible && !host
+    
+    var formPacket = {
+        type: 'form',
+        info: {
+            host: host,
+            user: document.getElementById('nameInput').value,
+            id: doID ? document.getElementById('idInput').value : ''
+        }
+    }
+
+    socket.ws.send(JSON.stringify(formPacket))
+}
+
+var sendingForm = false
+
+function menuSpaghetti(point) {
+    function showJoinGame() {
+        var withFriends = isSelected(joinFriendsGameText)
+        var withRandom = isSelected(joinRandomGameText)
+
+        gotoTitle()
+
+        joinGameText.box.visible = true
+        createGameText.box.visible = false
+        joinFriendsGameText.setEnabled(true)
+        joinFriendsGameText.box.visible = withFriends
+        joinRandomGameText.setEnabled(true)
+        joinRandomGameText.box.visible = withRandom
+
+        idEntry.visible = withFriends
+        document.getElementById('idInput').style.visibility = withFriends ? 'visible' : 'hidden'
+
+    }
+
+    function isSelected(button) {
+        return button.box.visible
+    }
+
+    if (joinGameText.clicked(point)) {
+        showJoinGame()
+
+    } else if (createGameText.clicked(point)) {
+        gotoTitle()
+        joinGameText.box.visible = false
+        createGameText.box.visible = true
+        joinFriendsGameText.setEnabled(true)
+        joinFriendsGameText.box.visible = true
+    } else if (joinRandomGameText.clicked(point)) {
+        joinFriendsGameText.box.visible = false
+        joinRandomGameText.box.visible = true
+        showJoinGame()
+    } else if (isSelected(joinGameText) && joinFriendsGameText.clicked(point)) {
+        joinFriendsGameText.box.visible = true
+        joinRandomGameText.box.visible = false
+        showJoinGame()
+    }
+
+    updateStartButton()
+
+    if (goText.clicked(point)) {
+        sendForm()
+    }
 }

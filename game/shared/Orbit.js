@@ -2,9 +2,11 @@
 const minDashes = 2
 // (Client) The thickness of the dashes being drawn
 const dashThickness = 1.4
+// (Client) The length of the dashes being drawn
+const dashLength = 25
 
 class Orbit extends(isServer ? Object : PIXI.Graphics) {
-    constructor(x, y, radius, dashLength) {
+    constructor(x, y, radius) {
         super()
 
         this.radius = radius

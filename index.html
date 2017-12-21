@@ -7,26 +7,66 @@
             background-color: #2A2C31;
         }
 
+        #nameInput {
+            position: absolute;
+            width: 188px;
+            height: 30px;
+            text-align: center;
+            left: 40px;
+            top: -26px;
+            font-size: 20px;
+            visibility: hidden;
+        }
+
+        .inputDiv {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+        }
+
+        #idInput {
+            position: absolute;
+            width: 188px;
+            height: 30px;
+            text-align: center;
+            left: 40px;
+            top: 42px;
+            font-size: 20px;
+            visibility: hidden;
+        }
+
     </style>
     <!-- Client libraries -->
-    <script src="game/client/lib/key.js"></script>
-    <script src="game/client/lib/colours.js"></script>
-    <script src="game/client/lib/particle.js"></script>
-    <script src="game/client/lib/libraries.js"></script>
+    <script src='game/client/lib/key.js'></script>
+    <script src='game/client/lib/colours.js'></script>
+    <script src='game/client/lib/particle.js'></script>
+    <script src='game/client/lib/libraries.js'></script>
 
     <!-- Shared -->
-    <script src="game/shared/IsServer.js"></script>
-    <script src="game/shared/Orbit.js"></script>
-    <script src="game/shared/Planet.js"></script>
-    <script src="game/shared/Ship.js"></script>
-    <script src="game/shared/System.js"></script>
-    <script src="game/shared/Util.js"></script>
+    <script src='game/shared/IsServer.js'></script>
+    <script src='game/shared/Orbit.js'></script>
+    <script src='game/shared/Planet.js'></script>
+    <script src='game/shared/Ship.js'></script>
+    <script src='game/shared/System.js'></script>
+    <script src='game/shared/Util.js'></script>
 </head>
 
 <body>
     <!-- Load Client -->
-    <script src="game/client/Line.js"></script>
-    <script src="game/client/Hud.js"></script>
-    <script src="game/client/Util.js"></script>
-    <script src="game/client/Client.js"></script>
+    <script src='game/client/Hud.js'></script>
+    <script src='game/client/Line.js'></script>
+    <script src='game/client/SocketManager.js'></script>
+    <script src='game/client/Util.js'></script>
+
+    <script src='game/client/Client.js'></script>
+
+    <div class='inputDiv'>
+        <form action='#' method='get'>
+            <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()'>
+        </form>
+
+        <form action='#' method='get'>
+            <input id='idInput' type='text' name='username' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()'>
+        </form>
+    </div>
 </body>

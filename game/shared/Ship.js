@@ -54,7 +54,7 @@ class Ship extends(isServer ? Object : PIXI.Sprite) {
 
     arrive() {
         if (!isServer) {
-            game.stage.removeChild(this)
+            system.removeChild(this)
         }
         // TODO remove the ship from the array
     }

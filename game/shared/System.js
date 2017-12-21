@@ -1,16 +1,11 @@
 // The extra pixels to add to the radius of a planet to determine whether to select it when clicked
 const clickThreshold = 40
 
-class System extends Object {
-    constructor(sun, planets, drawLines, myPlanets, yourPlanets) {
+class System extends(isServer ? Object : PIXI.Container) {
+    constructor(systemModel) {
         super()
 
-        this.sun = sun
-        this.planets = planets
-        this.drawLines = drawLines
-        this.myPlanets = myPlanets
-        this.yourPlanets = yourPlanets
-        this.ships = ships
+        this.planets = []
     }
 
     update(delta) {
@@ -45,5 +40,14 @@ class System extends Object {
         }
 
         return null
+    }
+
+    addPlanet(planet) {
+        this.planets.push(planet)
+        planet.system = this
+
+        if (isServer) {
+            // TODO send to client
+        }
     }
 }

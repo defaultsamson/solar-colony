@@ -6,45 +6,52 @@ const maxSpawns = 10
 class Planet extends(isServer ? Object : PIXI.Sprite) {
     constructor(texture, orbit, scale, rotationConstant, startAngle, opm) {
         super(texture)
-        this.radius = 0.5 * this.width
+
+        this.radius = isServer ? 0.5 * texture : 0.5 * this.width
         this.orbit = orbit
-        this.pivot.set(this.radius, this.radius)
 
-        // Infantry
-        this.infantry = new PIXI.particles.Emitter(this, resources.infantry.texture, infantryParticle)
-        this.infantry.updateSpawnPos(this.radius, this.radius)
-        this.infantry.emit = false
-        this.infantry.spawnRate = 0
-        this.infantry.spawnCounter = 0
+        if (!isServer) {
+            this.pivot.set(this.radius, this.radius)
 
-        // Selection ring
-        var ring = new PIXI.Graphics()
-        ring.lineStyle(dashThickness * 46, Colour.dark8)
-        ring.arc(this.radius, this.radius, this.radius * 3, 0, 7)
-        ring.visible = false
-        this.outline = this.addChild(ring)
+            // Infantry
+            this.infantry = new PIXI.particles.Emitter(this, resources.infantry.texture, infantryParticle)
+            this.infantry.updateSpawnPos(this.radius, this.radius)
+            this.infantry.emit = false
+            this.infantry.spawnRate = 0
+            this.infantry.spawnCounter = 0
 
-        // Ghost selection ring
-        var gring = new PIXI.Graphics()
-        gring.lineStyle(scale * dashThickness * 46, Colour.dark8)
-        gring.arc(scale * this.radius, scale * this.radius, scale * this.radius * 3, 0, 7)
-        gring.visible = false
+            // Selection ring
+            var ring = new PIXI.Graphics()
+            ring.lineStyle(dashThickness * 46, Colour.dark8)
+            ring.arc(this.radius, this.radius, this.radius * 3, 0, 7)
+            ring.visible = false
+            this.outline = this.addChild(ring)
 
-        // Set the scale
-        this.scale.set(scale)
-        this.radius = this.radius * this.scale.x
+            // Ghost selection ring
+            var gring = new PIXI.Graphics()
+            gring.lineStyle(scale * dashThickness * 46, Colour.dark8)
+            gring.arc(scale * this.radius, scale * this.radius, scale * this.radius * 3, 0, 7)
+            gring.visible = false
+
+            // Set the scale
+            this.scale.set(scale)
+        }
+
+        this.radius = this.radius * scale
 
         // orbits per minute
         this.opm = opm
 
-        // Ghosting ring
-        var ghost = new PIXI.Graphics()
-        ghost.lineStyle(dashThickness * 2, Colour.dark8)
-        ghost.arc(this.radius, this.radius, this.radius, 0, 7)
-        ghost.visible = false
-        ghost.pivot.set(this.radius, this.radius)
-        ghost.outline = ghost.addChild(gring)
-        this.ghost = game.stage.addChild(ghost)
+        if (!isServer) {
+            // Ghosting ring
+            var ghost = new PIXI.Graphics()
+            ghost.lineStyle(dashThickness * 2, Colour.dark8)
+            ghost.arc(this.radius, this.radius, this.radius, 0, 7)
+            ghost.visible = false
+            ghost.pivot.set(this.radius, this.radius)
+            ghost.outline = ghost.addChild(gring)
+            this.ghost = system.addChild(ghost)
+        }
 
         // The rotation speed in radians/second
         this.speed = opm * (1 / 60) * 2 * Math.PI
@@ -52,8 +59,9 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         this.age = startAngle / this.speed
 
         this.ships = []
-        this.sendingShips = []
         this.spawns = []
+
+        this.shipCount = 0
     }
 
     update(delta) {
@@ -177,9 +185,14 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                     ship.rotation = angle + (Math.PI / 2)
                     this.addChild(ship)
                     this.ships.push(ship)
+
+
                 }
-                ships++
             }
+            if (!isServer) {
+                ships += n
+            }
+            this.shipCount += n
         }
     }
 
@@ -196,9 +209,10 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                 // Removes the ships from the array
                 this.ships.splice(0, visualsToRemove)
             }
-        }
 
-        ships = Math.max(0, ships - n)
+            ships = Math.max(0, ships - n)
+        }
+        this.shipCount -= n
     }
 
     sendShipsTo(toPlanet, amount) {
@@ -207,7 +221,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         let duration = this.timeToFastestIntersect(selectedPlanet)
         var pos = selectedPlanet.calcPosition(duration)
 
-        var ship = this.sendingShips.push(game.stage.addChild(new Ship(this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
+        var ship = this.system.sendingShips.push(system.addChild(new Ship(this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
     }
 
     createSpawn(force) {
