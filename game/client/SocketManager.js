@@ -4,6 +4,8 @@ const port = 3141
 class SocketManager extends Object {
     constructor() {
         super()
+
+        this.ws = null
     }
 
     connect(secure) {
@@ -17,8 +19,8 @@ class SocketManager extends Object {
 
         return this.ws
     }
-    
+
     parse(type, packet) {
-        
+
     }
 }

@@ -1,6 +1,7 @@
 const localDebug = true
 
 const port = 3141
+
 const WebSocket = require('ws');
 const express = require('express')
 const https = require('https')
@@ -13,7 +14,7 @@ class SocketManager extends Object {
     constructor(serverObj) {
         super()
 
-        this.serverObj = serverObj
+        this.server = serverObj
         this.connections = []
     }
 
@@ -40,7 +41,7 @@ class SocketManager extends Object {
             })
         }
 
-        var server = this.serverObj
+        let sm = this
 
         this.wss.on('connection', function connection(ws) {
             ws.on('open', function open() {
@@ -48,17 +49,14 @@ class SocketManager extends Object {
             })
 
             ws.on('close', function close() {
-                // Remove the connection from this.conenctions
-                var i = this.connections.indexOf(ws)
-                if (i != -1) {
-                    this.connections.splice(i, 1)
-                }
+                // Remove the connection
+                sm.removeConnection(ws)
             })
 
             ws.on('message', function incoming(msg) {
                 try {
                     var pack = JSON.parse(msg)
-                    server.parse(ws, pack.type, pack)
+                    sm.server.parse(ws, pack.type, pack)
                 } catch (err) {
                     console.log(err)
                 }
@@ -66,45 +64,77 @@ class SocketManager extends Object {
         })
     }
 
+    removeConnection(sock) {
+        var i = this.connections.indexOf(sock)
+        if (i != -1) {
+            this.connections.splice(i, 1)
+        }
+    }
+
     addConnection(sock, host, name, id) {
         if (!this.approved(sock)) {
-            host = host ? true : false
-            if (id) id = id.toUpperCase()
+            id = id ? id.toUpperCase() : ''
 
             // Test if the name is proper
             if (/^([A-Za-z0-9]{3,20})$/.test(name)) {
                 // Test if no ID was given
-                if (!id) {
+                if (id == '') {
                     this.connections.push(sock)
 
+                    console.log('host: ' + host)
+
                     if (host) {
+                        var formPacket = {
+                            type: 'formpass'
+                        }
+                        sock.send(JSON.stringify(formPacket))
+                        console.log('hosting')
+
                         // Create a game with an ID
                         var id = generateSafeID()
 
-                        games.push(new Game(id))
+                        var game = new Game(id)
+                        games.push(game)
 
                         game.addPlayer(sock)
 
                     } else {
+                        var formPacket = {
+                            type: 'formpass'
+                        }
+                        sock.send(JSON.stringify(formPacket))
+                        console.log('randomassgame')
                         // Join a random game
                         this.queue(sock)
                     }
 
                     // If ID was given make sure it's proper
                 } else if (/^([A-Z0-9]{6})$/.test(id)) {
-                    let game = findGame(id)
+                    let game = this.server.findGame(id)
 
                     if (game) {
-                        game.addPlayer(sock)
-                    }
+                        var formPacket = {
+                            type: 'formpass'
+                        }
+                        sock.send(JSON.stringify(formPacket))
 
+                        game.addPlayer(sock)
+
+                    } else {
+                        // No game found with given ID
+                        var formPacket = {
+                            type: 'formfail',
+                            reason: 'No existing game with ID ' + id
+                        }
+                        sock.send(JSON.stringify(formPacket))
+                    }
                 } else {
                     // Improper ID
                     var formPacket = {
                         type: 'formfail',
                         reason: 'Improper game ID provided'
                     }
-                    sock.send(JSON.stringify(formpacket))
+                    sock.send(JSON.stringify(formPacket))
                 }
             } else {
                 // Improper name
@@ -112,7 +142,7 @@ class SocketManager extends Object {
                     type: 'formfail',
                     reason: 'Improper username provided'
                 }
-                sock.send(JSON.stringify(formpacket))
+                sock.send(JSON.stringify(formPacket))
             }
         }
     }
@@ -137,32 +167,3 @@ class SocketManager extends Object {
 
 module.exports = SocketManager
 
-
-const idChars = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
-
-// Generates an ID that no other game currently has
-function generateSafeID() {
-    var id
-    while (true) {
-        var badID = false
-        id = generateID()
-        for (var i in systems) {
-            if (systems.id == id) {
-                badID = true
-                break
-            }
-        }
-        if (!badID) {
-            return id
-        }
-    }
-}
-
-// Generates a random game ID
-function generateID() {
-    var id = ''
-    for (var i = 0; i < idLength; i++) {
-        id += idChars.charAt(Math.floor(Math.random() * idChars.length))
-    }
-    return id
-}

@@ -1,6 +1,9 @@
 var SocketManager = require('./SocketManager.js')
 let gameloop = require('node-gameloop')
 
+const idLength = 6
+const idChars = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
+
 class ServerObj extends Object {
     constructor() {
         super()
@@ -23,6 +26,10 @@ class ServerObj extends Object {
 
         switch (type) {
             case 'form':
+                console.log('PACK START ------')
+                console.log(packet)
+                console.log('PACK FINISh ------')
+                console.log('packet-host: ' + packet.host)
                 this.socket.addConnection(sender, packet.host, packet.user, packet.id)
                 break
         }
@@ -65,6 +72,26 @@ class ServerObj extends Object {
                 return this.games[i]
         }
         return null
+    }
+
+    // Generates an ID that no other game currently has
+    generateSafeID() {
+        var id
+        while (true) {
+            id = generateID()
+            if (findGame(id) == null) {
+                return id
+            }
+        }
+    }
+
+    // Generates a random game ID
+    generateID() {
+        var id = ''
+        for (var i = 0; i < idLength; i++) {
+            id += idChars.charAt(Math.floor(Math.random() * idChars.length))
+        }
+        return id
     }
 }
 

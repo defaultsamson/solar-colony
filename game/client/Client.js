@@ -183,10 +183,10 @@ function onLoad(loader, res) {
 
     // The menu texts
 
-    connectionText = hud.addChild(new TextButton('Connecting to Server...', style, 0.5, 0.5, 0, 0))
+    connectionText = hud.addChild(new TextButton('Connecting to Server...', style, 0.5, 0.5, 0, -250))
     connectionText.anchor.set(0.5, 0.5)
 
-    couldntReachText = hud.addChild(new TextButton('Couldn\'t establish connection, retrying... []', smallStyle, 0.5, 0.5, 0, 50))
+    couldntReachText = hud.addChild(new TextButton('Couldn\'t establish connection, retrying... []', smallStyle, 0.5, 0.5, 0, -220))
     couldntReachText.anchor.set(0.5, 0.5)
 
     joinGameText = hud.addChild(new TextButton('Join Game', style, 0.5, 0.5, -40, -170))
@@ -255,8 +255,8 @@ function onLoad(loader, res) {
 
     socket = new SocketManager()
 
-    removeGameFeatures()
-    gotoConnecting()
+    gotoTitle()
+    connect()
 }
 
 //  _____                   _   
@@ -587,23 +587,34 @@ function gameLoop() {
     hud.update()
 }
 
-function removeGameFeatures() {
-    viewport.pausePlugin('drag')
-    viewport.pausePlugin('zoom')
-    viewport.pausePlugin('wheel')
+function parse(type, packet) {
 
-    viewport.removePlugin('follow')
-    viewport.removePlugin('snap')
+    switch (type) {
+        case 'formfail':
+            failSendForm(packet.reason)
+            break
+        case 'formpass':
+            hud.hideAll()
+            document.getElementById('nameInput').style.visibility = 'hidden'
+            document.getElementById('idInput').style.visibility = 'hidden'
+            break
+    }
 
-    game.stage.removeChild(system)
-    system = null
-
-    hud.hideAll()
+    console.log('type: ' + type)
+    console.log('packet: ' + packet)
 }
 
-var connectionAttempts = -1
+//  __  __                  
+// |  \/  |                 
+// | \  / | ___ _ __  _   _ 
+// | |\/| |/ _ \ '_ \| | | |
+// | |  | |  __/ | | | |_| |
+// |_|  |_|\___|_| |_|\__,_|
 
-function gotoConnecting() {
+var connectionAttempts = -1
+var connected = false
+
+function connect() {
 
     connectionText.visible = true
 
@@ -616,25 +627,37 @@ function gotoConnecting() {
     ws.onclose = function (evt) {
         console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
 
-        removeGameFeatures()
+        //removeGameFeatures()
         connectionAttempts++
+        connected = false
 
+        updateStartButton()
+
+        connectionText.visible = true
         couldntReachText.visible = true
         couldntReachText.text = 'Couldn\'t establish connection, retrying... [' + connectionAttempts + ']'
 
-        gotoConnecting()
+        connect()
     }
 
     ws.onopen = function (evt) {
         console.log('The WebSocket was opened succesfully!');
 
         connectionAttempts = -1
-
-        gotoTitle()
+        connected = true
+        connectionText.visible = false
+        couldntReachText.visible = false
+        updateStartButton()
     }
 
     ws.onmessage = function (evt) {
-        console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
+        try {
+            // console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
+            var pack = JSON.parse(evt.data)
+            parse(pack.type, pack)
+        } catch (err) {
+            console.log(err)
+        }
     }
 }
 
@@ -642,7 +665,7 @@ var usernameSelected = false
 var flashingInput = 0
 
 function gotoTitle() {
-    removeGameFeatures()
+    hud.hideAll()
 
     joinGameText.visible = true
     joinGameText.box.visible = false
@@ -665,20 +688,14 @@ function gotoTitle() {
     updateStartButton()
 }
 
-function gotoGame(system) {
-    viewport.resumePlugin('drag')
-    viewport.resumePlugin('zoom')
-    viewport.resumePlugin('wheel')
-
-    game.stage.addChild(system)
-}
-
 function updateStartButton() {
     if ((joinGameText.box.visible || createGameText.box.visible) && (joinRandomGameText.box.visible || joinFriendsGameText.box.visible)) {
         if (/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {
             if (!(joinGameText.box.visible && joinFriendsGameText.box.visible) || /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {
-                goText.setEnabled()
-                return true
+                if (connected) {
+                    goText.setEnabled()
+                    return true
+                }
             }
         }
     }
@@ -686,9 +703,7 @@ function updateStartButton() {
     return false
 }
 
-document.onkeypress = keyDownTextField
-
-function keyDownTextField(e) {
+document.onkeypress = function keyDownTextField(e) {
     var keyCode = e.keyCode;
     if (keyCode == Key.ENTER && goText.visible) {
         if (updateStartButton()) {
@@ -707,16 +722,14 @@ function sendForm() {
     sendingFormText.text = 'Please wait while you are connected...'
     sendingFormText.visible = true
 
-    let host = createGameText.box.visible
-    let doID = joinFriendsGameText.box.visible && !host
-    
+    let isHost = createGameText.box.visible
+    let doID = joinFriendsGameText.box.visible && !isHost
+
     var formPacket = {
         type: 'form',
-        info: {
-            host: host,
-            user: document.getElementById('nameInput').value,
-            id: doID ? document.getElementById('idInput').value : ''
-        }
+        host: isHost,
+        user: document.getElementById('nameInput').value,
+        id: doID ? document.getElementById('idInput').value : ''
     }
 
     socket.ws.send(JSON.stringify(formPacket))
