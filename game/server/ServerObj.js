@@ -1,5 +1,6 @@
 var SocketManager = require('./SocketManager.js')
 let gameloop = require('node-gameloop')
+var Game = require('./Game.js')
 
 const idLength = 6
 const idChars = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
@@ -8,10 +9,12 @@ class ServerObj extends Object {
     constructor() {
         super()
 
+        this.waiting = null
+
         this.games = []
 
         this.gameLoopID = gameloop.setGameLoop(function (delta) {
-            for (i in ServerObj.games) {
+            for (var i in ServerObj.games) {
                 ServerObj.games[i].update(delta)
             }
         }, 1000 / 30);
@@ -20,29 +23,23 @@ class ServerObj extends Object {
         this.socket.connect()
     }
 
-
-
     parse(sender, type, packet) {
 
-        switch (type) {
-            case 'form':
-                console.log('PACK START ------')
-                console.log(packet)
-                console.log('PACK FINISh ------')
-                console.log('packet-host: ' + packet.host)
-                this.socket.addConnection(sender, packet.host, packet.user, packet.id)
-                break
-        }
-
         if (this.socket.approved(sender)) {
-
+            switch (type) {
+                case 'form':
+                    break
+            }
+        } else if (type == 'form') {
+            this.socket.addConnection(sender, packet.host, packet.user, packet.id)
         }
 
         console.log('type: ' + type)
         console.log('packet: ' + packet)
     }
 
-    createGame(p1, p2) {
+    // TODO move into Game class
+    createSystem(p1, p2) {
         const orbit1 = new Orbit(0, 0, 150)
         const orbit2 = new Orbit(0, 0, 220)
         const orbit3 = new Orbit(0, 0, 270)
@@ -67,19 +64,40 @@ class ServerObj extends Object {
     }
 
     findGame(gameID) {
-        for (i in this.games) {
+        for (var i in this.games) {
             if (this.games[i].gameID == gameID)
                 return this.games[i]
         }
         return null
     }
 
+    createGame() {
+        // Create a game with an ID
+        var id = this.generateSafeID()
+
+        var game = new Game(id)
+        this.games.push(game)
+
+        return game
+    }
+
+    queue(sock) {
+        if (this.waiting) {
+            var game = this.createGame()
+            game.addPlayer(this.waiting)
+            game.addPlayer(sock)
+            this.waiting = null
+        } else {
+            this.waiting = socket;
+        }
+    }
+
     // Generates an ID that no other game currently has
     generateSafeID() {
         var id
         while (true) {
-            id = generateID()
-            if (findGame(id) == null) {
+            id = this.generateID()
+            if (this.findGame(id) == null) {
                 return id
             }
         }

@@ -12,7 +12,7 @@ class System extends(isServer ? Object : PIXI.Container) {
         // Update the sun particle emitter
         this.sun.update(delta)
 
-        for (i in this.planets) {
+        for (var i in this.planets) {
             this.planets[i].update(delta)
         }
 
@@ -23,7 +23,7 @@ class System extends(isServer ? Object : PIXI.Container) {
             }
 
             // Move into Game class
-            for (i in this.planets) {
+            for (var i in this.planets) {
                 for (var k in this.planets[i].sendingShips) {
                     this.planets[i].sendingShips[k].update(delta)
                 }

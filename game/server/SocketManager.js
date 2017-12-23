@@ -7,7 +7,6 @@ const express = require('express')
 const https = require('https')
 const fs = require('fs')
 
-var Game = require('./Game.js')
 require('./ServerObj.js')
 
 class SocketManager extends Object {
@@ -81,31 +80,13 @@ class SocketManager extends Object {
                 if (id == '') {
                     this.connections.push(sock)
 
-                    console.log('host: ' + host)
-
                     if (host) {
-                        var formPacket = {
-                            type: 'formpass'
-                        }
-                        sock.send(JSON.stringify(formPacket))
-                        console.log('hosting')
-
-                        // Create a game with an ID
-                        var id = generateSafeID()
-
-                        var game = new Game(id)
-                        games.push(game)
-
-                        game.addPlayer(sock)
+                        // Create new game and add a player to it
+                        this.server.createGame().addPlayer(sock)
 
                     } else {
-                        var formPacket = {
-                            type: 'formpass'
-                        }
-                        sock.send(JSON.stringify(formPacket))
-                        console.log('randomassgame')
                         // Join a random game
-                        this.queue(sock)
+                        this.server.queueGame(sock)
                     }
 
                     // If ID was given make sure it's proper
@@ -113,11 +94,6 @@ class SocketManager extends Object {
                     let game = this.server.findGame(id)
 
                     if (game) {
-                        var formPacket = {
-                            type: 'formpass'
-                        }
-                        sock.send(JSON.stringify(formPacket))
-
                         game.addPlayer(sock)
 
                     } else {
@@ -147,15 +123,6 @@ class SocketManager extends Object {
         }
     }
 
-    queue(socket) {
-        if (this.inline) {
-            createSystem(this.inline, socket)
-            this.inline = null
-        } else {
-            this.inline = socket;
-        }
-    }
-
     approved(con) {
         // Check if con is in this.connections
         for (var i in this.connections) {
@@ -166,4 +133,3 @@ class SocketManager extends Object {
 }
 
 module.exports = SocketManager
-

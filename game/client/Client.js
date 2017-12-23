@@ -108,14 +108,14 @@ function onLoad(loader, res) {
 
     var planets = [planet1, planet2a, planet2b, planet3, planet4]
     var drawLines = []
-    for (i in planets) {
+    for (var i in planets) {
         drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
     }
-    for (i in planets) {
+    for (var i in planets) {
         game.stage.addChild(planets[i])
     }
 
-    for (i in planets) {
+    for (var i in planets) {
         planets[i].tint = 0xFFFFFF
     }
 
@@ -248,6 +248,9 @@ function onLoad(loader, res) {
 
     sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
     sendingFormText.anchor.set(0.5, 0)
+
+    waitingText = hud.addChild(new TextButton('Waiting for game start...', largeStyle, 0.5, 0.5, 0, 0))
+    waitingText.anchor.set(0.5, 0.5)
 
     resize()
 
@@ -526,8 +529,6 @@ function resize() {
     hud.resize(width, height)
 }
 
-const shipSpeed = 15 // units per second
-
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -587,16 +588,25 @@ function gameLoop() {
     hud.update()
 }
 
+var gameID = null
+var player = 0
+
 function parse(type, packet) {
 
     switch (type) {
         case 'formfail':
             failSendForm(packet.reason)
             break
-        case 'formpass':
+        case 'joingame':
             hud.hideAll()
             document.getElementById('nameInput').style.visibility = 'hidden'
             document.getElementById('idInput').style.visibility = 'hidden'
+
+            gameID = packet.gameID
+            player = packet.player
+
+            waitingText.text = 'Waiting for game start...\n(Game ID: ' + gameID + ')'
+            waitingText.visible = true
             break
     }
 

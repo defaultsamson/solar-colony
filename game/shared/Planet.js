@@ -3,6 +3,8 @@ const maxShips = 100
 // (Shared) The max number of spawns permitted
 const maxSpawns = 10
 
+const shipSpeed = 15 // units per second
+
 class Planet extends(isServer ? Object : PIXI.Sprite) {
     constructor(texture, orbit, scale, rotationConstant, startAngle, opm) {
         super(texture)
@@ -142,7 +144,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
     }
 
     isMyPlanet() {
-        for (i in system.myPlanets) {
+        for (var i in system.myPlanets) {
             if (this == system.myPlanets[i]) {
                 return true
             }
@@ -151,7 +153,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
     }
 
     isYourPlanet() {
-        for (i in system.yourPlanets) {
+        for (var i in system.yourPlanets) {
             if (this == system.yourPlanets[i]) {
                 return true
             }

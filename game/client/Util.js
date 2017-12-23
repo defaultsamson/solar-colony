@@ -18,7 +18,7 @@ function updateSelectedPlanet(mouse) {
     }
 
     // For each planet, draw a line from the sendShipsFrom planet to it
-    for (i in system.planets) {
+    for (var i in system.planets) {
         // Don't draw a line from the sendShipsFrom planet to itself
         if (system.planets[i] != sendShipsFrom) {
             // Only draw lines every update cycle
@@ -139,10 +139,10 @@ function goToSendShipsScreen(fromPlanet, amount) {
 }
 
 function cancelSendShips() {
-    for (i in system.drawLines) {
+    for (var i in system.drawLines) {
         system.drawLines[i].visible = false
     }
-    for (i in system.planets) {
+    for (var i in system.planets) {
         system.planets[i].outline.visible = false
         system.planets[i].ghost.visible = false
         system.planets[i].ghost.outline.visible = false
