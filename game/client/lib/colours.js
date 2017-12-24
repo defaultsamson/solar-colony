@@ -12,6 +12,6 @@ const Colour = {
     dark8: 0x7E8084,
     dark9: 0xA9AAAC,
     white: 0xFFFFFF,
-    
+
     greyText: 0x888888
 }
