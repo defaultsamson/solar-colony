@@ -76,14 +76,14 @@
     <!-- Form input for username and game ID -->
     <div class='inputDiv'>
         <form action='#' method='get'>
-            <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()'>
+            <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>
 
         <img id='nameCheck' src='game/assets/check.png' class='nameChecker' />
         <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
 
         <form action='#' method='get'>
-            <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()'>
+            <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>
 
         <img id='idCheck' src='game/assets/check.png' class='idChecker' />

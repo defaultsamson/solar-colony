@@ -142,10 +142,19 @@ document.onkeypress = function keyDownTextField(e) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
-            if (updateStartButton()) {
+            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {
+                console.log('jammin')
+            } else if (joinGameText.box.visible && joinFriendsGameText.box.visible && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {
+                console.log('mmees')
+            } else if (updateStartButton()) {
                 sendForm()
+                console.log('sending form')
+                e.preventDefault()
+                return false
+            } else {
+                e.preventDefault()
+                return false
             }
-            return false
         } else if (!/^([A-Za-z0-9])$/.test(txt)) {
             if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
 
