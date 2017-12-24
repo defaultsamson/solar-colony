@@ -88,7 +88,7 @@ class ServerObj extends Object {
             game.addPlayer(sock)
             this.waiting = null
         } else {
-            this.waiting = socket;
+            this.waiting = sock;
         }
     }
 

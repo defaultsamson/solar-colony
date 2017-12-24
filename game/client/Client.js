@@ -698,10 +698,39 @@ function gotoTitle() {
     updateStartButton()
 }
 
+var nameGotGood = false
+var idGotGood = false
+
 function updateStartButton() {
+    document.getElementById('nameCheck').style.visibility = 'hidden'
+    document.getElementById('nameCross').style.visibility = 'hidden'
+    document.getElementById('idCheck').style.visibility = 'hidden'
+    document.getElementById('idCross').style.visibility = 'hidden'
+
+    let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
+    if (nameCheck) {
+        document.getElementById('nameCheck').style.visibility = 'visible'
+        nameGotGood = true
+    } else if (nameGotGood) {
+        document.getElementById('nameCross').style.visibility = 'visible'
+    }
+
+    let idRequired = joinGameText.box.visible && joinFriendsGameText.box.visible
+
+    let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
+    if (idRequired) {
+        if (idCheck) {
+            document.getElementById('idCheck').style.visibility = 'visible'
+            idGotGood = true
+        } else if (idGotGood) {
+            document.getElementById('idCross').style.visibility = 'visible'
+        }
+    }
+
+    // If the Join/Create game and Random/Friend buttons have been selected
     if ((joinGameText.box.visible || createGameText.box.visible) && (joinRandomGameText.box.visible || joinFriendsGameText.box.visible)) {
-        if (/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {
-            if (!(joinGameText.box.visible && joinFriendsGameText.box.visible) || /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {
+        if (nameCheck) {
+            if (!idRequired || idCheck) {
                 if (connected) {
                     goText.setEnabled()
                     return true
@@ -715,12 +744,26 @@ function updateStartButton() {
 
 document.onkeypress = function keyDownTextField(e) {
     var keyCode = e.keyCode;
-    if (keyCode == Key.ENTER && goText.visible) {
-        if (updateStartButton()) {
-            sendForm()
+    if (goText.visible) {
+        var txt = String.fromCharCode(e.which);
+
+        if (keyCode == Key.ENTER) {
+            if (updateStartButton()) {
+                sendForm()
+            }
+            return false
+        } else if (!/^([A-Za-z0-9])$/.test(txt)) {
+            if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
+
+            } else {
+                console.log(txt + ' : ' + e.which);
+                e.preventDefault()
+                return false
+            }
         }
-        return false
     }
+
+    //console.log(txt + ' : ' + e.which);
 }
 
 function failSendForm(message) {

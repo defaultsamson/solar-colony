@@ -86,7 +86,7 @@ class SocketManager extends Object {
 
                     } else {
                         // Join a random game
-                        this.server.queueGame(sock)
+                        this.server.queue(sock)
                     }
 
                     // If ID was given make sure it's proper

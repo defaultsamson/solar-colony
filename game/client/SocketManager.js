@@ -1,5 +1,6 @@
-const ip = 'localhost' //'samsonclose.me'
-const port = 3141
+let localDebug = true
+let port = 3141
+let ip = localDebug ? 'localhost' : 'samsonclose.me'
 
 class SocketManager extends Object {
     constructor() {
@@ -9,7 +10,7 @@ class SocketManager extends Object {
     }
 
     connect(secure) {
-        secure = exists(secure) ? secure : ip != 'localhost'
+        secure = exists(secure) ? secure : !localDebug
 
         if (secure) {
             this.ws = new WebSocket('wss://' + ip + ':' + port)

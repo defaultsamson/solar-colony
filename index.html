@@ -7,35 +7,45 @@
             background-color: #2A2C31;
         }
 
-        #nameInput {
-            position: absolute;
-            width: 188px;
-            height: 30px;
-            text-align: center;
-            left: 40px;
-            top: -26px;
-            font-size: 20px;
-            visibility: hidden;
-        }
-
         .inputDiv {
             position: absolute;
             left: 50%;
             top: 50%;
         }
 
-        #idInput {
+        input {
             position: absolute;
             width: 188px;
             height: 30px;
             text-align: center;
             left: 40px;
-            top: 42px;
             font-size: 20px;
             visibility: hidden;
         }
 
+        #idInput {
+            top: 42px;
+        }
+
+        #nameInput {
+            top: -26px;
+        }
+
+        img {
+            position: absolute;
+            left: 235px;
+        }
+
+        .idChecker {
+            top: 43px;
+        }
+
+        .nameChecker {
+            top: -25px;
+        }
+
     </style>
+
     <!-- Client libraries -->
     <script src='game/client/lib/key.js'></script>
     <script src='game/client/lib/colours.js'></script>
@@ -60,13 +70,20 @@
 
     <script src='game/client/Client.js'></script>
 
+    <!-- Form input for username and game ID -->
     <div class='inputDiv'>
         <form action='#' method='get'>
             <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()'>
         </form>
 
+        <img id='nameCheck' src='game/assets/check.png' class='nameChecker' />
+        <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
+
         <form action='#' method='get'>
             <input id='idInput' type='text' name='username' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()'>
         </form>
+
+        <img id='idCheck' src='game/assets/check.png' class='idChecker' />
+        <img id='idCross' src='game/assets/cross.png' class='idChecker' />
     </div>
 </body>
