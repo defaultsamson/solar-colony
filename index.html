@@ -24,7 +24,8 @@
         }
 
         #idInput {
-            top: 42px
+            top: 42px;
+            text-transform: uppercase
         }
 
         #nameInput {
@@ -33,7 +34,8 @@
 
         img {
             position: absolute;
-            left: 235px
+            left: 235px;
+            visibility: hidden
         }
 
         .idChecker {
@@ -81,7 +83,7 @@
         <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
 
         <form action='#' method='get'>
-            <input id='idInput' type='text' name='username' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()'>
+            <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()'>
         </form>
 
         <img id='idCheck' src='game/assets/check.png' class='idChecker' />

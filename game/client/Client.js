@@ -609,7 +609,7 @@ function parse(type, packet) {
             gameID = packet.gameID
             player = packet.player
 
-            waitingText.text = 'Waiting for game start...\n(Game ID: ' + gameID + ')'
+            waitingText.text = (player == 1 ? 'Waiting for player 2 to join...' : 'Waiting for game to start...') + '\n(Game ID: ' + gameID + ')'
             waitingText.visible = true
             break
     }

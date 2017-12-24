@@ -33,7 +33,7 @@ class Game extends Object {
         }
         sock.send(JSON.stringify(packet))
 
-        if (this.player1 && this.player2) start()
+        if (this.player1 && this.player2) this.start()
     }
 
     start() {

@@ -1,3 +1,5 @@
+// To be completely honest, most of this code is spaghetti, but the menu works sooo... :/
+
 var connectionAttempts = -1
 var connected = false
 
@@ -18,6 +20,7 @@ function connect() {
         connectionAttempts++
         connected = false
 
+        formSent = false
         updateStartButton()
 
         connectionText.visible = true
@@ -34,6 +37,7 @@ function connect() {
         connected = true
         connectionText.visible = false
         couldntReachText.visible = false
+        formSent = false
         updateStartButton()
     }
 
@@ -84,45 +88,57 @@ function updateStartButton() {
     document.getElementById('idCheck').style.visibility = 'hidden'
     document.getElementById('idCross').style.visibility = 'hidden'
 
-    let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
-    if (nameCheck) {
-        document.getElementById('nameCheck').style.visibility = 'visible'
-        nameGotGood = true
-    } else if (nameGotGood) {
-        document.getElementById('nameCross').style.visibility = 'visible'
-    }
-
-    let idRequired = joinGameText.box.visible && joinFriendsGameText.box.visible
-
-    let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
-    if (idRequired) {
-        if (idCheck) {
-            document.getElementById('idCheck').style.visibility = 'visible'
-            idGotGood = true
-        } else if (idGotGood) {
-            document.getElementById('idCross').style.visibility = 'visible'
-        }
-    }
-
-    // If the Join/Create game and Random/Friend buttons have been selected
-    if ((joinGameText.box.visible || createGameText.box.visible) && (joinRandomGameText.box.visible || joinFriendsGameText.box.visible)) {
+    if (formSent) {
+        goText.setEnabled(false)
+        return false
+    } else {
+        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
         if (nameCheck) {
-            if (!idRequired || idCheck) {
-                if (connected) {
-                    goText.setEnabled()
-                    return true
-                }
+            document.getElementById('nameCheck').style.visibility = 'visible'
+            nameGotGood = true
+        } else if (nameGotGood) {
+            document.getElementById('nameCross').style.visibility = 'visible'
+        }
+
+        let idRequired = joinGameText.box.visible && joinFriendsGameText.box.visible
+
+        let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
+        if (idRequired) {
+            if (idCheck) {
+                document.getElementById('idCheck').style.visibility = 'visible'
+                idGotGood = true
+            } else if (idGotGood) {
+                document.getElementById('idCross').style.visibility = 'visible'
             }
         }
+
+        if (!serverFail) {
+            sendingFormText.visible = false
+        }
+
+        // If the Join/Create game and Random/Friend buttons have been selected
+        if ((joinGameText.box.visible || createGameText.box.visible) && (joinRandomGameText.box.visible || joinFriendsGameText.box.visible)) {
+            if (nameCheck) {
+                if (!idRequired || idCheck) {
+                    if (connected) {
+                        goText.setEnabled()
+                        return true
+                    }
+                } else if (idGotGood) {
+                    failSendForm('Game ID must be 6 characters, letters and numbers only')
+                }
+            } else if (nameGotGood) {
+                failSendForm('Username must be 3-20 characters, letters and numbers only')
+            }
+        }
+        goText.setEnabled(false)
+        return false
     }
-    goText.setEnabled(false)
-    return false
 }
 
 document.onkeypress = function keyDownTextField(e) {
+    var keyCode = e.keyCode
     if (goText.visible) {
-        var keyCode = e.keyCode
-
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
@@ -139,12 +155,24 @@ document.onkeypress = function keyDownTextField(e) {
                 return false
             }
         }
+    } else if (keyCode == Key.ENTER) {
+        e.preventDefault()
+        return false
     }
 }
+
+var serverFail = false
+var formSent = false
 
 function failSendForm(message) {
     sendingFormText.text = message
     sendingFormText.visible = true
+    if (formSent) {
+        serverFail = true
+        formSent = false
+    } else {
+        serverFail = false
+    }
 }
 
 function sendForm() {
@@ -162,6 +190,8 @@ function sendForm() {
     }
 
     socket.ws.send(JSON.stringify(formPacket))
+
+    formSent = true
 }
 
 var sendingForm = false
