@@ -56,7 +56,11 @@ var usernameSelected = false
 var flashingInput = 0
 
 function gotoTitle() {
+    var connecting = connectionText.visible
+    var connectingError = couldntReachText.visible
     hud.hideAll()
+    connectionText.visible = connecting
+    couldntReachText.visible = connectingError
 
     joinGameText.visible = true
     joinGameText.box.visible = false
@@ -142,13 +146,8 @@ document.onkeypress = function keyDownTextField(e) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
-            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {
-                console.log('jammin')
-            } else if (joinGameText.box.visible && joinFriendsGameText.box.visible && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {
-                console.log('mmees')
-            } else if (updateStartButton()) {
+            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {} else if (joinGameText.box.visible && joinFriendsGameText.box.visible && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {} else if (updateStartButton()) {
                 sendForm()
-                console.log('sending form')
                 e.preventDefault()
                 return false
             } else {

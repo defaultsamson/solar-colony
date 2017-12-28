@@ -188,6 +188,7 @@ function onLoad(loader, res) {
 
     couldntReachText = hud.addChild(new TextButton('Couldn\'t establish connection, retrying... []', smallStyle, 0.5, 0.5, 0, -220))
     couldntReachText.anchor.set(0.5, 0.5)
+    couldntReachText.visible = false
 
     joinGameText = hud.addChild(new TextButton('Join Game', style, 0.5, 0.5, -40, -170))
     joinGameText.anchor.set(1, 0)

@@ -8,10 +8,15 @@ class Game extends Object {
         this.player2 = null
 
         this.system = null
+
+        this.countdown = 0
+        this.pingTest = 0
     }
 
     update(delta) {
-
+        if (this.system) {
+            this.system.update(delta)
+        }
     }
 
     addPlayer(sock) {
@@ -37,7 +42,41 @@ class Game extends Object {
     }
 
     start() {
+        var packet = {
+            type: 'joingame',
+            gameID: this.gameID,
+            player: player
+        }
+        sock.send(JSON.stringify(packet))
+
+        this.pingTest = 30 * 4
+    }
+
+    createSystem() {
         console.log('starting the system because I\'m Gay')
+
+        const orbit1 = new Orbit(0, 0, 150)
+        const orbit2 = new Orbit(0, 0, 220)
+        const orbit3 = new Orbit(0, 0, 270)
+        const orbit4 = new Orbit(0, 0, 360)
+
+        const planet1 = new Planet(190, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
+        const planet2a = new Planet(190, orbit2, 0.1, -1 / 6, 0, 1)
+        const planet2b = new Planet(190, orbit2, 0.1, -1 / 6, Math.PI, 1)
+        const planet3 = new Planet(190, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
+        const planet4 = new Planet(190, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
+
+        var planets = [planet1, planet2a, planet2b, planet3, planet4]
+
+        // Setup for testing the game
+        var myPlanets = [planet2a]
+        var yourPlanets = [planet2b]
+
+        planet2a.createSpawn(true)
+        planet2b.createSpawn(true)
+
+        this.system = new System()
+
         // create the system
         //this.system = something
     }

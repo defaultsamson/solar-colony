@@ -90,6 +90,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         }
     }
 
+    // to = target planet
     timeToFastestIntersect(to) {
         // Can be ound on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
 
@@ -104,7 +105,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         var time = 0
         var iterations = 0
 
-        do {
+        while (iterations < 1000) {
             iterations++
             let pos = to.calcPosition(time)
 
@@ -124,7 +125,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
             }
 
             let desired
-        } while (iterations < 1000)
+        }
 
         return 0
     }
