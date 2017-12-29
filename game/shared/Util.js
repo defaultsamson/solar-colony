@@ -17,3 +17,18 @@ function isBetween(x, y, z, error) {
         return y - error < x && x < z + error
     }
 }
+
+try {
+    if (exists(global)) {
+        global.isServer = true
+        require('../server/Util.js')
+    }
+} catch (err) {
+    window.isServer = false
+}
+
+if (isServer) {
+    global.distSqr = distSqr
+    global.exists = exists
+    global.isBetween = isBetween
+}

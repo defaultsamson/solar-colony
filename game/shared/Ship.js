@@ -3,15 +3,7 @@ class Ship extends(isServer ? Object : PIXI.Sprite) {
         if (isServer) {
             super()
 
-            this.position = {}
-            this.position.x = 0
-            this.position.y = 0
-
-            function setter(x1, y1) {
-                this.position.x = x1
-                this.position.y = y1
-            }
-            this.position.set = setter
+            addPosition(this)
 
         } else {
             super(resources.ship.texture)
@@ -58,4 +50,8 @@ class Ship extends(isServer ? Object : PIXI.Sprite) {
         }
         // TODO remove the ship from the array
     }
+}
+
+if (isServer) {
+    module.exports = Ship
 }

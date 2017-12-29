@@ -5,7 +5,7 @@ var Game = require('./Game.js')
 const idLength = 6
 const idChars = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
 
-class ServerObj extends Object {
+class GameManager extends Object {
     constructor() {
         super()
 
@@ -14,7 +14,7 @@ class ServerObj extends Object {
         this.games = []
 
         let so = this
-        
+
         this.gameLoopID = gameloop.setGameLoop(function (delta) {
             for (var i in so.games) {
                 so.games[i].update(delta)
@@ -90,4 +90,4 @@ class ServerObj extends Object {
     }
 }
 
-module.exports = ServerObj
+module.exports = GameManager

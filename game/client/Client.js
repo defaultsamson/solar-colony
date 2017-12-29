@@ -592,11 +592,11 @@ function gameLoop() {
 var gameID = null
 var player = 0
 
-function parse(type, packet) {
+function parse(type, pack) {
 
     switch (type) {
         case 'formfail':
-            failSendForm(packet.reason)
+            failSendForm(pack.reason)
             break
         case 'joingame':
             hud.hideAll()
@@ -607,14 +607,35 @@ function parse(type, packet) {
             document.getElementById('idCheck').style.visibility = 'hidden'
             document.getElementById('idCross').style.visibility = 'hidden'
 
-            gameID = packet.gameID
-            player = packet.player
+            gameID = pack.gameID
+            player = pack.player
 
             waitingText.text = (player == 1 ? 'Waiting for player 2 to join...' : 'Waiting for game to start...') + '\n(Game ID: ' + gameID + ')'
             waitingText.visible = true
             break
+        case 'createsystem':
+            system = new System()
+            break
+        case 'createorbit':
+            var orbit = new Orbit(pack.x, pack.y, pack.radius)
+            orbit.id = pack.id
+            system.addOrbit(orbit)
+            break
+        case 'createplanet':
+            var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
+            planet.id = pack.id
+            system.addPlanet(planet)
+            break
+        case 'setorbit':
+            var planet = system.getPlanet(pack.planet)
+            var orbit = system.getOrbit(pack.orbit)
+            planet.setOrbit(orbit)
+            break
+        case 'startgame':
+            game.stage.addChild(system)
+            break
     }
 
-    console.log('type: ' + type)
-    console.log('packet: ' + packet)
+    //console.log('type: ' + type)
+    //console.log('pack: ' + pack)
 }

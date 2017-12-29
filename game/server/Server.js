@@ -1,5 +1,7 @@
-let ServerObj = require('./ServerObj.js')
+require('../shared/Util.js')
 
-let server = new ServerObj()
+let GameManager = require('./GameManager.js')
+
+let server = new GameManager()
 
 console.log('Server Started')

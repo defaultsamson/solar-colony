@@ -7,13 +7,11 @@ const express = require('express')
 const https = require('https')
 const fs = require('fs')
 
-require('./ServerObj.js')
-
 class SocketManager extends Object {
-    constructor(serverObj) {
+    constructor(gameManager) {
         super()
 
-        this.server = serverObj
+        this.server = gameManager
         this.connections = []
     }
 

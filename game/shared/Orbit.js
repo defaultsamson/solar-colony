@@ -9,6 +9,8 @@ class Orbit extends(isServer ? Object : PIXI.Graphics) {
     constructor(x, y, radius) {
         super()
 
+        this.x = x
+        this.y = y
         this.radius = radius
 
         if (!isServer) {
@@ -36,4 +38,8 @@ class Orbit extends(isServer ? Object : PIXI.Graphics) {
             // this.cacheAsBitmap = true
         }
     }
+}
+
+if (isServer) {
+    module.exports = Orbit
 }

@@ -1,3 +1,7 @@
+const Orbit = require('../shared/Orbit.js')
+const Planet = require('../shared/Planet.js')
+const System = require('../shared/System.js')
+
 class Game extends Object {
     constructor(gameID) {
         super()
@@ -25,7 +29,9 @@ class Game extends Object {
 
         if (!this.player1) {
             this.player1 = sock
+            this.player2 = sock
             player = 1
+            this.createSystem()
         } else {
             this.player2 = sock
             player = 2
@@ -43,13 +49,10 @@ class Game extends Object {
 
     start() {
         var packet = {
-            type: 'joingame',
-            gameID: this.gameID,
-            player: player
+            type: 'startgame'
         }
-        sock.send(JSON.stringify(packet))
-
-        this.pingTest = 30 * 4
+        this.player1.send(JSON.stringify(packet))
+        // TODO this.player2.send(JSON.stringify(packet))
     }
 
     createSystem() {
@@ -60,11 +63,11 @@ class Game extends Object {
         const orbit3 = new Orbit(0, 0, 270)
         const orbit4 = new Orbit(0, 0, 360)
 
-        const planet1 = new Planet(190, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
-        const planet2a = new Planet(190, orbit2, 0.1, -1 / 6, 0, 1)
-        const planet2b = new Planet(190, orbit2, 0.1, -1 / 6, Math.PI, 1)
-        const planet3 = new Planet(190, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
-        const planet4 = new Planet(190, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
+        const planet1 = new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2)
+        const planet2a = new Planet(190, 0.1, -1 / 6, 0, 1)
+        const planet2b = new Planet(190, 0.1, -1 / 6, Math.PI, 1)
+        const planet3 = new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
+        const planet4 = new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
 
         var planets = [planet1, planet2a, planet2b, planet3, planet4]
 
@@ -76,9 +79,31 @@ class Game extends Object {
         planet2b.createSpawn(true)
 
         this.system = new System()
+        this.system.game = this
 
-        // create the system
-        //this.system = something
+        // Creates the system on the client-side
+        var pack = {
+            type: 'createsystem'
+        }
+        this.player1.send(JSON.stringify(pack))
+        // TODO this.player2.send(JSON.stringify(pack))
+
+        this.system.addOrbit(orbit1)
+        this.system.addOrbit(orbit2)
+        this.system.addOrbit(orbit3)
+        this.system.addOrbit(orbit4)
+
+        this.system.addPlanet(planet1)
+        this.system.addPlanet(planet2a)
+        this.system.addPlanet(planet2b)
+        this.system.addPlanet(planet3)
+        this.system.addPlanet(planet4)
+
+        planet1.setOrbit(orbit1)
+        planet2a.setOrbit(orbit2)
+        planet2b.setOrbit(orbit2)
+        planet3.setOrbit(orbit3)
+        planet4.setOrbit(orbit4)
     }
 }
 

@@ -16,13 +16,13 @@ class Hud extends PIXI.Container {
         buy10ShipText.tint = pixels < 90 ? Colour.greyText : Colour.white
         buy100ShipText.tint = pixels < 800 ? Colour.greyText : Colour.white
 
-        if (focusPlanet && focusPlanet.spawns.length >= maxSpawns) {
+        if (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) {
             buySpawnText.text = 'MAX SPAWNS'
         } else {
             buySpawnText.text = '1 Spawn (1000 pixels)'
         }
 
-        buySpawnText.tint = pixels < 1000 || (focusPlanet && focusPlanet.spawns.length >= maxSpawns) ? Colour.greyText : Colour.white
+        buySpawnText.tint = pixels < 1000 || (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) ? Colour.greyText : Colour.white
 
         sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
 
