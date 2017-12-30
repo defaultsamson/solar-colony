@@ -79,6 +79,7 @@ PIXI.loader
 //  _| |_| | | | | |_ 
 // |_____|_| |_|_|\__|
 
+var myTeam
 var system
 var hud
 
@@ -88,53 +89,6 @@ var resources
 
 function onLoad(loader, res) {
     resources = res
-
-    const stage = game.stage
-
-    /*
-    const orbit1 = game.stage.addChild(new Orbit(0, 0, 150, 25))
-    const orbit2 = game.stage.addChild(new Orbit(0, 0, 220, 25))
-    const orbit3 = game.stage.addChild(new Orbit(0, 0, 270, 25))
-    const orbit4 = game.stage.addChild(new Orbit(0, 0, 360, 25))
-
-    var sun = new PIXI.particles.Emitter(stage, resources.sunTexture.texture, sunParticle)
-    sun.emit = true
-
-    const planet1 = new Planet(resources.planet1.texture, orbit1, 0.1, -1 / 4, Math.PI / 2, 2)
-    const planet2a = new Planet(resources.planet2.texture, orbit2, 0.1, -1 / 6, 0, 1)
-    const planet2b = new Planet(resources.planet2.texture, orbit2, 0.1, -1 / 6, Math.PI, 1)
-    const planet3 = new Planet(resources.planet1.texture, orbit3, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
-    const planet4 = new Planet(resources.planet2.texture, orbit4, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
-
-    var planets = [planet1, planet2a, planet2b, planet3, planet4]
-    var drawLines = []
-    for (var i in planets) {
-        drawLines.push(game.stage.addChild(new Line(dashThickness, planets[i].tint)))
-    }
-    for (var i in planets) {
-        game.stage.addChild(planets[i])
-    }
-
-    for (var i in planets) {
-        planets[i].tint = 0xFFFFFF
-    }
-
-    // Setup for testing the game
-    var myPlanets = [planet2a]
-    var yourPlanets = [planet2b]
-    //planet1.tint = 0xFFCCCC
-    planet2a.tint = 0xFFAAAA
-    planet2a.outline.tint = planet2a.tint
-    planet2b.tint = 0xAAAAFF
-    planet2b.outline.tint = planet2b.tint
-    //planet3.tint = 0xCCCCFF
-    //planet4.tint = 0xFAFACC
-
-    planet2a.createSpawn(true)
-    planet2b.createSpawn(true)
-
-    system = new System(sun, planets, drawLines, myPlanets, yourPlanets)
-    */
 
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
@@ -163,7 +117,7 @@ function onLoad(loader, res) {
         disabledFill: Colour.greyText
     }
 
-    hud = stage.addChild(new Hud())
+    hud = game.stage.addChild(new Hud())
 
     pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
     shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
@@ -630,6 +584,23 @@ function parse(type, pack) {
             var planet = system.getPlanet(pack.planet)
             var orbit = system.getOrbit(pack.orbit)
             planet.setOrbit(orbit)
+            break
+        case 'createspawn':
+            var planet = system.getPlanet(pack.planet)
+            planet.createSpawn(pack.force)
+            break
+        case 'createteam':
+            var team = new Team(pack.colour)
+            team.id = pack.id
+            system.addTeam(team)
+            break
+        case 'setteam':
+            var planet = system.getPlanet(pack.planet)
+            var team = system.getTeam(pack.team)
+            planet.setTeam(team)
+            break
+        case 'setmyteam':
+            myTeam = system.getTeam(pack.team)
             break
         case 'startgame':
             game.stage.addChild(system)

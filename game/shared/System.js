@@ -14,6 +14,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 
         this.orbits = []
         this.planets = []
+        this.teams = []
     }
 
     update(delta) {
@@ -50,6 +51,32 @@ class System extends(isServer ? Object : PIXI.Container) {
         return null
     }
 
+    addTeam(team) {
+        this.teams.push(team)
+        team.system = this
+
+        if (isServer) {
+            team.id = this.createID()
+
+            var pack = {
+                type: 'createteam',
+                id: team.id,
+                colour: team.colour
+            }
+            this.game.sendPlayers(pack)
+            return team
+        }
+    }
+
+    getTeam(id) {
+        for (var i in this.teams) {
+            if (this.teams[i].id == id) {
+                return this.teams[i]
+            }
+        }
+        return null
+    }
+
     addOrbit(orbit) {
         this.orbits.push(orbit)
         orbit.system = this
@@ -64,8 +91,8 @@ class System extends(isServer ? Object : PIXI.Container) {
                 y: orbit.y,
                 radius: orbit.radius
             }
-            this.game.player1.send(JSON.stringify(pack))
-            // TODO this.game.player2.send(JSON.stringify(pack))
+            this.game.sendPlayers(pack)
+            return orbit
         } else {
             this.addChild(orbit)
         }
@@ -95,8 +122,8 @@ class System extends(isServer ? Object : PIXI.Container) {
                 startAngle: planet.startAngle,
                 opm: planet.opm
             }
-            this.game.player1.send(JSON.stringify(pack))
-            // TODO this.game.player2.send(JSON.stringify(pack))
+            this.game.sendPlayers(pack)
+            return planet
         } else {
             this.addChild(planet)
         }

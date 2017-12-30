@@ -73,6 +73,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
             this.spawns = []
         }
 
+        this.team = null
         this.id = null
         this.ships = []
         this.shipCount = 0
@@ -92,16 +93,17 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
             }
             // Updates infantry
             this.infantry.update(delta)
-        }
 
-        if (this.isMyPlanet()) {
-            this.infantry.spawnCounter += this.infantry.spawnRate * delta
+            // TODO this pixel shit
+            if (this.isMyPlanet()) {
+                this.infantry.spawnCounter += this.infantry.spawnRate * delta
 
-            // Adds the accumulated number of pixels to a user
-            let toAdd = Math.floor(this.infantry.spawnCounter)
-            if (toAdd > 0) {
-                this.infantry.spawnCounter = 0
-                pixels += toAdd
+                // Adds the accumulated number of pixels to a user
+                let toAdd = Math.floor(this.infantry.spawnCounter)
+                if (toAdd > 0) {
+                    this.infantry.spawnCounter = 0
+                    pixels += toAdd
+                }
             }
         }
     }
@@ -168,21 +170,33 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
     }
 
     isMyPlanet() {
-        for (var i in this.system.myPlanets) {
-            if (this == this.system.myPlanets[i]) {
-                return true
-            }
-        }
-        return false
+        // Client-side only
+        return this.team === myTeam
     }
 
-    isYourPlanet() {
-        for (var i in this.system.yourPlanets) {
-            if (this == this.system.yourPlanets[i]) {
-                return true
+    isTeamsPlanet(team) {
+        return this.team === team
+    }
+
+    setTeam(team) {
+        this.team = team
+
+        if (isServer) {
+            // Creates the planet on the client-side
+            var pack = {
+                type: 'setteam',
+                planet: this.id,
+                team: team.id
+            }
+            this.system.game.sendPlayers(pack)
+        } else {
+            var colour = exists(team) ? team.colour : 0xFFFFFF
+            this.tint = colour
+            this.outline.tint = colour
+            for (var i in this.spawns) {
+                this.spawns[i].tint = colour
             }
         }
-        return false
     }
 
     createShips(n, cost) {
@@ -259,7 +273,14 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                 pixels -= 1000
             }
 
-            if (!isServer) {
+            if (isServer) {
+                var pack = {
+                    type: 'createspawn',
+                    planet: this.id,
+                    force: force
+                }
+                this.system.game.sendPlayers(pack)
+            } else {
                 var spawn = new PIXI.Sprite(resources.spawn.texture)
 
                 // The position on this planet's surface to place the spawn (the angle)
@@ -324,14 +345,13 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         this.orbit = orbit
 
         if (isServer) {
-            // Creates the planet on the client-side
+            // Sets the planet's orbit on the client-side
             var pack = {
                 type: 'setorbit',
                 planet: this.id,
                 orbit: orbit.id
             }
-            this.system.game.player1.send(JSON.stringify(pack))
-            // TODO this.game.player2.send(JSON.stringify(pack))
+            this.system.game.sendPlayers(pack)
         }
     }
 }

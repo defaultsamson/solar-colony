@@ -1,6 +1,7 @@
 const Orbit = require('../shared/Orbit.js')
 const Planet = require('../shared/Planet.js')
 const System = require('../shared/System.js')
+const Team = require('../shared/Team.js')
 
 class Game extends Object {
     constructor(gameID) {
@@ -8,8 +9,7 @@ class Game extends Object {
 
         this.gameID = gameID
 
-        this.player1 = null
-        this.player2 = null
+        this.players = []
 
         this.system = null
 
@@ -27,13 +27,13 @@ class Game extends Object {
 
         var player = 0
 
-        if (!this.player1) {
-            this.player1 = sock
-            this.player2 = sock
+        // TODO up to 8 players?
+        if (this.players.length == 0) {
+            this.players[0] = sock
             player = 1
             this.createSystem()
         } else {
-            this.player2 = sock
+            this.players[1] = sock
             player = 2
         }
 
@@ -43,40 +43,42 @@ class Game extends Object {
             player: player
         }
         sock.send(JSON.stringify(packet))
-
-        if (this.player1 && this.player2) this.start()
     }
 
     start() {
-        var packet = {
+        var pack = {
             type: 'startgame'
         }
-        this.player1.send(JSON.stringify(packet))
-        // TODO this.player2.send(JSON.stringify(packet))
+        this.sendPlayers(pack)
+    }
+
+    sendPlayers(obj) {
+        var toSend = JSON.stringify(obj)
+        for (var i in this.players) {
+            this.players[i].send(toSend)
+        }
+    }
+
+    sendTeamByID(teamID, obj) {
+        var toSend = JSON.stringify(obj)
+        for (var i in this.players) {
+            if (this.players[i].team.id == teamID) {
+                this.players[i].send(toSend)
+            }
+        }
+    }
+
+    sendTeam(team, obj) {
+        var toSend = JSON.stringify(obj)
+        for (var i in this.players) {
+            if (this.players[i].team === team) {
+                this.players[i].send(toSend)
+            }
+        }
     }
 
     createSystem() {
         console.log('starting the system because I\'m Gay')
-
-        const orbit1 = new Orbit(0, 0, 150)
-        const orbit2 = new Orbit(0, 0, 220)
-        const orbit3 = new Orbit(0, 0, 270)
-        const orbit4 = new Orbit(0, 0, 360)
-
-        const planet1 = new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2)
-        const planet2a = new Planet(190, 0.1, -1 / 6, 0, 1)
-        const planet2b = new Planet(190, 0.1, -1 / 6, Math.PI, 1)
-        const planet3 = new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2)
-        const planet4 = new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4)
-
-        var planets = [planet1, planet2a, planet2b, planet3, planet4]
-
-        // Setup for testing the game
-        var myPlanets = [planet2a]
-        var yourPlanets = [planet2b]
-
-        planet2a.createSpawn(true)
-        planet2b.createSpawn(true)
 
         this.system = new System()
         this.system.game = this
@@ -85,25 +87,46 @@ class Game extends Object {
         var pack = {
             type: 'createsystem'
         }
-        this.player1.send(JSON.stringify(pack))
-        // TODO this.player2.send(JSON.stringify(pack))
+        this.sendPlayers(pack)
 
-        this.system.addOrbit(orbit1)
-        this.system.addOrbit(orbit2)
-        this.system.addOrbit(orbit3)
-        this.system.addOrbit(orbit4)
+        const orbit1 = this.system.addOrbit(new Orbit(0, 0, 150))
+        const orbit2 = this.system.addOrbit(new Orbit(0, 0, 220))
+        const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
+        const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
-        this.system.addPlanet(planet1)
-        this.system.addPlanet(planet2a)
-        this.system.addPlanet(planet2b)
-        this.system.addPlanet(planet3)
-        this.system.addPlanet(planet4)
+        const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
+        const planet2a = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, 0, 1))
+        const planet2b = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, Math.PI, 1))
+        const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
+        const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 
         planet1.setOrbit(orbit1)
         planet2a.setOrbit(orbit2)
         planet2b.setOrbit(orbit2)
         planet3.setOrbit(orbit3)
         planet4.setOrbit(orbit4)
+
+        planet2a.createSpawn(true)
+        planet2b.createSpawn(true)
+
+        var redTeam = this.system.addTeam(new Team(0xFFAAAA))
+        var blueTeam = this.system.addTeam(new Team(0xAAAAFF))
+        //var yellowTeam = new Team(0xFFF099)
+        //var greenTeam = new Team(0xAAFFAA)
+
+        planet2a.setTeam(redTeam)
+        planet2b.setTeam(blueTeam)
+
+        for (var i in this.players) {
+            var pack = {
+                type: 'setmyteam',
+                team: this.system.teams[i].id
+            }
+            this.players[i].send(JSON.stringify(pack))
+        }
+
+        // TODO starting countdown
+        this.start()
     }
 }
 
