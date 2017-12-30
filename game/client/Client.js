@@ -581,12 +581,12 @@ function parse(type, pack) {
             system.addPlanet(planet)
             break
         case 'setorbit':
-            var planet = system.getPlanet(pack.planet)
+            var planet = system.getPlanetByID(pack.planet)
             var orbit = system.getOrbit(pack.orbit)
             planet.setOrbit(orbit)
             break
         case 'createspawn':
-            var planet = system.getPlanet(pack.planet)
+            var planet = system.getPlanetByID(pack.planet)
             planet.createSpawn(pack.force)
             break
         case 'createteam':
@@ -595,7 +595,7 @@ function parse(type, pack) {
             system.addTeam(team)
             break
         case 'setteam':
-            var planet = system.getPlanet(pack.planet)
+            var planet = system.getPlanetByID(pack.planet)
             var team = system.getTeam(pack.team)
             planet.setTeam(team)
             break

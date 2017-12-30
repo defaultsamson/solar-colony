@@ -129,7 +129,7 @@ class System extends(isServer ? Object : PIXI.Container) {
         }
     }
 
-    getPlanet(id) {
+    getPlanetByID(id) {
         for (var i in this.planets) {
             if (this.planets[i].id == id) {
                 return this.planets[i]
