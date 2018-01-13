@@ -344,6 +344,7 @@ viewport.on('drag-start', function (e) {
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
 viewport.on('click', handleClick)
+viewport.on('tap', handleClick)
 
 function handleClick(e) {
     if (!dragging) {
@@ -356,9 +357,6 @@ function handleClick(e) {
 function onMouseClick(e) {
     let screen = e.data.global
     let world = viewport.toWorld(screen)
-
-    console.log('screen: (' + screen.x + ', ' + screen.y + ')')
-    console.log(' world: (' + world.x + ', ' + world.y + ')')
 
     if (system) {
         if (isChoosingShipSend()) {
