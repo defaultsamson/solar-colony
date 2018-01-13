@@ -36,14 +36,16 @@ document.addEventListener('contextmenu', event => event.preventDefault())
 // Viewport options. Not very important because it can vary (see resize() )
 // These are mostly just used for initialization so that no errors occur
 const viewportOptions = {
-    pauseOnBlur: false,
     screenWidth: w,
     screenHeight: h,
     worldWidth: w,
     worldHeight: h,
+    ticker: game.ticker
 }
 
-const viewport = new Viewport(game.stage, viewportOptions)
+const viewport = new Viewport(viewportOptions)
+game.stage.addChild(viewport)
+
 
 const clampOptions = {
     minWidth: 1,
@@ -62,6 +64,13 @@ viewport
     .pinch(pinchOptions)
     .clampZoom(clampOptions)
     .decelerate()
+
+/*
+var graphics = new PIXI.Graphics()
+graphics.beginFill(0xFFFF00)
+graphics.lineStyle(5, 0xFF0000)
+graphics.drawRect(0, 0, 100, 100)
+viewport.addChild(graphics)*/
 
 PIXI.loader
     .add('sunTexture', 'game/assets/sun.png')
@@ -209,8 +218,6 @@ function onLoad(loader, res) {
 
     resize()
 
-    hud.update()
-
     socket = new SocketManager()
 
     gotoTitle()
@@ -249,7 +256,7 @@ function stopFollow() {
     focusPlanet = null
 }
 
-function centerView(inter) {
+function centerView() {
     if (!snappingToCenter) {
         stopSnap()
         snappingToCenter = true
@@ -278,9 +285,10 @@ function updateKeyboard() {
         hud.updateText()
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
-        // removeShips(myPlanet, 10)
-        //focusPlanet.removeSpawn(1)
-        hud.updateText()
+
+    }
+    if (PIXI.keyboardManager.isPressed(Key.L)) {
+
     }
 
     let screenPoint = game.renderer.plugins.interaction.mouse.global
@@ -296,18 +304,15 @@ function updateKeyboard() {
         if (viewport.plugins['drag'] && viewport.plugins['drag'].moved) {
 
         } else {
-            let worldPoint = viewport.toWorld(screenPoint)
-
             onMouseClick({
-                screen: {
-                    x: screenPoint.x,
-                    y: screenPoint.y
+                e: {
+                    data: {
+                        global: {
+                            x: screenPoint.x,
+                            y: screenPoint.y
+                        }
+                    }
                 },
-                world: {
-                    x: worldPoint.x,
-                    y: worldPoint.y
-                },
-                viewport: viewport
             })
         }
 
@@ -328,15 +333,33 @@ function updateKeyboard() {
     PIXI.keyboardManager.update()
 }
 
+// Quick hack while dragging error persists:
+// Click event fires after drag
+var dragging = false
 viewport.on('drag-start', function (e) {
     stopSnap()
     stopFollow()
+    dragging = true
 })
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
-viewport.on('click', onMouseClick)
+viewport.on('click', handleClick)
+
+function handleClick(e) {
+    if (!dragging) {
+        onMouseClick(e)
+    } else {
+        dragging = false
+    }
+}
 
 function onMouseClick(e) {
+    let screen = e.data.global
+    let world = viewport.toWorld(screen)
+
+    console.log('screen: (' + screen.x + ', ' + screen.y + ')')
+    console.log(' world: (' + world.x + ', ' + world.y + ')')
+
     if (system) {
         if (isChoosingShipSend()) {
             // updateSelectedPlanet(e.world.x, e.world.y)
@@ -351,7 +374,7 @@ function onMouseClick(e) {
 
         stopSnap()
 
-        var point = new PIXI.Point(e.screen.x, e.screen.y)
+        var point = new PIXI.Point(screen.x, screen.y)
 
         if (buy1ShipText.clicked(point)) {
             focusPlanet.createShips(1, 10)
@@ -378,7 +401,7 @@ function onMouseClick(e) {
             return
         }
 
-        var planet = system.getPlanet(e.world.x, e.world.y)
+        var planet = system.getPlanet(world.x, world.y)
         if (planet) {
 
             // If the viewport is already following the planet that was clicked on, then don't do anything
@@ -434,7 +457,7 @@ function onMouseClick(e) {
         centerView()
     } else {
         // Spaghetti Main Menu code
-        var point = new PIXI.Point(e.screen.x, e.screen.y)
+        var point = new PIXI.Point(screen.x, screen.y)
 
         menuSpaghetti(point)
     }
@@ -471,7 +494,7 @@ function resize() {
     var ratio = height / h
 
     game.renderer.resize(width, height)
-    viewport.resize(width, height)
+    viewport.resize(width, height, width, height)
     viewport.fitHeight(prevHeight, false)
 
     // Must maintain the center manually instad of using fitHeight's built in one because the
@@ -506,11 +529,9 @@ function gameLoop() {
     updateKeyboard()
 
     let now = Date.now()
-    let elasped = now - lastElapsed
+    let elapsed = now - lastElapsed
     lastElapsed = now
-    let eTime = (elasped * 0.001)
-
-    viewport.update()
+    let eTime = (elapsed * 0.001)
 
     if (system) {
         system.update(eTime)
@@ -539,8 +560,6 @@ function gameLoop() {
             hud.updateText()
         }
     }
-
-    hud.update()
 }
 
 var gameID = null
@@ -603,7 +622,7 @@ function parse(type, pack) {
             myTeam = system.getTeam(pack.team)
             break
         case 'startgame':
-            game.stage.addChild(system)
+            viewport.addChild(system)
             break
     }
 

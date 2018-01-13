@@ -5,11 +5,6 @@ class Hud extends PIXI.Container {
         super()
     }
 
-    update() {
-        hud.position.copy(viewport.toWorld(0, 0))
-        hud.scale.set(1 / game.stage.scale.x)
-    }
-
     updateText() {
         // If the number of pixels has been updated
         buy1ShipText.tint = pixels < 10 ? Colour.greyText : Colour.white
