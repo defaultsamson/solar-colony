@@ -5,16 +5,13 @@ class System extends(isServer ? Object : PIXI.Container) {
     constructor() {
         super()
 
-        if (isServer) {
-            this.ids = 0
-        } else {
+        if (!isServer) {
             this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, sunParticle)
             this.sun.emit = true
         }
 
         this.orbits = []
         this.planets = []
-        this.teams = []
     }
 
     update(delta) {
@@ -51,38 +48,12 @@ class System extends(isServer ? Object : PIXI.Container) {
         return null
     }
 
-    addTeam(team) {
-        this.teams.push(team)
-        team.system = this
-
-        if (isServer) {
-            team.id = this.createID()
-
-            var pack = {
-                type: 'createteam',
-                id: team.id,
-                colour: team.colour
-            }
-            this.game.sendPlayers(pack)
-            return team
-        }
-    }
-
-    getTeam(id) {
-        for (var i in this.teams) {
-            if (this.teams[i].id == id) {
-                return this.teams[i]
-            }
-        }
-        return null
-    }
-
     addOrbit(orbit) {
         this.orbits.push(orbit)
         orbit.system = this
 
         if (isServer) {
-            orbit.id = this.createID()
+            orbit.id = this.game.createID()
             // Creates the orbit on the client-side
             var pack = {
                 type: 'createorbit',
@@ -112,7 +83,7 @@ class System extends(isServer ? Object : PIXI.Container) {
         planet.system = this
 
         if (isServer) {
-            planet.id = this.createID()
+            planet.id = this.game.createID()
             // Creates the planet on the client-side
             var pack = {
                 type: 'createplanet',
@@ -136,10 +107,6 @@ class System extends(isServer ? Object : PIXI.Container) {
             }
         }
         return null
-    }
-
-    createID() {
-        return this.ids++
     }
 }
 

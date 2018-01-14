@@ -90,6 +90,7 @@ PIXI.loader
 
 var myTeam
 var system
+var teams
 var hud
 
 var socket
@@ -177,7 +178,7 @@ function onLoad(loader, res) {
         createGameText.box = outline
     }
 
-    joinRandomGameText = hud.addChild(new TextButton('With Random Player', style, 0.5, 0.5, -40, -100))
+    joinRandomGameText = hud.addChild(new TextButton('With Random Players', style, 0.5, 0.5, -40, -100))
     joinRandomGameText.anchor.set(1, 0)
 
     {
@@ -189,7 +190,7 @@ function onLoad(loader, res) {
         joinRandomGameText.box = outline
     }
 
-    joinFriendsGameText = hud.addChild(new TextButton('With a Friend', style, 0.5, 0.5, 40, -100))
+    joinFriendsGameText = hud.addChild(new TextButton('With Friends', style, 0.5, 0.5, 45, -100))
     joinFriendsGameText.anchor.set(0, 0)
 
     {
@@ -213,8 +214,46 @@ function onLoad(loader, res) {
     sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
     sendingFormText.anchor.set(0.5, 0)
 
-    waitingText = hud.addChild(new TextButton('Waiting for game start...', largeStyle, 0.5, 0.5, 0, 0))
-    waitingText.anchor.set(0.5, 0.5)
+    gameIDText = hud.addChild(new TextButton('Waiting for game start...', style, 0.5, 0.5, 0, -200))
+    gameIDText.anchor.set(0.5, 0)
+
+    // All the team texts
+
+    redTeamText = hud.addChild(new TextButton('Red', style, 0.5, 0.5, -300, -160))
+    redTeamText.anchor.set(0.5, 0)
+    redTeamText.tint = Colour.red
+    redPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -300, -120))
+    redPlayersText.anchor.set(0.5, 0)
+
+    purpleTeamText = hud.addChild(new TextButton('Purple', style, 0.5, 0.5, -180, -160))
+    purpleTeamText.anchor.set(0.5, 0)
+    purpleTeamText.tint = Colour.purple
+    purplePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -180, -120))
+    purplePlayersText.anchor.set(0.5, 0)
+
+    blueTeamText = hud.addChild(new TextButton('Blue', style, 0.5, 0.5, -60, -160))
+    blueTeamText.anchor.set(0.5, 0)
+    blueTeamText.tint = Colour.blue
+    bluePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -60, -120))
+    bluePlayersText.anchor.set(0.5, 0)
+
+    greenTeamText = hud.addChild(new TextButton('Green', style, 0.5, 0.5, 60, -160))
+    greenTeamText.anchor.set(0.5, 0)
+    greenTeamText.tint = Colour.green
+    greenPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 60, -120))
+    greenPlayersText.anchor.set(0.5, 0)
+
+    yellowTeamText = hud.addChild(new TextButton('Yellow', style, 0.5, 0.5, 180, -160))
+    yellowTeamText.anchor.set(0.5, 0)
+    yellowTeamText.tint = Colour.yellow
+    yellowPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 180, -120))
+    yellowPlayersText.anchor.set(0.5, 0)
+
+    orangeTeamText = hud.addChild(new TextButton('Orange', style, 0.5, 0.5, 300, -160))
+    orangeTeamText.anchor.set(0.5, 0)
+    orangeTeamText.tint = Colour.orange
+    orangePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 300, -120))
+    orangePlayersText.anchor.set(0.5, 0)
 
     resize()
 
@@ -293,13 +332,15 @@ function updateKeyboard() {
 
     let screenPoint = game.renderer.plugins.interaction.mouse.global
     if (PIXI.keyboardManager.isPressed(Key.W)) {
+        /* TODO
         viewport.down(screenPoint.x, screenPoint.y, {
             id: 0
-        })
+        })*/
     } else if (PIXI.keyboardManager.isDown(Key.W)) {
+        /* TODO
         viewport.move(screenPoint.x, screenPoint.y, {
             id: 0
-        })
+        })*/
     } else if (PIXI.keyboardManager.isReleased(Key.W)) {
         if (viewport.plugins['drag'] && viewport.plugins['drag'].moved) {
 
@@ -358,6 +399,8 @@ function onMouseClick(e) {
     let screen = e.data.global
     let world = viewport.toWorld(screen)
 
+    var point = new PIXI.Point(screen.x, screen.y)
+
     if (system) {
         if (isChoosingShipSend()) {
             // updateSelectedPlanet(e.world.x, e.world.y)
@@ -372,7 +415,6 @@ function onMouseClick(e) {
 
         stopSnap()
 
-        var point = new PIXI.Point(screen.x, screen.y)
 
         if (buy1ShipText.clicked(point)) {
             focusPlanet.createShips(1, 10)
@@ -454,10 +496,67 @@ function onMouseClick(e) {
         stopFollow()
         centerView()
     } else {
-        // Spaghetti Main Menu code
-        var point = new PIXI.Point(screen.x, screen.y)
-
-        menuSpaghetti(point)
+        if (inTeamSelection()) {
+            if (redTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 0
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (purpleTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 1
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (blueTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 2
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (greenTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 3
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (yellowTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 4
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (orangeTeamText.clicked(point)) {
+                var pack = {
+                    type: 'jointeam',
+                    team: 5
+                }
+                socket.ws.send(JSON.stringify(pack))
+                return
+            }
+            if (goText.clicked(point)) {
+                var pack = {
+                    type: 'start'
+                }
+                socket.ws.send(JSON.stringify(pack))
+                goText.setEnabled(false)
+                return
+            }
+        } else {
+            // Spaghetti Main Menu code
+            menuSpaghetti(point)
+        }
     }
 }
 
@@ -503,6 +602,15 @@ function resize() {
 
     stopSnap()
     hud.resize(width, height)
+}
+
+function getTeam(id) {
+    for (var i in this.teams) {
+        if (this.teams[i].id == id) {
+            return this.teams[i]
+        }
+    }
+    return null
 }
 
 //   _____                      
@@ -563,8 +671,11 @@ function gameLoop() {
 var gameID = null
 var player = 0
 
-function parse(type, pack) {
+function inTeamSelection() {
+    return redTeamText.visible
+}
 
+function parse(type, pack) {
     switch (type) {
         case 'formfail':
             failSendForm(pack.reason)
@@ -581,8 +692,28 @@ function parse(type, pack) {
             gameID = pack.gameID
             player = pack.player
 
-            waitingText.text = (player == 1 ? 'Waiting for player 2 to join...' : 'Waiting for game to start...') + '\n(Game ID: ' + gameID + ')'
-            waitingText.visible = true
+            teams = []
+            myTeam = null
+
+            goText.visible = true
+
+            gameIDText.text = '(Game ID: ' + gameID + ')'
+            gameIDText.visible = true
+
+            redTeamText.visible = true
+            purpleTeamText.visible = true
+            blueTeamText.visible = true
+            greenTeamText.visible = true
+            yellowTeamText.visible = true
+            orangeTeamText.visible = true
+
+            redPlayersText.visible = true
+            purplePlayersText.visible = true
+            bluePlayersText.visible = true
+            greenPlayersText.visible = true
+            yellowPlayersText.visible = true
+            orangePlayersText.visible = true
+
             break
         case 'createsystem':
             system = new System()
@@ -607,20 +738,104 @@ function parse(type, pack) {
             planet.createSpawn(pack.force)
             break
         case 'createteam':
-            var team = new Team(pack.colour)
-            team.id = pack.id
-            system.addTeam(team)
+            teams.push(new Team(pack.colour, pack.id))
             break
         case 'setteam':
             var planet = system.getPlanetByID(pack.planet)
-            var team = system.getTeam(pack.team)
+            var team = getTeam(pack.team)
             planet.setTeam(team)
             break
         case 'setmyteam':
-            myTeam = system.getTeam(pack.team)
+            myTeam = getTeam(pack.team)
             break
         case 'startgame':
             viewport.addChild(system)
+            break
+        case 'start':
+            var started = pack.chosen
+            var total = pack.total
+
+            if (goText.enabled) {
+                sendingFormText.text = 'Press Start to confirm teams! (' + started + '/' + total + ')'
+            } else {
+                let starting = total - started
+                sendingFormText.text = 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams... (' + started + '/' + total + ')'
+            }
+
+            break
+        case 'popteam':
+            var team = getTeam(pack.team)
+            var name = pack.name
+
+            switch (pack.team) {
+                case 0:
+                    redPlayersText.text += name + '\n'
+                    break
+                case 1:
+                    purplePlayersText.text += name + '\n'
+                    break
+                case 2:
+                    bluePlayersText.text += name + '\n'
+                    break
+                case 3:
+                    greenPlayersText.text += name + '\n'
+                    break
+                case 4:
+                    yellowPlayersText.text += name + '\n'
+                    break
+                case 5:
+                    orangePlayersText.text += name + '\n'
+                    break
+            }
+
+            team.addPlayer(new Player(name))
+
+            break;
+        case 'clearteams':
+            teams = []
+            break
+        case 'clearteamplayers':
+            for (var i in teams) {
+                teams[i].players = []
+            }
+            redPlayersText.text = ''
+            purplePlayersText.text = ''
+            bluePlayersText.text = ''
+            greenPlayersText.text = ''
+            yellowPlayersText.text = ''
+            orangePlayersText.text = ''
+            break
+        case 'updateplayers':
+            var chosen = pack.chosen
+            var total = pack.total
+
+            goText.setEnabled(false)
+            sendingFormText.visible = true
+
+            if (total >= 2) {
+                if (chosen == total) {
+                    // Double checks to make sure that more than one team is populated populated
+                    var populatedTeams = 0
+                    for (var i in teams) {
+                        if (teams[i].players.length > 0) {
+                            populatedTeams++
+                        }
+                    }
+
+                    if (populatedTeams > 1) {
+                        goText.setEnabled(true)
+                        sendingFormText.text = 'Press Start to confirm teams! (0/' + total + ')'
+                    } else {
+                        sendingFormText.text = 'More than one team must be populated'
+                    }
+                } else {
+                    var choosing = total - chosen
+                    sendingFormText.text = 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team'
+                }
+            } else {
+                sendingFormText.text = 'Waiting for one or more players to join...'
+            }
+
             break
     }
 

@@ -77,10 +77,11 @@ class SocketManager extends Object {
                 // Test if no ID was given
                 if (id == '') {
                     this.connections.push(sock)
+                    sock.approved = true
 
                     if (host) {
                         // Create new game and add a player to it
-                        this.server.createGame().addPlayer(sock)
+                        this.server.createGame().addPlayer(sock, name)
 
                     } else {
                         // Join a random game
@@ -92,7 +93,9 @@ class SocketManager extends Object {
                     let game = this.server.findGame(id)
 
                     if (game) {
-                        game.addPlayer(sock)
+                        this.connections.push(sock)
+                        sock.approved = true
+                        game.addPlayer(sock, name)
 
                     } else {
                         // No game found with given ID
@@ -121,12 +124,14 @@ class SocketManager extends Object {
         }
     }
 
-    approved(con) {
+    approved(sock) {
+        return sock.approved === true
+        
         // Check if con is in this.connections
-        for (var i in this.connections) {
+        /*for (var i in this.connections) {
             if (this.connections[i] === con) return true
         }
-        return false
+        return false*/
     }
 }
 
