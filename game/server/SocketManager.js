@@ -126,7 +126,7 @@ class SocketManager extends Object {
 
     approved(sock) {
         return sock.approved === true
-        
+
         // Check if con is in this.connections
         /*for (var i in this.connections) {
             if (this.connections[i] === con) return true

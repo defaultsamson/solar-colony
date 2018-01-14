@@ -13,7 +13,7 @@ class Team extends Object {
         player.team = this
         this.players.push(player)
     }
-    
+
     removePlayer(player) {
         player.team = null
         var i = this.players.indexOf(player)

@@ -346,20 +346,19 @@ function updateKeyboard() {
 
         } else {
             onMouseClick({
-                e: {
-                    data: {
-                        global: {
-                            x: screenPoint.x,
-                            y: screenPoint.y
-                        }
+                data: {
+                    global: {
+                        x: screenPoint.x,
+                        y: screenPoint.y
                     }
-                },
+                }
             })
         }
 
+        /* TODO
         viewport.up(screenPoint.x, screenPoint.y, {
             id: 0
-        })
+        })*/
     }
 
     if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
@@ -443,7 +442,6 @@ function onMouseClick(e) {
 
         var planet = system.getPlanet(world.x, world.y)
         if (planet) {
-
             // If the viewport is already following the planet that was clicked on, then don't do anything
             var follow = viewport.plugins['follow']
             if (follow && (follow.target == planet)) {
@@ -717,6 +715,7 @@ function parse(type, pack) {
             break
         case 'createsystem':
             system = new System()
+            hud.hideAll()
             break
         case 'createorbit':
             var orbit = new Orbit(pack.x, pack.y, pack.radius)

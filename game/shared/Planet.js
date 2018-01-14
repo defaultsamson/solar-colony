@@ -171,11 +171,11 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
     isMyPlanet() {
         // Client-side only
-        return this.team === myTeam
+        return exists(this.team) ? this.team.id === myTeam.id : false
     }
 
     isTeamsPlanet(team) {
-        return this.team === team
+        return this.team.id === team.id
     }
 
     setTeam(team) {

@@ -14,11 +14,11 @@ class Game extends Object {
         this.teams = []
 
         this.redTeam = this.addTeam(new Team(0xFF8888, 0))
-        this.purpleTeam = this.addTeam(new Team(0xBB88DD, 2))
-        this.blueTeam = this.addTeam(new Team(0xAAAAFF, 1))
-        this.greenTeam = this.addTeam(new Team(0xAAFFAA, 5))
-        this.yellowTeam = this.addTeam(new Team(0xFFFF66, 3))
-        this.orangeTeam = this.addTeam(new Team(0xFFAA55, 4))
+        this.purpleTeam = this.addTeam(new Team(0xBB88DD, 1))
+        this.blueTeam = this.addTeam(new Team(0xAAAAFF, 2))
+        this.greenTeam = this.addTeam(new Team(0xAAFFAA, 3))
+        this.yellowTeam = this.addTeam(new Team(0xFFFF66, 4))
+        this.orangeTeam = this.addTeam(new Team(0xFFAA55, 5))
 
         this.system = null
 
@@ -59,7 +59,9 @@ class Game extends Object {
                     }
 
                     // Start the game if all players have chosen
-                    if (chosen == this.players.length) {} else {
+                    if (chosen == this.players.length) {
+                        this.createSystem()
+                    } else {
                         // Else tell the other players to choose
                         var packet = {
                             type: 'start',
@@ -74,7 +76,8 @@ class Game extends Object {
     }
 
     addTeam(team) {
-        return this.teams.push(team)
+        this.teams.push(team)
+        return team
     }
 
     getTeam(id) {
@@ -221,7 +224,7 @@ class Game extends Object {
         for (var i in this.players) {
             var pack = {
                 type: 'setmyteam',
-                team: this.system.teams[i].id
+                team: this.players[i].team.id
             }
             this.players[i].send(JSON.stringify(pack))
         }
