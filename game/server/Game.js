@@ -137,7 +137,6 @@ class Game extends Object {
         sock.send(JSON.stringify(packet))
 
         this.updatePlayerCount()
-
         this.sendTeams()
     }
 
@@ -187,7 +186,7 @@ class Game extends Object {
     }
 
     createSystem() {
-        console.log('Starting the solar system')
+        console.log('Starting Game: ' + this.gameID)
 
         this.system = new System()
         this.system.game = this

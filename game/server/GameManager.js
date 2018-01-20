@@ -33,8 +33,8 @@ class GameManager extends Object {
             this.socket.addConnection(sender, packet.host, packet.user, packet.id)
         }
 
-        console.log('type: ' + type)
-        console.log('packet: ' + packet)
+        // console.log('type: ' + type)
+        // console.log('packet: ' + packet)
     }
 
     findGame(gameID) {
@@ -51,8 +51,17 @@ class GameManager extends Object {
 
         var game = new Game(id)
         this.games.push(game)
+        console.log('Creating Game: ' + id)
 
         return game
+    }
+
+    removeGame(game) {
+        var i = this.games.indexOf(game)
+        if (i != -1) {
+            this.games.splice(i, 1)
+            console.log('Removing Game: ' + game.gameID)
+        }
     }
 
     queue(sock) {

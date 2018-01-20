@@ -66,6 +66,27 @@ class SocketManager extends Object {
         if (i != -1) {
             this.connections.splice(i, 1)
         }
+
+        if (sock.game) {
+            if (sock.team) {
+                sock.team.removePlayer(sock)
+            }
+
+            var i = sock.game.players.indexOf(sock)
+            if (i != -1) {
+                sock.game.players.splice(i, 1)
+            }
+
+            // If there's still players left in the game
+            if (sock.game.players.length > 0) {
+                // Update the teams for them
+                // TODO may break if performed mid-game
+                sock.game.sendTeamPlayers()
+                sock.game.updatePlayerCount()
+            } else {
+                this.server.removeGame(sock.game)
+            }
+        }
     }
 
     addConnection(sock, host, name, id) {
