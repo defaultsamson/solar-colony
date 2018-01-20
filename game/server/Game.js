@@ -203,22 +203,38 @@ class Game extends Object {
         const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
         const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
-        const planet2a = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, 0, 1))
-        const planet2b = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, Math.PI, 1))
+
+        {
+            // Rebuilds the teams 
+            var tempTeams = []
+            for (var i in this.teams) {
+                if (this.teams[i].players.length > 0) {
+                    tempTeams.push(this.teams[i])
+                }
+            }
+            this.teams = tempTeams
+
+            // builds the player planets
+            const planetCount = this.teams.length
+            const rotation = 2 * Math.PI / planetCount 
+            for (var i = 0; i < planetCount; i++) {
+                var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
+
+                planet.setOrbit(orbit2)
+                planet.createSpawn(true)
+                planet.setTeam(this.teams[i])
+            }
+        }
+
+        //const planet2a = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, 0, 1))
+        //const planet2b = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, Math.PI, 1))
         const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
         const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 
         planet1.setOrbit(orbit1)
-        planet2a.setOrbit(orbit2)
-        planet2b.setOrbit(orbit2)
+
         planet3.setOrbit(orbit3)
         planet4.setOrbit(orbit4)
-
-        planet2a.createSpawn(true)
-        planet2b.createSpawn(true)
-
-        planet2a.setTeam(this.redTeam)
-        planet2b.setTeam(this.blueTeam)
 
         for (var i in this.players) {
             var pack = {

@@ -136,7 +136,7 @@ function onLoad(loader, res) {
     buy10ShipText.anchor.set(1, 0.5)
     buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
     buy1ShipText.anchor.set(1, 0.5)
-    buy100ShipText = hud.addChild(new TextButton('100 Ship (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
+    buy100ShipText = hud.addChild(new TextButton('100 Ships (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
     buy100ShipText.anchor.set(1, 0.5)
 
     buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
