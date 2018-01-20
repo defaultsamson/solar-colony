@@ -46,6 +46,24 @@
             top: -25px
         }
 
+        .idDiv {
+            position: absolute;
+            left: -150px;
+            top: -240px;
+            width: 0px;
+            height: 0px
+        }
+
+        #gameID {
+            text-align: center;
+            font-size: 30px;
+            color: white;
+            font-family: Verdana, Geneva, sans-serif;
+            
+            width: 300px;
+            visibility: hidden
+        }
+
     </style>
 
     <!-- Client libraries -->
@@ -90,5 +108,9 @@
 
         <img id='idCheck' src='game/assets/check.png' class='idChecker' />
         <img id='idCross' src='game/assets/cross.png' class='idChecker' />
+
+        <div class='idDiv'>
+            <p id='gameID'>Game ID: HUJ7I8</p>
+        </div>
     </div>
 </body>

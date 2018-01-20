@@ -214,9 +214,6 @@ function onLoad(loader, res) {
     sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
     sendingFormText.anchor.set(0.5, 0)
 
-    gameIDText = hud.addChild(new TextButton('Waiting for game start...', style, 0.5, 0.5, 0, -200))
-    gameIDText.anchor.set(0.5, 0)
-
     // All the team texts
 
     redTeamText = hud.addChild(new TextButton('Red', style, 0.5, 0.5, -300, -160))
@@ -695,8 +692,8 @@ function parse(type, pack) {
 
             goText.visible = true
 
-            gameIDText.text = '(Game ID: ' + gameID + ')'
-            gameIDText.visible = true
+            document.getElementById('gameID').style.visibility = 'visible'
+            document.getElementById('gameID').innerHTML = 'Game ID: ' + gameID
 
             redTeamText.visible = true
             purpleTeamText.visible = true
@@ -716,6 +713,7 @@ function parse(type, pack) {
         case 'createsystem':
             system = new System()
             hud.hideAll()
+            document.getElementById('gameID').style.visibility = 'hidden'
             break
         case 'createorbit':
             var orbit = new Orbit(pack.x, pack.y, pack.radius)

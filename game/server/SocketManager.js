@@ -93,10 +93,28 @@ class SocketManager extends Object {
                     let game = this.server.findGame(id)
 
                     if (game) {
-                        this.connections.push(sock)
-                        sock.approved = true
-                        game.addPlayer(sock, name)
 
+                        var allowName = true
+                        for (var i in game.players) {
+                            //console.log('name: ' + )
+                            if (game.players[i].name == name) {
+                                allowName = false
+                                break
+                            }
+                        }
+
+                        if (allowName) {
+                            this.connections.push(sock)
+                            sock.approved = true
+                            game.addPlayer(sock, name)
+                        } else {
+                            // name already exists
+                            var formPacket = {
+                                type: 'formfail',
+                                reason: 'A player with username ' + name + ' already exists'
+                            }
+                            sock.send(JSON.stringify(formPacket))
+                        }
                     } else {
                         // No game found with given ID
                         var formPacket = {

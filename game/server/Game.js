@@ -187,7 +187,7 @@ class Game extends Object {
     }
 
     createSystem() {
-        console.log('starting the system because I\'m Gay')
+        console.log('Starting the solar system')
 
         this.system = new System()
         this.system.game = this
