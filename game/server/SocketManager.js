@@ -98,7 +98,6 @@ class SocketManager extends Object {
                 // Test if no ID was given
                 if (id == '') {
                     this.connections.push(sock)
-                    sock.approved = true
 
                     if (host) {
                         // Create new game and add a player to it
@@ -126,7 +125,7 @@ class SocketManager extends Object {
 
                         if (allowName) {
                             this.connections.push(sock)
-                            sock.approved = true
+                            
                             game.addPlayer(sock, name)
                         } else {
                             // name already exists

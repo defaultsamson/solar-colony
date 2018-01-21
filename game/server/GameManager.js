@@ -27,7 +27,11 @@ class GameManager extends Object {
 
     parse(sender, type, packet) {
 
-        if (this.socket.approved(sender)) {
+        if (type == 'p') {
+            if (sender.pinger) {
+                sender.pinger.recieve()
+            }
+        } else if (this.socket.approved(sender)) {
             sender.game.parse(sender, type, packet)
         } else if (type == 'form') {
             this.socket.addConnection(sender, packet.host, packet.user, packet.id)

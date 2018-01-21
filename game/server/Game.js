@@ -2,6 +2,7 @@ const Orbit = require('../shared/Orbit.js')
 const Planet = require('../shared/Planet.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
+const Timeskewer = require('./Timeskewer.js')
 
 class Game extends Object {
     constructor(gameID) {
@@ -29,6 +30,10 @@ class Game extends Object {
     update(delta) {
         if (this.system) {
             this.system.update(delta)
+        }
+
+        for (var i in this.players) {
+            this.players[i].pinger.update(delta)
         }
     }
 
@@ -125,9 +130,11 @@ class Game extends Object {
     }
 
     addPlayer(sock, name) {
-        this.players.push(sock)
         sock.name = name
         sock.game = this
+        sock.approved = true
+        sock.pinger = new Timeskewer(sock)
+        this.players.push(sock)
 
         var packet = {
             type: 'joingame',
@@ -216,7 +223,7 @@ class Game extends Object {
 
             // builds the player planets
             const planetCount = this.teams.length
-            const rotation = 2 * Math.PI / planetCount 
+            const rotation = 2 * Math.PI / planetCount
             for (var i = 0; i < planetCount; i++) {
                 var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
 
@@ -226,8 +233,6 @@ class Game extends Object {
             }
         }
 
-        //const planet2a = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, 0, 1))
-        //const planet2b = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, Math.PI, 1))
         const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
         const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 

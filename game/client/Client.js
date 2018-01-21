@@ -672,6 +672,12 @@ function inTeamSelection() {
 
 function parse(type, pack) {
     switch (type) {
+        case 'p':
+            let pPack = {
+                type: 'p'
+            }
+            socket.ws.send(JSON.stringify(pPack))
+            break
         case 'formfail':
             failSendForm(pack.reason)
             break
