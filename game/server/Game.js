@@ -52,9 +52,15 @@ class Game extends Object {
                 this.getTeam(pack.team).addPlayer(sender)
                 this.sendTeamPlayers()
                 this.updatePlayerCount()
+
+                var pack = {
+                    type: 'setmyteam',
+                    team: sender.team.id
+                }
+                sender.send(JSON.stringify(pack))
                 break
             case 'start':
-                if (!sender.start) {
+                if (!sender.start && sender.team) {
                     sender.start = true
                     var chosen = 0
                     for (var i in this.players) {
@@ -63,8 +69,8 @@ class Game extends Object {
                         }
                     }
 
-                    // Start the game if all players have chosen
-                    if (chosen == this.players.length) {
+                    // Start the game if there's more than two players and all players have chosen a team
+                    if (chosen >= 2 && chosen == this.players.length) {
                         this.createSystem()
                     } else {
                         // Else tell the other players to choose

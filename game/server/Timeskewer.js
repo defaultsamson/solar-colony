@@ -88,6 +88,12 @@ class Timeskewer extends Object {
         // if the server still doesn't have enough data to perform the algorithm on
         if (this.initialPings) {
             this.ping = ping
+
+            let pack = {
+                type: 'pi',
+                ping: Math.ceil(this.ping)
+            }
+            this.sock.send(JSON.stringify(pack))
         }
 
         // If the pings should now be skewed
@@ -104,6 +110,12 @@ class Timeskewer extends Object {
 
             this.ping = average(this.pings)
             this.pings = []
+
+            let pack = {
+                type: 'pi',
+                ping: Math.ceil(this.ping)
+            }
+            this.sock.send(JSON.stringify(pack))
         }
     }
 }

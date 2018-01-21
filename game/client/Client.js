@@ -132,6 +132,9 @@ function onLoad(loader, res) {
     pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
     shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
 
+    pingText = hud.addChild(new TextButton('Ping: 200ms', smallStyle, 1, 0, -10, 10))
+    pingText.anchor.set(1, 0)
+
     buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
     buy10ShipText.anchor.set(1, 0.5)
     buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
@@ -678,6 +681,10 @@ function parse(type, pack) {
             }
             socket.ws.send(JSON.stringify(pPack))
             break
+        case 'pi':
+            pingText.visible = true
+            pingText.text = 'Ping: ' + pack.ping + 'ms'
+            break
         case 'formfail':
             failSendForm(pack.reason)
             break
@@ -718,8 +725,6 @@ function parse(type, pack) {
             break
         case 'createsystem':
             system = new System()
-            hud.hideAll()
-            document.getElementById('gameID').style.visibility = 'hidden'
             break
         case 'createorbit':
             var orbit = new Orbit(pack.x, pack.y, pack.radius)
@@ -750,9 +755,17 @@ function parse(type, pack) {
             break
         case 'setmyteam':
             myTeam = getTeam(pack.team)
+
+            if (waitingMessage) {
+                sendingFormText.text = waitingMessage
+                waitingMessage = null
+            }
             break
         case 'startgame':
             viewport.addChild(system)
+            document.getElementById('gameID').style.visibility = 'hidden'
+            hud.hideAll()
+            pingText.visible = true
             break
         case 'start':
             var started = pack.chosen
@@ -839,6 +852,12 @@ function parse(type, pack) {
                 sendingFormText.text = 'Waiting for one or more players to join...'
             }
 
+            // If a team hasn't been chosen yet, display a choose team message
+            if (!myTeam) {
+                waitingMessage = sendingFormText.text
+
+                sendingFormText.text = 'Click a colour above to join that team!'
+            }
             break
     }
 
