@@ -78,9 +78,12 @@ function gotoTitle() {
 
     document.getElementById('nameInput').style.visibility = 'visible'
     document.getElementById('idInput').style.visibility = 'hidden'
+    document.getElementById('gameID').style.visibility = 'hidden'
 
     goText.visible = true
     updateStartButton()
+
+    formSent = false
 }
 
 var nameGotGood = false

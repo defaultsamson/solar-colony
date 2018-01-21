@@ -5,9 +5,10 @@ const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
 
 class Game extends Object {
-    constructor(gameID) {
+    constructor(server, gameID) {
         super()
 
+        this.server = server
         this.ids = 0
         this.gameID = gameID
 
@@ -83,6 +84,10 @@ class Game extends Object {
                     }
                 }
                 break
+            case 'quit':
+                this.removePlayer(sender)
+                sender.approved = false
+                break
         }
     }
 
@@ -151,6 +156,28 @@ class Game extends Object {
 
         this.updatePlayerCount()
         this.sendTeams()
+    }
+
+    removePlayer(sock) {
+        if (sock.team) {
+            sock.team.removePlayer(sock)
+        }
+
+        // Removes the player from the list of players
+        var i = this.players.indexOf(sock)
+        if (i != -1) {
+            this.players.splice(i, 1)
+        }
+
+        // If there's still players left in the game
+        if (this.players.length > 0) {
+            // Update the teams for them
+            // TODO may break if performed mid-game
+            this.sendTeamPlayers()
+            this.updatePlayerCount()
+        } else {
+            this.server.removeGame(this)
+        }
     }
 
     updatePlayerCount() {

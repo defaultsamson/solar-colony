@@ -53,7 +53,7 @@ class GameManager extends Object {
         // Create a game with an ID
         var id = this.generateSafeID()
 
-        var game = new Game(id)
+        var game = new Game(this, id)
         this.games.push(game)
         console.log('Creating Game: ' + id)
 

@@ -217,6 +217,9 @@ function onLoad(loader, res) {
     sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
     sendingFormText.anchor.set(0.5, 0)
 
+    quitText = hud.addChild(new TextButton('Quit Game', style, 0.5, 0.5, 0, 220))
+    quitText.anchor.set(0.5, 0)
+
     // All the team texts
 
     redTeamText = hud.addChild(new TextButton('Red', style, 0.5, 0.5, -300, -160))
@@ -551,6 +554,14 @@ function onMouseClick(e) {
                 goText.setEnabled(false)
                 return
             }
+            if (quitText.clicked(point)) {
+                var pack = {
+                    type: 'quit'
+                }
+                socket.ws.send(JSON.stringify(pack))
+                gotoTitle()
+                return
+            }
         } else {
             // Spaghetti Main Menu code
             menuSpaghetti(point)
@@ -704,6 +715,7 @@ function parse(type, pack) {
             myTeam = null
 
             goText.visible = true
+            quitText.visible = true
 
             document.getElementById('gameID').style.visibility = 'visible'
             document.getElementById('gameID').innerHTML = 'Game ID: ' + gameID
