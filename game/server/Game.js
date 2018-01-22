@@ -5,12 +5,14 @@ const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
 
 class Game extends Object {
-    constructor(server, gameID) {
+    constructor(server, gameID, maxPlayers) {
         super()
 
-        this.server = server
         this.ids = 0
+
+        this.server = server
         this.gameID = gameID
+        this.maxPlayers = maxPlayers
 
         this.players = []
         this.teams = []
@@ -54,11 +56,11 @@ class Game extends Object {
                 this.sendTeamPlayers()
                 this.updatePlayerCount()
 
-                var pack = {
+                var packet = {
                     type: 'setmyteam',
                     team: sender.team.id
                 }
-                sender.send(JSON.stringify(pack))
+                sender.send(JSON.stringify(packet))
                 break
             case 'start':
                 if (!sender.start && sender.team) {
@@ -72,7 +74,7 @@ class Game extends Object {
 
                     // Start the game if there's more than two players and all players have chosen a team
                     if (chosen >= 2 && chosen == this.players.length) {
-                        this.createSystem()
+                        this.start()
                     } else {
                         // Else tell the other players to choose
                         var packet = {
@@ -89,6 +91,10 @@ class Game extends Object {
                 sender.approved = false
                 break
         }
+    }
+
+    canAddPlayer() {
+        return this.players.length < this.maxPlayers
     }
 
     addTeam(team) {
@@ -191,42 +197,16 @@ class Game extends Object {
         var packet = {
             type: 'updateplayers',
             chosen: chosen,
-            total: this.players.length
+            total: this.players.length,
+            max: this.maxPlayers
         }
         this.sendPlayers(packet)
     }
 
     start() {
-        let pack = {
-            type: 'startgame'
-        }
-        this.sendPlayers(pack)
-    }
-
-    sendPlayers(obj) {
-        let toSend = JSON.stringify(obj)
-        for (var i in this.players) {
-            this.players[i].send(toSend)
-        }
-    }
-
-    sendTeamByID(teamID, obj) {
-        let toSend = JSON.stringify(obj)
-        let team = this.getTeam(teamID)
-        for (var i in team.players) {
-            team.players[i].send(toSend)
-        }
-    }
-
-    sendTeam(team, obj) {
-        let toSend = JSON.stringify(obj)
-        for (var i in team.players) {
-            team.players[i].send(toSend)
-        }
-    }
-
-    createSystem() {
         console.log('Starting Game: ' + this.gameID)
+
+        this.server.removeQueue(this)
 
         this.system = new System()
         this.system.game = this
@@ -283,7 +263,32 @@ class Game extends Object {
         }
 
         // TODO starting countdown
-        this.start()
+        var pack = {
+            type: 'startgame'
+        }
+        this.sendPlayers(pack)
+    }
+
+    sendPlayers(obj) {
+        let toSend = JSON.stringify(obj)
+        for (var i in this.players) {
+            this.players[i].send(toSend)
+        }
+    }
+
+    sendTeamByID(teamID, obj) {
+        let toSend = JSON.stringify(obj)
+        let team = this.getTeam(teamID)
+        for (var i in team.players) {
+            team.players[i].send(toSend)
+        }
+    }
+
+    sendTeam(team, obj) {
+        let toSend = JSON.stringify(obj)
+        for (var i in team.players) {
+            team.players[i].send(toSend)
+        }
     }
 
     createID() {

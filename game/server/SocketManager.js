@@ -50,6 +50,12 @@ class SocketManager extends Object {
                 sm.removeConnection(ws)
             })
 
+            ws.on('error', function error(e) {
+                // Remove the connection
+                sm.removeConnection(ws)
+                console.log('Error: ' + e.code);
+            })
+
             ws.on('message', function incoming(msg) {
                 try {
                     var pack = JSON.parse(msg)
@@ -72,7 +78,7 @@ class SocketManager extends Object {
         }
     }
 
-    addConnection(sock, host, name, id) {
+    addConnection(sock, host, name, id, playerCount) {
         if (!this.approved(sock)) {
             id = id ? id.toUpperCase() : ''
 
@@ -88,7 +94,7 @@ class SocketManager extends Object {
 
                     } else {
                         // Join a random game
-                        this.server.queue(sock)
+                        this.server.queue(sock, name, playerCount)
                     }
 
                     // If ID was given make sure it's proper

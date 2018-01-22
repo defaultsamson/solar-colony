@@ -134,6 +134,8 @@ function onLoad(loader, res) {
 
     pingText = hud.addChild(new TextButton('Ping: 200ms', smallStyle, 1, 0, -10, 10))
     pingText.anchor.set(1, 0)
+    playersText = hud.addChild(new TextButton('Players: (0/0)', smallStyle, 1, 0, -10, 30))
+    playersText.anchor.set(1, 0)
 
     buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
     buy10ShipText.anchor.set(1, 0.5)
@@ -181,7 +183,7 @@ function onLoad(loader, res) {
         createGameText.box = outline
     }
 
-    joinRandomGameText = hud.addChild(new TextButton('With Random Players', style, 0.5, 0.5, -40, -100))
+    joinRandomGameText = hud.addChild(new TextButton('Random Game', style, 0.5, 0.5, -40, -100))
     joinRandomGameText.anchor.set(1, 0)
 
     {
@@ -210,6 +212,93 @@ function onLoad(loader, res) {
 
     idEntry = hud.addChild(new TextButton('Game ID:', style, 0.5, 0.5, -40, 40))
     idEntry.anchor.set(1, 0)
+
+    playerCount = hud.addChild(new TextButton('Player Count:', style, 0.5, 0.5, -40, 40))
+    playerCount.anchor.set(1, 0)
+
+    playerCount2 = hud.addChild(new TextButton('2', style, 0.5, 0.5, 10, 40))
+    playerCount2.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount2.width + 20, playerCount2.height + 10)
+        outline.visible = false
+        playerCount2.addChild(outline)
+        playerCount2.box = outline
+    }
+
+    playerCount3 = hud.addChild(new TextButton('3', style, 0.5, 0.5, 40, 40))
+    playerCount3.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount3.width + 20, playerCount3.height + 10)
+        outline.visible = false
+        playerCount3.addChild(outline)
+        playerCount3.box = outline
+    }
+
+    playerCount4 = hud.addChild(new TextButton('4', style, 0.5, 0.5, 70, 40))
+    playerCount4.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount4.width + 20, playerCount4.height + 10)
+        outline.visible = false
+        playerCount4.addChild(outline)
+        playerCount4.box = outline
+    }
+
+    playerCount5 = hud.addChild(new TextButton('5', style, 0.5, 0.5, 100, 40))
+    playerCount5.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount5.width + 20, playerCount5.height + 10)
+        outline.visible = false
+        playerCount5.addChild(outline)
+        playerCount5.box = outline
+    }
+
+    playerCount8 = hud.addChild(new TextButton('8', style, 0.5, 0.5, 130, 40))
+    playerCount8.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount8.width + 20, playerCount8.height + 10)
+        outline.visible = false
+        playerCount8.addChild(outline)
+        playerCount8.box = outline
+    }
+
+    playerCount10 = hud.addChild(new TextButton('10', style, 0.5, 0.5, 160, 40))
+    playerCount10.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCount10.width + 20, playerCount10.height + 10)
+        outline.visible = false
+        playerCount10.addChild(outline)
+        playerCount10.box = outline
+    }
+
+    playerCountAny = hud.addChild(new TextButton('Any', style, 0.5, 0.5, 210, 40))
+    playerCountAny.anchor.set(0, 0)
+
+    {
+        var outline = new PIXI.Graphics()
+        outline.lineStyle(3, 0xFFFFFF)
+        outline.drawRect(-10, -5, playerCountAny.width + 20, playerCountAny.height + 10)
+        outline.visible = false
+        playerCountAny.addChild(outline)
+        playerCountAny.box = outline
+    }
 
     goText = hud.addChild(new TextButton('Start!', largeStyle, 0.5, 0.5, 0, 110))
     goText.anchor.set(0.5, 0)
@@ -836,6 +925,10 @@ function parse(type, pack) {
         case 'updateplayers':
             var chosen = pack.chosen
             var total = pack.total
+            var max = pack.max
+
+            playersText.visible = true
+            playersText.text = 'Players: (' + total + '/' + max + ')'
 
             goText.setEnabled(false)
             sendingFormText.visible = true
