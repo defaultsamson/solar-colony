@@ -262,11 +262,18 @@ class Game extends Object {
             this.players[i].send(JSON.stringify(pack))
         }
 
-        // TODO starting countdown
-        var pack = {
-            type: 'startgame'
+        const waitTime = 1000
+
+        for (var i in this.players) {
+            const player = this.players[i]
+            setTimeout(function () {
+                // TODO starting countdown
+                var pack = {
+                    type: 'startgame'
+                }
+                player.send(JSON.stringify(pack))
+            }, Math.max(0, waitTime - player.pinger.ping))
         }
-        this.sendPlayers(pack)
     }
 
     sendPlayers(obj) {

@@ -868,6 +868,8 @@ function parse(type, pack) {
             hud.hideAll()
             pingText.visible = true
             break
+        case 'begingame':
+            break
         case 'start':
             var started = pack.chosen
             var total = pack.total
