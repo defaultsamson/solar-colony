@@ -18,7 +18,14 @@ class GameManager extends Object {
 
         this.gameLoopID = gameloop.setGameLoop(function (delta) {
             for (var i in so.games) {
-                so.games[i].update(delta)
+                try {
+                    so.games[i].update(delta)
+                } catch (err) {
+                    console.log("================================")
+                    console.log("ERROR: Server game tick error...")
+                    console.log("================================")
+                    console.log(err)
+                }
             }
         }, 1000 / 30);
 
@@ -77,7 +84,7 @@ class GameManager extends Object {
             console.log('Removing Game: ' + game.gameID)
         }
 
-        this.removeQueue()
+        this.removeQueue(game)
     }
 
     removeQueue(game) {

@@ -21,6 +21,26 @@ class Team extends Object {
             this.players.splice(i, 1)
         }
     }
+    
+    // Server-side function to update the pixel count for the clients
+    updateClientPIxels() {
+        // Send the updated pixel count to clients
+        if (isServer) {
+            var pack = {
+                type: 'pix',
+                pl: this.pixels
+            }
+            this.sendTeam(pack)
+        }
+    }
+
+    // Server-side only
+    sendTeam(obj) {
+        let toSend = JSON.stringify(obj)
+        for (var i in this.players) {
+            this.players[i].send(toSend)
+        }
+    }
 }
 
 if (isServer) {

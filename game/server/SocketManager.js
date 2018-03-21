@@ -47,13 +47,21 @@ class SocketManager extends Object {
 
             ws.on('close', function close() {
                 // Remove the connection
-                sm.removeConnection(ws)
+                try {
+                    sm.removeConnection(ws)
+                } catch (err) {
+                    console.log(err)
+                }
             })
 
             ws.on('error', function error(e) {
                 // Remove the connection
-                sm.removeConnection(ws)
-                console.log('Error: ' + e.code);
+                try {
+                    console.log('Error: ' + e.code);
+                    sm.removeConnection(ws)
+                } catch (err) {
+                    console.log(err)
+                }
             })
 
             ws.on('message', function incoming(msg) {

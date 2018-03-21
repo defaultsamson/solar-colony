@@ -412,7 +412,7 @@ function centerView() {
 function updateKeyboard() {
 
     if (PIXI.keyboardManager.isPressed(Key.P)) {
-        pixels += 5000
+        myTeam.pixels += 5000
         hud.updateText()
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
@@ -508,17 +508,17 @@ function onMouseClick(e) {
 
 
         if (buy1ShipText.clicked(point)) {
-            focusPlanet.createShips(1, 10)
+            focusPlanet.createShipsClick(1, 10)
             return
         }
 
         if (buy10ShipText.clicked(point)) {
-            focusPlanet.createShips(10, 90)
+            focusPlanet.createShipsClick(10, 90)
             return
         }
 
         if (buy100ShipText.clicked(point)) {
-            focusPlanet.createShips(100, 800)
+            focusPlanet.createShipsClick(100, 800)
             return
         }
 
@@ -720,7 +720,6 @@ function getTeam(id) {
 
 // Stats
 var lastPixels = 1
-var pixels = 0
 var lastShips = 1
 var ships = 0
 
@@ -744,9 +743,11 @@ function gameLoop() {
             lastShips = ships
             shipsText.text = 'Ships: ' + ships
         }
-        if (pixels != lastPixels) {
-            lastPixels = pixels
-            pixelText.text = 'Pixels: ' + pixels
+        
+        // TODO this can be done in parse() when the server sends new pixels
+        if (myTeam.pixels != lastPixels) {
+            lastPixels = myTeam.pixels
+            pixelText.text = 'Pixels: ' + myTeam.pixels
         }
 
         var focussed = focusPlanet && focusPlanet.isMyPlanet()
@@ -784,6 +785,14 @@ function parse(type, pack) {
         case 'pi':
             pingText.visible = true
             pingText.text = 'Ping: ' + pack.ping + 'ms'
+            break
+        case 'pix': // update pixel count
+            var pl = pack.pl
+            myTeam.pixels = pl
+            break
+        case 'bs': // buy ships
+            var planet = system.getPlanetByID(pack.pl)
+            planet.createShips(pack.n)
             break
         case 'formfail':
             failSendForm(pack.reason)
@@ -867,8 +876,9 @@ function parse(type, pack) {
             document.getElementById('gameID').style.visibility = 'hidden'
             hud.hideAll()
             pingText.visible = true
-            break
-        case 'begingame':
+            pixelText.visible = true
+            shipsText.visible = true
+            
             break
         case 'start':
             var started = pack.chosen

@@ -42,6 +42,9 @@ class Game extends Object {
 
     parse(sender, type, pack) {
         switch (type) {
+            case 'bs': // buy ships
+                this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+                break
             case 'jointeam':
                 // Reset the start status
                 for (var i in this.players) {
@@ -247,6 +250,7 @@ class Game extends Object {
         }
 
         const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
+
         const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 
         planet1.setOrbit(orbit1)
@@ -262,7 +266,7 @@ class Game extends Object {
             this.players[i].send(JSON.stringify(pack))
         }
 
-        const waitTime = 1000
+        const waitTime = 3000
 
         for (var i in this.players) {
             const player = this.players[i]
@@ -286,13 +290,6 @@ class Game extends Object {
     sendTeamByID(teamID, obj) {
         let toSend = JSON.stringify(obj)
         let team = this.getTeam(teamID)
-        for (var i in team.players) {
-            team.players[i].send(toSend)
-        }
-    }
-
-    sendTeam(team, obj) {
-        let toSend = JSON.stringify(obj)
         for (var i in team.players) {
             team.players[i].send(toSend)
         }
