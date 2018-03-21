@@ -791,8 +791,7 @@ function parse(type, pack) {
             myTeam.pixels = pl
             break
         case 'bs': // buy ships
-            var planet = system.getPlanetByID(pack.pl)
-            planet.createShips(pack.n)
+            system.getPlanetByID(pack.pl).createShips(pack.n)
             break
         case 'formfail':
             failSendForm(pack.reason)
