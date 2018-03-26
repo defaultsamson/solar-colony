@@ -24,7 +24,7 @@ function connect() {
         if (connected) {
             gotoTitle()
         }
-        
+
         connectionAttempts++
         connected = false
 
@@ -66,12 +66,12 @@ var flashingInput = 0
 function gotoTitle() {
     var connecting = connectionText.visible
     var connectingError = couldntReachText.visible
-    
+
     if (system) {
         viewport.removeChild(system)
         system = null
     }
-    
+
     hud.hideAll()
     connectionText.visible = connecting
     couldntReachText.visible = connectingError

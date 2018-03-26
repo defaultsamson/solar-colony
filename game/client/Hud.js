@@ -19,7 +19,7 @@ class Hud extends PIXI.Container {
 
         buySpawnText.tint = myTeam.pixels < 1000 || (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) ? Colour.greyText : Colour.white
 
-        sendShipText.tint = ships < 100 ? Colour.greyText : Colour.white
+        sendShipText.tint = myTeam.shipCount < 100 ? Colour.greyText : Colour.white
 
         hud.resize()
     }

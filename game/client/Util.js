@@ -128,7 +128,7 @@ function updateSelectedPlanet(mouse) {
 
 
 function goToSendShipsScreen(fromPlanet, amount) {
-    if (ships >= amount) {
+    if (fromPlanet.shipCount >= amount) {
         updateLines = ticksPerCollideUpdate
         sendShipsFrom = fromPlanet
         sendShipsAmount = amount

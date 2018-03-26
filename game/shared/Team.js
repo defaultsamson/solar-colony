@@ -7,6 +7,7 @@ class Team extends Object {
         this.colour = colour
         this.id = id
         this.pixels = 0
+        this.shipCount = 0
     }
 
     addPlayer(player) {
@@ -21,7 +22,7 @@ class Team extends Object {
             this.players.splice(i, 1)
         }
     }
-    
+
     // Server-side function to update the pixel count for the clients
     updateClientPIxels() {
         // Send the updated pixel count to clients

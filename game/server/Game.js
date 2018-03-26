@@ -45,6 +45,9 @@ class Game extends Object {
             case 'bs': // buy ships
                 this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
                 break
+                case 'cs': // create spawn
+                this.system.getPlanetByID(pack.pl).createSpawn()
+                break
             case 'jointeam':
                 // Reset the start status
                 for (var i in this.players) {

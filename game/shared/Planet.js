@@ -81,7 +81,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
     update(delta) {
         // Age the planet
-        this.age += delta;
+        this.age += delta
         var pos = this.calcPosition()
         this.position.set(pos.x, pos.y)
         if (!isServer) {
@@ -213,29 +213,32 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         if (isServer) {
             // Validate to make sure the client isn't lying about the packet
             if (this.team.pixels >= cost && n > 0) {
+                var good = false
                 if (n <= 1 && cost >= 10) {
-                    this.shipCount += n
-                    this.team.pixels -= cost
+                    good = true
                 } else if (n <= 10 && cost >= 90) {
-                    this.shipCount += n
-                    this.team.pixels -= cost
+                    good = true
                 } else if (n <= 100 && cost >= 800) {
-                    this.shipCount += n
-                    this.team.pixels -= cost
+                    good = true
                 }
 
-                this.team.updateClientPIxels()
+                if (good) {
+                    this.shipCount += n
+                    this.team.pixels -= cost
+                    this.team.updateClientPIxels()
 
-                this.system.game.sendPlayers({
-                    type: 'bs',
-                    pl: this.id,
-                    n: n
-                })
+                    this.system.game.sendPlayers({
+                        type: 'bs',
+                        pl: this.id,
+                        n: n
+                    })
+                }
             }
         } else {
             this.shipCount += n
+            this.team.shipCount += n
             for (var i = 0; i < n; i++) {
-                if (ships < maxDisplayShips) {
+                if (this.shipCount < maxDisplayShips) {
                     var ship = new PIXI.Sprite(resources.ship.texture)
 
                     // The position on the planet's surface to place the ship (the angle)
@@ -264,7 +267,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
     removeShips(n) {
         if (!isServer) {
-            var visualsToRemove = Math.min(n, Math.max(0, maxDisplayShips - ships + n))
+            var visualsToRemove = Math.min(n, Math.max(0, maxDisplayShips - this.shipCount + n))
 
             if (visualsToRemove > 0) {
                 // Removes the ships from the world
@@ -275,10 +278,9 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                 // Removes the ships from the array
                 this.ships.splice(0, visualsToRemove)
             }
-
-            ships = Math.max(0, ships - n)
         }
-        this.shipCount -= n
+        this.shipCount = this.shipCount - n
+        this.team.shipCount -= n
     }
 
     sendShipsTo(toPlanet, amount) {
@@ -294,47 +296,61 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         return isServer ? this.spawns : this.spawns.length
     }
 
-    createSpawn(force) {
-        if (force || (this.team.pixels >= 1000 && this.spawnCount() < maxSpawns)) {
+    createSpawnClick() {
+        var pack = {
+            type: 'cs',
+            pl: this.id, // planet
+        }
+        socket.ws.send(JSON.stringify(pack))
+    }
 
-            if (!force) {
+    createSpawn(force) {
+        if (!isServer) {
+            if (this.team && !force) this.team.pixels -= 1000
+            var spawn = new PIXI.Sprite(resources.spawn.texture)
+
+            // The position on this planet's surface to place the spawn (the angle)
+            // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+            let angle = Math.PI * 6 * this.spawnCount() / 10
+
+            let distFromPlanet = -8
+
+            // hypotenuse, opposite, adjacent
+            let h = this.radius / this.scale.x + distFromPlanet
+            let o = h * Math.sin(angle)
+            let a = h * Math.cos(angle)
+            let x = a + this.radius / this.scale.x
+            let y = o + this.radius / this.scale.x
+
+            spawn.tint = this.tint
+            spawn.pivot.set(spawn.width * 0.5, spawn.height)
+            spawn.scale.set(1.3)
+            spawn.position.set(x, y)
+            spawn.rotation = angle + (Math.PI / 2)
+            this.addChild(spawn)
+            this.spawns.push(spawn)
+
+            this.updateInfantry()
+        } else {
+            var good = false
+            if (force) {
+                good = true
+            } else if (this.team.pixels >= 1000 && this.spawnCount() < maxSpawns) {
+                good = true
                 this.team.pixels -= 1000
             }
 
-            if (isServer) {
+            if (good) {
                 var pack = {
                     type: 'createspawn',
                     planet: this.id,
-                    force: force
+                    force: this.force
                 }
                 this.system.game.sendPlayers(pack)
                 this.spawns++
-            } else {
-                var spawn = new PIXI.Sprite(resources.spawn.texture)
 
-                // The position on this planet's surface to place the spawn (the angle)
-                // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
-                let angle = Math.PI * 6 * this.spawnCount() / 10
-
-                let distFromPlanet = -8
-
-                // hypotenuse, opposite, adjacent
-                let h = this.radius / this.scale.x + distFromPlanet
-                let o = h * Math.sin(angle)
-                let a = h * Math.cos(angle)
-                let x = a + this.radius / this.scale.x
-                let y = o + this.radius / this.scale.x
-
-                spawn.tint = this.tint
-                spawn.pivot.set(spawn.width * 0.5, spawn.height)
-                spawn.scale.set(1.3)
-                spawn.position.set(x, y)
-                spawn.rotation = angle + (Math.PI / 2)
-                this.addChild(spawn)
-                this.spawns.push(spawn)
+                    this.updateInfantry()
             }
-
-            this.updateInfantry()
         }
     }
 
@@ -350,7 +366,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                     this.removeChild(this.spawns[i])
                 }
 
-                // Removes the ships from the array
+                // Removes the spawns from the array
                 this.spawns.splice(removeTo, n)
                 updatePurchaseHud()
             }

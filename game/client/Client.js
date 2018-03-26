@@ -94,6 +94,7 @@ var teams
 var hud
 
 var socket
+var ping = 200
 
 var resources
 
@@ -412,7 +413,7 @@ function centerView() {
 function updateKeyboard() {
 
     if (PIXI.keyboardManager.isPressed(Key.P)) {
-        myTeam.pixels += 5000
+        myTeam.pixels += 5000000000000000000000
         hud.updateText()
     }
     if (PIXI.keyboardManager.isPressed(Key.O)) {
@@ -528,7 +529,7 @@ function onMouseClick(e) {
         }
 
         if (buySpawnText.clicked(point)) {
-            focusPlanet.createSpawn()
+            focusPlanet.createSpawnClick()
             return
         }
 
@@ -721,7 +722,6 @@ function getTeam(id) {
 // Stats
 var lastPixels = 1
 var lastShips = 1
-var ships = 0
 
 // Planet vars
 var lastFocus = true
@@ -739,11 +739,11 @@ function gameLoop() {
     if (system) {
         system.update(eTime)
 
-        if (ships != lastShips) {
-            lastShips = ships
-            shipsText.text = 'Ships: ' + ships
+        if (myTeam.shipCount != lastShips) {
+            lastShips = myTeam.shipCount
+            shipsText.text = 'Ships: ' + myTeam.shipCount
         }
-        
+
         // TODO this can be done in parse() when the server sends new pixels
         if (myTeam.pixels != lastPixels) {
             lastPixels = myTeam.pixels
@@ -784,7 +784,8 @@ function parse(type, pack) {
             break
         case 'pi':
             pingText.visible = true
-            pingText.text = 'Ping: ' + pack.ping + 'ms'
+            ping = pack.ping
+            pingText.text = 'Ping: ' + ping + 'ms'
             break
         case 'pix': // update pixel count
             var pl = pack.pl
@@ -852,7 +853,13 @@ function parse(type, pack) {
             break
         case 'createspawn':
             var planet = system.getPlanetByID(pack.planet)
+
+            // 1. subtract the counter that has happened while this packet sent
+            // 2. update the spawn counter by creating a spawn
+            // 3. push the spawn counter forward by the new rate
+            planet.spawnCounter -= planet.spawnRate * ping
             planet.createSpawn(pack.force)
+            planet.spawnCounter += planet.spawnRate * ping
             break
         case 'createteam':
             teams.push(new Team(pack.colour, pack.id))
@@ -877,7 +884,7 @@ function parse(type, pack) {
             pingText.visible = true
             pixelText.visible = true
             shipsText.visible = true
-            
+
             break
         case 'start':
             var started = pack.chosen
