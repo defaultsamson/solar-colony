@@ -73,7 +73,7 @@ class Timeskewer extends Object {
         this.time = Date.now()
 
         let pack = {
-            type: 'p'
+            type: Pack.PING_PROBE
         }
         this.sock.send(JSON.stringify(pack))
     }
@@ -90,7 +90,7 @@ class Timeskewer extends Object {
             this.ping = ping
 
             let pack = {
-                type: 'pi',
+                type: Pack.PING_SET,
                 ping: Math.ceil(this.ping)
             }
             this.sock.send(JSON.stringify(pack))
@@ -112,7 +112,7 @@ class Timeskewer extends Object {
             this.pings = []
 
             let pack = {
-                type: 'pi',
+                type: Pack.PING_SET,
                 ping: Math.ceil(this.ping)
             }
             this.sock.send(JSON.stringify(pack))

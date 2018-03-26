@@ -42,13 +42,13 @@ class Game extends Object {
 
     parse(sender, type, pack) {
         switch (type) {
-            case 'bs': // buy ships
+            case Pack.BUY_SHIPS:
                 this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
                 break
-                case 'cs': // create spawn
+            case Pack.CREATE_SPAWN: // create spawn
                 this.system.getPlanetByID(pack.pl).createSpawn()
                 break
-            case 'jointeam':
+            case Pack.JOIN_TEAM:
                 // Reset the start status
                 for (var i in this.players) {
                     this.players[i].start = false
@@ -63,12 +63,12 @@ class Game extends Object {
                 this.updatePlayerCount()
 
                 var packet = {
-                    type: 'setmyteam',
+                    type: Pack.SET_CLIENT_TEAM,
                     team: sender.team.id
                 }
                 sender.send(JSON.stringify(packet))
                 break
-            case 'start':
+            case Pack.UPDATE_START_BUTTON:
                 if (!sender.start && sender.team) {
                     sender.start = true
                     var chosen = 0
@@ -84,7 +84,7 @@ class Game extends Object {
                     } else {
                         // Else tell the other players to choose
                         var packet = {
-                            type: 'start',
+                            type: Pack.UPDATE_START_BUTTON,
                             chosen: chosen,
                             total: this.players.length
                         }
@@ -92,7 +92,7 @@ class Game extends Object {
                     }
                 }
                 break
-            case 'quit':
+            case Pack.QUIT:
                 this.removePlayer(sender)
                 sender.approved = false
                 break
@@ -119,13 +119,13 @@ class Game extends Object {
 
     sendTeams() {
         var pack = {
-            type: 'clearteams'
+            type: Pack.CLEAR_TEAMS
         }
         this.sendPlayers(pack)
 
         for (var i in this.teams) {
             var pack = {
-                type: 'createteam',
+                type: Pack.CREATE_TEAM,
                 id: this.teams[i].id,
                 colour: this.teams[i].colour
             }
@@ -136,14 +136,14 @@ class Game extends Object {
 
     sendTeamPlayers() {
         var pack = {
-            type: 'clearteamplayers'
+            type: Pack.CLEAR_TEAM_GUI
         }
         this.sendPlayers(pack)
 
         for (var i in this.teams) {
             for (var j in this.teams[i].players) {
                 var pack = {
-                    type: 'popteam',
+                    type: Pack.POPULATE_TEAM,
                     team: this.teams[i].id,
                     name: this.teams[i].players[j].name
                 }
@@ -160,7 +160,7 @@ class Game extends Object {
         this.players.push(sock)
 
         var packet = {
-            type: 'joingame',
+            type: Pack.JOIN_GAME,
             gameID: this.gameID,
             player: this.players.length
         }
@@ -201,7 +201,7 @@ class Game extends Object {
         }
 
         var packet = {
-            type: 'updateplayers',
+            type: Pack.UPDATE_PLAYER_COUNT,
             chosen: chosen,
             total: this.players.length,
             max: this.maxPlayers
@@ -219,7 +219,7 @@ class Game extends Object {
 
         // Creates the system on the client-side
         var pack = {
-            type: 'createsystem'
+            type: Pack.CREATE_SYSTEM
         }
         this.sendPlayers(pack)
 
@@ -263,7 +263,7 @@ class Game extends Object {
 
         for (var i in this.players) {
             var pack = {
-                type: 'setmyteam',
+                type: Pack.SET_CLIENT_TEAM,
                 team: this.players[i].team.id
             }
             this.players[i].send(JSON.stringify(pack))
@@ -276,7 +276,7 @@ class Game extends Object {
             setTimeout(function () {
                 // TODO starting countdown
                 var pack = {
-                    type: 'startgame'
+                    type: Pack.START_GAME
                 }
                 player.send(JSON.stringify(pack))
             }, Math.max(0, waitTime - player.pinger.ping))

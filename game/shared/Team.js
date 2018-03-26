@@ -28,7 +28,7 @@ class Team extends Object {
         // Send the updated pixel count to clients
         if (isServer) {
             var pack = {
-                type: 'pix',
+                type: Pack.UPDATE_PIXELS,
                 pl: this.pixels
             }
             this.sendTeam(pack)

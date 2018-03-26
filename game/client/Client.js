@@ -590,7 +590,7 @@ function onMouseClick(e) {
         if (inTeamSelection()) {
             if (redTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 0
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -598,7 +598,7 @@ function onMouseClick(e) {
             }
             if (purpleTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 1
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -606,7 +606,7 @@ function onMouseClick(e) {
             }
             if (blueTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 2
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -614,7 +614,7 @@ function onMouseClick(e) {
             }
             if (greenTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 3
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -622,7 +622,7 @@ function onMouseClick(e) {
             }
             if (yellowTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 4
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -630,7 +630,7 @@ function onMouseClick(e) {
             }
             if (orangeTeamText.clicked(point)) {
                 var pack = {
-                    type: 'jointeam',
+                    type: Pack.JOIN_TEAM,
                     team: 5
                 }
                 socket.ws.send(JSON.stringify(pack))
@@ -638,7 +638,7 @@ function onMouseClick(e) {
             }
             if (goText.clicked(point)) {
                 var pack = {
-                    type: 'start'
+                    type: Pack.UPDATE_START_BUTTON
                 }
                 socket.ws.send(JSON.stringify(pack))
                 goText.setEnabled(false)
@@ -646,7 +646,7 @@ function onMouseClick(e) {
             }
             if (quitText.clicked(point)) {
                 var pack = {
-                    type: 'quit'
+                    type: Pack.QUIT
                 }
                 socket.ws.send(JSON.stringify(pack))
                 gotoTitle()
@@ -776,28 +776,28 @@ function inTeamSelection() {
 
 function parse(type, pack) {
     switch (type) {
-        case 'p':
+        case Pack.PING_PROBE:
             let pPack = {
-                type: 'p'
+                type: Pack.PING_PROBE,
             }
             socket.ws.send(JSON.stringify(pPack))
             break
-        case 'pi':
+        case Pack.PING_SET:
             pingText.visible = true
             ping = pack.ping
             pingText.text = 'Ping: ' + ping + 'ms'
             break
-        case 'pix': // update pixel count
+        case Pack.UPDATE_PIXELS: // update pixel count
             var pl = pack.pl
             myTeam.pixels = pl
             break
-        case 'bs': // buy ships
+        case Pack.BUY_SHIPS: // buy ships
             system.getPlanetByID(pack.pl).createShips(pack.n)
             break
-        case 'formfail':
+        case Pack.FORM_FAIL:
             failSendForm(pack.reason)
             break
-        case 'joingame':
+        case Pack.JOIN_GAME:
             hud.hideAll()
             document.getElementById('nameInput').style.visibility = 'hidden'
             document.getElementById('idInput').style.visibility = 'hidden'
@@ -833,43 +833,47 @@ function parse(type, pack) {
             orangePlayersText.visible = true
 
             break
-        case 'createsystem':
+        case Pack.CREATE_SYSTEM:
             system = new System()
             break
-        case 'createorbit':
+        case Pack.CREATE_ORBIT:
             var orbit = new Orbit(pack.x, pack.y, pack.radius)
             orbit.id = pack.id
             system.addOrbit(orbit)
             break
-        case 'createplanet':
+        case Pack.CREATE_PLANET:
             var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
             planet.id = pack.id
             system.addPlanet(planet)
             break
-        case 'setorbit':
+        case Pack.SET_PLANET_ORBIT:
             var planet = system.getPlanetByID(pack.planet)
             var orbit = system.getOrbit(pack.orbit)
             planet.setOrbit(orbit)
             break
-        case 'createspawn':
+        case Pack.CREATE_SPAWN:
             var planet = system.getPlanetByID(pack.planet)
 
-            // 1. subtract the counter that has happened while this packet sent
-            // 2. update the spawn counter by creating a spawn
-            // 3. push the spawn counter forward by the new rate
-            planet.spawnCounter -= planet.spawnRate * ping
-            planet.createSpawn(pack.force)
-            planet.spawnCounter += planet.spawnRate * ping
+            if (pack.force) {
+                planet.createSpawn(true)
+            } else {
+                // 1. subtract the counter that has happened while this packet sent
+                // 2. update the spawn counter by creating a spawn
+                // 3. push the spawn counter forward by the new rate
+                planet.spawnCounter -= planet.spawnRate * ping
+                planet.createSpawn(false)
+                planet.spawnCounter += planet.spawnRate * ping
+            }
             break
-        case 'createteam':
+        case Pack.CREATE_TEAM:
             teams.push(new Team(pack.colour, pack.id))
             break
-        case 'setteam':
+        case Pack.SET_PLANET_TEAM:
             var planet = system.getPlanetByID(pack.planet)
             var team = getTeam(pack.team)
             planet.setTeam(team)
             break
-        case 'setmyteam':
+        case Pack.SET_CLIENT_TEAM:
             myTeam = getTeam(pack.team)
 
             if (waitingMessage) {
@@ -877,7 +881,7 @@ function parse(type, pack) {
                 waitingMessage = null
             }
             break
-        case 'startgame':
+        case Pack.START_GAME:
             viewport.addChild(system)
             document.getElementById('gameID').style.visibility = 'hidden'
             hud.hideAll()
@@ -886,7 +890,7 @@ function parse(type, pack) {
             shipsText.visible = true
 
             break
-        case 'start':
+        case Pack.UPDATE_START_BUTTON:
             var started = pack.chosen
             var total = pack.total
 
@@ -898,7 +902,7 @@ function parse(type, pack) {
             }
 
             break
-        case 'popteam':
+        case Pack.POPULATE_TEAM:
             var team = getTeam(pack.team)
             var name = pack.name
 
@@ -926,10 +930,10 @@ function parse(type, pack) {
             team.addPlayer(new Player(name))
 
             break;
-        case 'clearteams':
+        case Pack.CLEAR_TEAMS:
             teams = []
             break
-        case 'clearteamplayers':
+        case Pack.CLEAR_TEAM_GUI:
             for (var i in teams) {
                 teams[i].players = []
             }
@@ -940,7 +944,7 @@ function parse(type, pack) {
             yellowPlayersText.text = ''
             orangePlayersText.text = ''
             break
-        case 'updateplayers':
+        case Pack.UPDATE_PLAYER_COUNT:
             var chosen = pack.chosen
             var total = pack.total
             var max = pack.max

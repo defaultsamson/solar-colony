@@ -56,7 +56,7 @@ class System extends(isServer ? Object : PIXI.Container) {
             orbit.id = this.game.createID()
             // Creates the orbit on the client-side
             var pack = {
-                type: 'createorbit',
+                type: Pack.CREATE_ORBIT,
                 id: orbit.id,
                 x: orbit.x,
                 y: orbit.y,
@@ -86,7 +86,7 @@ class System extends(isServer ? Object : PIXI.Container) {
             planet.id = this.game.createID()
             // Creates the planet on the client-side
             var pack = {
-                type: 'createplanet',
+                type: Pack.CREATE_PLANET,
                 id: planet.id,
                 scale: planet.scale,
                 rotationConstant: planet.rotationConstant,

@@ -35,13 +35,13 @@ class GameManager extends Object {
 
     parse(sender, type, packet) {
 
-        if (type == 'p') {
+        if (type == Pack.PING_PROBE) {
             if (sender.pinger) {
                 sender.pinger.recieve()
             }
         } else if (this.socket.approved(sender)) {
             sender.game.parse(sender, type, packet)
-        } else if (type == 'form') {
+        } else if (type == Pack.FORM_SEND) {
             this.socket.addConnection(sender, packet.host, packet.user, packet.id, packet.players)
         }
 

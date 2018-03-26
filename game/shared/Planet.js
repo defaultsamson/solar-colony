@@ -183,7 +183,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         if (isServer) {
             // Creates the planet on the client-side
             var pack = {
-                type: 'setteam',
+                type: Pack.SET_PLANET_TEAM,
                 planet: this.id,
                 team: team.id
             }
@@ -201,7 +201,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
     // A client-side function for ease of use
     createShipsClick(n, cost) {
         var pack = {
-            type: 'bs',
+            type: Pack.BUY_SHIPS,
             pl: this.id, // planet
             n: n, // n 
             c: cost // cost
@@ -228,7 +228,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                     this.team.updateClientPIxels()
 
                     this.system.game.sendPlayers({
-                        type: 'bs',
+                        type: Pack.BUY_SHIPS,
                         pl: this.id,
                         n: n
                     })
@@ -298,7 +298,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
     createSpawnClick() {
         var pack = {
-            type: 'cs',
+            type: Pack.CREATE_SPAWN,
             pl: this.id, // planet
         }
         socket.ws.send(JSON.stringify(pack))
@@ -342,7 +342,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
             if (good) {
                 var pack = {
-                    type: 'createspawn',
+                    type: Pack.CREATE_SPAWN,
                     planet: this.id,
                     force: this.force
                 }
@@ -394,7 +394,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
         if (isServer) {
             // Sets the planet's orbit on the client-side
             var pack = {
-                type: 'setorbit',
+                type: Pack.SET_PLANET_ORBIT,
                 planet: this.id,
                 orbit: orbit.id
             }

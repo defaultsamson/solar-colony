@@ -127,7 +127,7 @@ class SocketManager extends Object {
                         } else {
                             // name already exists
                             var formPacket = {
-                                type: 'formfail',
+                                type: Pack.FORM_FAIL,
                                 reason: 'A player with username ' + name + ' already exists'
                             }
                             sock.send(JSON.stringify(formPacket))
@@ -135,7 +135,7 @@ class SocketManager extends Object {
                     } else {
                         // No game found with given ID
                         var formPacket = {
-                            type: 'formfail',
+                            type: Pack.FORM_FAIL,
                             reason: 'No existing game with ID ' + id
                         }
                         sock.send(JSON.stringify(formPacket))
@@ -143,7 +143,7 @@ class SocketManager extends Object {
                 } else {
                     // Improper ID
                     var formPacket = {
-                        type: 'formfail',
+                        type: Pack.FORM_FAIL,
                         reason: 'Improper game ID provided'
                     }
                     sock.send(JSON.stringify(formPacket))
@@ -151,7 +151,7 @@ class SocketManager extends Object {
             } else {
                 // Improper name
                 var formPacket = {
-                    type: 'formfail',
+                    type: Pack.FORM_FAIL,
                     reason: 'Improper username provided'
                 }
                 sock.send(JSON.stringify(formPacket))

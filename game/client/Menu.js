@@ -242,7 +242,7 @@ function sendForm() {
     }
 
     var formPacket = {
-        type: 'form',
+        type: Pack.FORM_SEND,
         host: isHost,
         user: document.getElementById('nameInput').value,
         id: doID ? document.getElementById('idInput').value : '',
