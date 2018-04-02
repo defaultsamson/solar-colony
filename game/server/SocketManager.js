@@ -1,5 +1,3 @@
-const localDebug = true
-
 const port = 3141
 
 const WebSocket = require('ws');

@@ -1,4 +1,3 @@
-let localDebug = true
 let port = 3141
 let ip = localDebug ? 'localhost' : 'samsonclose.me'
 
