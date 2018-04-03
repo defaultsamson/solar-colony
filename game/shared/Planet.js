@@ -128,23 +128,21 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
             let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
 
-            let delta = d - time
+            let epsilon = d - time
 
             // The smaller the right side of the < is, the more accurate, but also the more
-            if (delta < 0.5) {
+            if (epsilon < 0.5) {
                 return time
-            } else if (delta < 2) {
+            } else if (epsilon < 2) {
                 time += 0.1
-            } else if (delta < 4) {
+            } else if (epsilon < 4) {
                 time += 0.5
             } else {
                 time += 1
             }
-
-            let desired
         }
 
-        return 0
+        return time
     }
 
     calcPosition(additionalAge) {
