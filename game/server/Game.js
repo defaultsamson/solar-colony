@@ -25,9 +25,6 @@ class Game extends Object {
         this.orangeTeam = this.addTeam(new Team(0xFFAA55, 5))
 
         this.system = null
-
-        this.countdown = 0
-        this.pingTest = 0
     }
 
     update(delta) {
@@ -79,7 +76,7 @@ class Game extends Object {
                     }
 
                     // Start the game if there's more than two players and all players have chosen a team
-                    if (chosen >= 2 && chosen == this.players.length) {
+                    if (chosen >= MIN_PLAYERS && chosen == this.players.length) {
                         this.start()
                     } else {
                         // Else tell the other players to choose
@@ -269,18 +266,25 @@ class Game extends Object {
             this.players[i].send(JSON.stringify(pack))
         }
 
-        const waitTime = 3000
+        this.sendPlayers({
+            type: Pack.SHOW_SYSTEM
+        })
 
-        for (var i in this.players) {
-            const player = this.players[i]
+        // starting sync and countdown for clients
+        let ga = this
+
+        for (var i = 0; i < COUNTDOWN_PACKET_SENDS; i++) {
             setTimeout(function () {
-                // TODO starting countdown
-                var pack = {
+                ga.sendPlayers({
                     type: Pack.START_GAME
-                }
-                player.send(JSON.stringify(pack))
-            }, Math.max(0, waitTime - player.pinger.ping))
+                })
+            }, (i + 1) * COUNTDOWN_INTERVAL) // i + 1 so that the first one won't immediately send
         }
+
+        // start the game on server-side
+        setTimeout(function () {
+            ga.system.play()
+        }, COUNTDOWN_TIME)
     }
 
     sendPlayers(obj) {
@@ -290,13 +294,14 @@ class Game extends Object {
         }
     }
 
+    /* Do we really need this?
     sendTeamByID(teamID, obj) {
         let toSend = JSON.stringify(obj)
         let team = this.getTeam(teamID)
         for (var i in team.players) {
             team.players[i].send(toSend)
         }
-    }
+    }*/
 
     createID() {
         return this.ids++

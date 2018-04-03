@@ -1,6 +1,3 @@
-// The extra pixels to add to the radius of a planet to determine whether to select it when clicked
-const clickThreshold = 40
-
 class System extends(isServer ? Object : PIXI.Container) {
     constructor() {
         super()
@@ -12,26 +9,41 @@ class System extends(isServer ? Object : PIXI.Container) {
 
         this.orbits = []
         this.planets = []
+
+        // TODO implement game pausing when a player leaves
+        this.updating = false
+    }
+
+    play() {
+        this.updating = true
+    }
+
+    pause() {
+        this.updating = false
     }
 
     update(delta) {
-        for (var i in this.planets) {
-            this.planets[i].update(delta)
+        if (this.updating) {
+            for (var i in this.planets) {
+                this.planets[i].update(delta)
+            }
         }
 
         if (!isServer) {
-            // Update the sun particle emitter
+            // Update the sun particle emitter regardless of this.update
             this.sun.update(delta)
 
-            // If drawing the ship travel lines
-            if (isChoosingShipSend()) {
-                updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
-            }
+            if (this.updating) {
+                // If drawing the ship travel lines
+                if (isChoosingShipSend()) {
+                    updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
+                }
 
-            // Move into System class
-            for (var i in this.planets) {
-                for (var k in this.planets[i].sendingShips) {
-                    this.planets[i].sendingShips[k].update(delta)
+                // Move into System class
+                for (var i in this.planets) {
+                    for (var k in this.planets[i].sendingShips) {
+                        this.planets[i].sendingShips[k].update(delta)
+                    }
                 }
             }
         }
@@ -39,8 +51,8 @@ class System extends(isServer ? Object : PIXI.Container) {
 
     getPlanet(x, y) {
         for (var i in this.planets) {
-            let clickThresh = (this.planets[i].radius + clickThreshold)
-            if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickThresh * clickThresh) {
+            let clickRadius = this.planets[i].radius + PLANET_CLICK_RADIUS
+            if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickRadius * clickRadius) {
                 return this.planets[i]
             }
         }

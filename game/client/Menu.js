@@ -60,12 +60,11 @@ function connect() {
     }
 }
 
-var usernameSelected = false
-var flashingInput = 0
-
 function gotoTitle() {
     var connecting = connectionText.visible
     var connectingError = couldntReachText.visible
+
+    allowMouseClick = true
 
     if (system) {
         viewport.removeChild(system)
@@ -253,8 +252,6 @@ function sendForm() {
 
     formSent = true
 }
-
-var sendingForm = false
 
 function menuSpaghetti(point) {
     let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]

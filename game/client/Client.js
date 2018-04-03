@@ -7,11 +7,6 @@
 //                       | |    
 //                       |_|   
 
-const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
-
-const maxHeight = 1000
-const minHeight = 100
-
 // This is variable, used here to initialize things
 const h = 600
 const w = 600
@@ -49,9 +44,9 @@ game.stage.addChild(viewport)
 
 const clampOptions = {
     minWidth: 1,
-    minHeight: minHeight,
+    minHeight: MIN_HEIGHT,
     maxWidth: 1000 * w,
-    maxHeight: maxHeight
+    maxHeight: MAX_HEIGHT
 }
 
 const pinchOptions = {
@@ -104,7 +99,7 @@ function onLoad(loader, res) {
     lastElapsed = Date.now()
     game.ticker.add(gameLoop)
 
-    viewport.fitHeight(centerHeight)
+    viewport.fitHeight(SUN_HEIGHT)
     viewport.moveCenter(0, 0)
 
     var style = {
@@ -132,6 +127,9 @@ function onLoad(loader, res) {
 
     pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
     shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
+
+    countDownText = hud.addChild(new TextButton('Starting Game in 3', largeStyle, 0.5, 0, 0, 30))
+    countDownText.anchor.set(0.5, 0)
 
     pingText = hud.addChild(new TextButton('Ping: 200ms', smallStyle, 1, 0, -10, 10))
     pingText.anchor.set(1, 0)
@@ -365,14 +363,6 @@ function onLoad(loader, res) {
 //             | |              
 //             |_|              
 
-const sunClickRadiusSqr = 100 * 100
-
-// The animation time (in milliseconds) for zooming, panning, etc.
-const animTime = 300
-// The height of the viewport after zooming on a planet
-const zoomHeight = 250
-// The height of the viewport after zooming back out to the sun
-const centerHeight = 800
 var snappingToPlanet = false
 var snappingToCenter = false
 
@@ -394,15 +384,15 @@ function centerView() {
         snappingToCenter = true
         stopFollow()
         viewport.snap(0, 0, {
-            time: animTime,
+            time: ANIMATION_TIME,
             removeOnComplete: true,
             center: true,
             ease: 'easeInOutSine'
         })
 
         viewport.snapZoom({
-            height: centerHeight,
-            time: animTime,
+            height: SUN_HEIGHT,
+            time: ANIMATION_TIME,
             removeOnComplete: true,
             center: true,
             ease: 'easeOutQuart'
@@ -411,7 +401,6 @@ function centerView() {
 }
 
 function updateKeyboard() {
-
     if (PIXI.keyboardManager.isPressed(Key.P)) {
         myTeam.pixels += 5000000000000000000000
         hud.updateText()
@@ -487,174 +476,177 @@ function handleClick(e) {
     }
 }
 
+var allowMouseClick = true
+
 function onMouseClick(e) {
-    let screen = e.data.global
-    let world = viewport.toWorld(screen)
+    if (allowMouseClick) {
+        let screen = e.data.global
+        let world = viewport.toWorld(screen)
 
-    var point = new PIXI.Point(screen.x, screen.y)
+        var point = new PIXI.Point(screen.x, screen.y)
 
-    if (system) {
-        if (isChoosingShipSend()) {
-            // updateSelectedPlanet(e.world.x, e.world.y)
+        if (system) {
+            if (isChoosingShipSend()) {
+                // updateSelectedPlanet(e.world.x, e.world.y)
 
-            if (selectedPlanet) {
-                sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
-            }
-            cancelSendShips()
-
-            return
-        }
-
-        stopSnap()
-
-
-        if (buy1ShipText.clicked(point)) {
-            focusPlanet.createShipsClick(1, 10)
-            return
-        }
-
-        if (buy10ShipText.clicked(point)) {
-            focusPlanet.createShipsClick(10, 90)
-            return
-        }
-
-        if (buy100ShipText.clicked(point)) {
-            focusPlanet.createShipsClick(100, 800)
-            return
-        }
-
-        if (sendShipText.clicked(point)) {
-            goToSendShipsScreen(focusPlanet, 100)
-            return
-        }
-
-        if (buySpawnText.clicked(point)) {
-            focusPlanet.createSpawnClick()
-            return
-        }
-
-        var planet = system.getPlanet(world.x, world.y)
-        if (planet) {
-            // If the viewport is already following the planet that was clicked on, then don't do anything
-            var follow = viewport.plugins['follow']
-            if (follow && (follow.target == planet)) {
-                // Do the zoom if holding shift
-                if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
-                    viewport.snapZoom({
-                        height: centerHeight,
-                        time: animTime,
-                        removeOnComplete: true,
-                        ease: 'easeInOutSine'
-                    })
-                } else {
-                    viewport.snapZoom({
-                        height: zoomHeight,
-                        time: animTime,
-                        removeOnComplete: true,
-                        ease: 'easeInOutSine'
-                    })
+                if (selectedPlanet) {
+                    sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
                 }
+                cancelSendShips()
 
                 return
             }
 
-            snappingToPlanet = planet
+            stopSnap()
 
-            // The calculated future positions of the planet
-            var pos = planet.calcPosition(animTime / 1000)
+            if (buy1ShipText.clicked(point)) {
+                focusPlanet.createShipsClick(1, 10)
+                return
+            }
 
-            // Snap to that position
-            viewport.snap(pos.x, pos.y, {
-                time: animTime,
-                removeOnComplete: true,
-                ease: 'easeOutQuart'
-            })
+            if (buy10ShipText.clicked(point)) {
+                focusPlanet.createShipsClick(10, 90)
+                return
+            }
 
-            // Do the zoom if not holding shift
-            if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-                viewport.snapZoom({
-                    height: zoomHeight,
-                    time: animTime,
+            if (buy100ShipText.clicked(point)) {
+                focusPlanet.createShipsClick(100, 800)
+                return
+            }
+
+            if (sendShipText.clicked(point)) {
+                goToSendShipsScreen(focusPlanet, 100)
+                return
+            }
+
+            if (buySpawnText.clicked(point)) {
+                focusPlanet.createSpawnClick()
+                return
+            }
+
+            var planet = system.getPlanet(world.x, world.y)
+            if (planet) {
+                // If the viewport is already following the planet that was clicked on, then don't do anything
+                var follow = viewport.plugins['follow']
+                if (follow && (follow.target == planet)) {
+                    // Do the zoom if holding shift
+                    if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
+                        viewport.snapZoom({
+                            height: SUN_HEIGHT,
+                            time: ANIMATION_TIME,
+                            removeOnComplete: true,
+                            ease: 'easeInOutSine'
+                        })
+                    } else {
+                        viewport.snapZoom({
+                            height: PLANET_HEIGHT,
+                            time: ANIMATION_TIME,
+                            removeOnComplete: true,
+                            ease: 'easeInOutSine'
+                        })
+                    }
+
+                    return
+                }
+
+                snappingToPlanet = planet
+
+                // The calculated future positions of the planet
+                var pos = planet.calcPosition(ANIMATION_TIME / 1000)
+
+                // Snap to that position
+                viewport.snap(pos.x, pos.y, {
+                    time: ANIMATION_TIME,
                     removeOnComplete: true,
-                    ease: 'easeInOutSine'
+                    ease: 'easeOutQuart'
                 })
+
+                // Do the zoom if not holding shift
+                if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
+                    viewport.snapZoom({
+                        height: PLANET_HEIGHT,
+                        time: ANIMATION_TIME,
+                        removeOnComplete: true,
+                        ease: 'easeInOutSine'
+                    })
+                }
+
+                return
             }
 
-            return
-        }
-
-        // If nothing was clicked on, remove the follow plugin
-        stopFollow()
-        centerView()
-    } else {
-        if (inTeamSelection()) {
-            if (redTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 0
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (purpleTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 1
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (blueTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 2
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (greenTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 3
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (yellowTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 4
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (orangeTeamText.clicked(point)) {
-                var pack = {
-                    type: Pack.JOIN_TEAM,
-                    team: 5
-                }
-                socket.ws.send(JSON.stringify(pack))
-                return
-            }
-            if (goText.clicked(point)) {
-                var pack = {
-                    type: Pack.UPDATE_START_BUTTON
-                }
-                socket.ws.send(JSON.stringify(pack))
-                goText.setEnabled(false)
-                return
-            }
-            if (quitText.clicked(point)) {
-                var pack = {
-                    type: Pack.QUIT
-                }
-                socket.ws.send(JSON.stringify(pack))
-                gotoTitle()
-                return
-            }
+            // If nothing was clicked on, remove the follow plugin
+            stopFollow()
+            centerView()
         } else {
-            // Spaghetti Main Menu code
-            menuSpaghetti(point)
+            if (inTeamSelection()) {
+                if (redTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 0
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (purpleTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 1
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (blueTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 2
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (greenTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 3
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (yellowTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 4
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (orangeTeamText.clicked(point)) {
+                    var pack = {
+                        type: Pack.JOIN_TEAM,
+                        team: 5
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    return
+                }
+                if (goText.clicked(point)) {
+                    var pack = {
+                        type: Pack.UPDATE_START_BUTTON
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    goText.setEnabled(false)
+                    return
+                }
+                if (quitText.clicked(point)) {
+                    var pack = {
+                        type: Pack.QUIT
+                    }
+                    socket.ws.send(JSON.stringify(pack))
+                    gotoTitle()
+                    return
+                }
+            } else {
+                // Spaghetti Main Menu code
+                menuSpaghetti(point)
+            }
         }
     }
 }
@@ -720,8 +712,8 @@ function getTeam(id) {
 //  \_____|\__,_|_| |_| |_|\___|
 
 // Stats
-var lastPixels = 1
-var lastShips = 1
+var lastPixels = -1
+var lastShips = -1
 
 // Planet vars
 var lastFocus = true
@@ -734,7 +726,7 @@ function gameLoop() {
     let now = Date.now()
     let elapsed = now - lastElapsed
     lastElapsed = now
-    let eTime = (elapsed * 0.001)
+    let eTime = (elapsed * 0.001) // time elapsed in seconds
 
     if (system) {
         system.update(eTime)
@@ -774,7 +766,11 @@ function inTeamSelection() {
     return redTeamText.visible
 }
 
+var countDown
+
 function parse(type, pack) {
+    console.log("dank: " + type)
+
     switch (type) {
         case Pack.PING_PROBE:
             let pPack = {
@@ -805,6 +801,8 @@ function parse(type, pack) {
             document.getElementById('nameCross').style.visibility = 'hidden'
             document.getElementById('idCheck').style.visibility = 'hidden'
             document.getElementById('idCross').style.visibility = 'hidden'
+
+            countDown = COUNTDOWN_TIME
 
             gameID = pack.gameID
             player = pack.player
@@ -881,13 +879,42 @@ function parse(type, pack) {
                 waitingMessage = null
             }
             break
-        case Pack.START_GAME:
+        case Pack.SHOW_SYSTEM:
             viewport.addChild(system)
             document.getElementById('gameID').style.visibility = 'hidden'
             hud.hideAll()
             pingText.visible = true
             pixelText.visible = true
             shipsText.visible = true
+
+            // A little hack to get planets to go to their correct positions when the game starts
+            system.play() // This lets us update the planets
+            system.update(0) // this updates them from their default pos
+            system.pause() // This reverts the game state to being paused
+
+            countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
+            countDownText.visible = true
+
+            viewport.pausePlugin('drag')
+            viewport.pausePlugin('pinch')
+            viewport.pausePlugin('wheel')
+            allowMouseClick = false
+            break
+        case Pack.START_GAME:
+            countDown -= COUNTDOWN_INTERVAL
+            countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
+
+            if (countDown <= 0) {
+                system.play()
+                system.update(ping / 1000) // fast forward based on our ping
+
+                countDownText.visible = false
+
+                viewport.resumePlugin('drag')
+                viewport.resumePlugin('pinch')
+                viewport.resumePlugin('wheel')
+                allowMouseClick = true
+            }
 
             break
         case Pack.UPDATE_START_BUTTON:

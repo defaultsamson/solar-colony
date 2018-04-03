@@ -1,5 +1,5 @@
 require('../shared/Util.js')
-require('../shared/Packets.js')
+require('../shared/Constants.js')
 
 let GameManager = require('./GameManager.js')
 
