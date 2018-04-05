@@ -206,8 +206,10 @@ function onLoad(loader, res) {
         joinFriendsGameText.box = outline
     }
 
+    /*
     usernameEntry = hud.addChild(new TextButton('Username:', style, 0.5, 0.5, -40, -30))
     usernameEntry.anchor.set(1, 0)
+    */
 
     idEntry = hud.addChild(new TextButton('Game ID:', style, 0.5, 0.5, -40, 40))
     idEntry.anchor.set(1, 0)

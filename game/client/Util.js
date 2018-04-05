@@ -156,3 +156,30 @@ function cancelSendShips() {
 function isChoosingShipSend() {
     return sendShipsFrom
 }
+
+function setVisible(elemID) {
+    document.getElementById(elemID).style.visibility = 'visible'
+}
+
+function setHidden(elemID) {
+    document.getElementById(elemID).style.visibility = 'hidden'
+}
+
+function disableButton(elemID) {
+    document.getElementById(elemID).style.color = Colour.greyText
+    document.getElementById(elemID).style.cursor = 'default'
+    document.getElementById(elemID).onmouseover = function () {
+        this.style.backgroundColor = 'transparent'
+    }
+}
+
+function enableButton(elemID) {
+    document.getElementById(elemID).style.color = '#FFF'
+    document.getElementById(elemID).style.cursor = 'pointer'
+    document.getElementById(elemID).onmouseover = function () {
+        this.style.backgroundColor = '#666'
+    }
+    document.getElementById(elemID).onmouseout = function () {
+        this.style.backgroundColor = 'transparent'
+    }
+}

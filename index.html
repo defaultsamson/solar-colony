@@ -54,14 +54,64 @@
             height: 0px
         }
 
-        #gameID {
-            text-align: center;
-            font-size: 30px;
+        .textNormal {
+            pointer-events: none;
+            position: absolute;
+            font-size: 28px;
             color: white;
             font-family: Verdana, Geneva, sans-serif;
+            white-space: nowrap;
+        }
+
+        #userText {
+            right: 40px;
+            top: -58px;
+        }
+        
+        #joinGame {
+            text-align: center;
+            width: 190px;
+            right: 11.5px;
+            top: -213px;
+        }
+        #createGame {
+            text-align: center;
+            width: 190px;
+            left: 29px;
+            top: -213px;
+        }
+        #randomGame {
+            text-align: center;
+            width: 220px;
+            right: 26px;
+            top: -142px;
+        }
+        #withFriends {
+            text-align: center;
+            width: 190px;
+            left: 29px;
+            top: -142px;
+        }
+        
+        #gameID {
+            pointer-events: auto;
+            text-align: center;
 
             width: 500px;
             visibility: hidden
+        }
+
+        .btn {
+            pointer-events: auto;
+            position: absolute;
+            border: none;
+            background-color: inherit;
+            padding: 14px 8px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #666;
         }
 
     </style>
@@ -96,6 +146,15 @@
 
     <!-- Form input for username and game ID -->
     <div class='inputDiv'>
+
+
+        <p id='joinGame' class='btn textNormal'>Join Game</p>
+        <p id='createGame' class='btn textNormal'>Create Game</p>
+        
+        <p id='randomGame' class='btn textNormal'>Random Game</p>
+        <p id='withFriends' class='btn textNormal'>With Friends</p>
+        
+        <p id='userText' class='textNormal'>Username:</p>
         <form action='#' method='get'>
             <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>
@@ -111,7 +170,7 @@
         <img id='idCross' src='game/assets/cross.png' class='idChecker' />
 
         <div class='idDiv'>
-            <p id='gameID'>Game ID: D3F4LT</p>
+            <p id='gameID' class='textNormal'>Game ID: D3F4LT</p>
         </div>
     </div>
 </body>

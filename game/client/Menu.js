@@ -75,23 +75,27 @@ function gotoTitle() {
     connectionText.visible = connecting
     couldntReachText.visible = connectingError
 
-    joinGameText.visible = true
+    setVisible('joinGame') // TODO isSelected
+    joinGameText.visible = false // TODO default should be true
     joinGameText.box.visible = false
-    createGameText.visible = true
+    createGameText.visible = false // TODO default should be true
     createGameText.box.visible = false
 
-    joinRandomGameText.visible = true
+    setVisible('randomGame')
+    disableButton('randomGame')
+    joinRandomGameText.visible = false // TODO default should be true
     joinRandomGameText.box.visible = false
     joinRandomGameText.setEnabled(false)
-    joinFriendsGameText.visible = true
+    setVisible('withFriends')
+    disableButton('withFriends')
+    joinFriendsGameText.visible = false // TODO default should be true
     joinFriendsGameText.box.visible = false
     joinFriendsGameText.setEnabled(false)
 
-    usernameEntry.visible = true
-
-    document.getElementById('nameInput').style.visibility = 'visible'
-    document.getElementById('idInput').style.visibility = 'hidden'
-    document.getElementById('gameID').style.visibility = 'hidden'
+    setVisible('userText')
+    setVisible('nameInput')
+    setHidden('idInput')
+    setHidden('gameID')
 
     goText.visible = true
     updateStartButton()
@@ -103,10 +107,10 @@ var nameGotGood = false
 var idGotGood = false
 
 function updateStartButton() {
-    document.getElementById('nameCheck').style.visibility = 'hidden'
-    document.getElementById('nameCross').style.visibility = 'hidden'
-    document.getElementById('idCheck').style.visibility = 'hidden'
-    document.getElementById('idCross').style.visibility = 'hidden'
+    setHidden('nameCheck')
+    setHidden('nameCross')
+    setHidden('idCheck')
+    setHidden('idCross')
 
     if (formSent) {
         goText.setEnabled(false)
@@ -114,10 +118,10 @@ function updateStartButton() {
     } else {
         let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
         if (nameCheck) {
-            document.getElementById('nameCheck').style.visibility = 'visible'
+            setVisible('nameCheck')
             nameGotGood = true
         } else if (nameGotGood) {
-            document.getElementById('nameCross').style.visibility = 'visible'
+            setVisible('nameCross')
         }
 
         let idRequired = isSelected(joinGameText) && isSelected(joinFriendsGameText)
@@ -125,10 +129,10 @@ function updateStartButton() {
         let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
         if (idRequired) {
             if (idCheck) {
-                document.getElementById('idCheck').style.visibility = 'visible'
+                setVisible('idCheck')
                 idGotGood = true
             } else if (idGotGood) {
-                document.getElementById('idCross').style.visibility = 'visible'
+                setVisible('idCross')
             }
         }
 

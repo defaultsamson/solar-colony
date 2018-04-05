@@ -13,7 +13,7 @@ const Colour = {
     dark9: 0xA9AAAC,
     white: 0xFFFFFF,
 
-    greyText: 0x888888,
+    greyText: '#888',
 
     red: 0xFF8888,
     purple: 0xBB88DD,
