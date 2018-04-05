@@ -1,9 +1,9 @@
 # space-territory
 Another space game (very different from the first)
 
-## To Build ./game/lib/libraries.js
+## To Build ./game/client/lib/libraries.js
 
-This process builds `./libraries.js` to `./game/lib/libraries.js` using the tool Browserify
+This process builds `./libraries.js` to `./game/client/lib/libraries.js` using the tool Browserify
 
 ### 1. Setup Browserify
 ```
@@ -20,4 +20,19 @@ npm i pixi.js pixi-viewport pixi-keyboard pixi-particles
 build_libraries.bat
 -- or --
 build_libraries.sh
+```
+
+## Server
+
+### 1. Install required modules
+```
+npm i ws fs express node-gameloop
+```
+
+### 2. Modify ./game/server/Server.js  
+Change the file paths of the secure websocket's `key` and `cert` to point to your SSL certificates.
+
+### 3. Run server
+```
+node Server.js
 ```
