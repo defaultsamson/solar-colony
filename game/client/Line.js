@@ -3,7 +3,7 @@ class Line extends PIXI.Graphics {
         super()
 
         this.l_width = lineSize || 5
-        this.l_colour = lineColor || "0x000000"
+        this.l_colour = lineColor || "0xFFFFFF"
     }
 
     setPoints(x1, y1, x2, y2) {

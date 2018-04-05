@@ -72,5 +72,13 @@ const PLANET_HEIGHT = 250
 // The height of the viewport after zooming back out to the sun
 const SUN_HEIGHT = 800
 
+// Viewport constants
 const MAX_HEIGHT = 1000
 const MIN_HEIGHT = 100
+
+// The required minimum amount of dashes to draw
+const MIN_DASHES = 2
+// The thickness of the dashes being drawn
+const DASH_THICKNESS = 1.4
+// The length of the dashes being drawn
+const DASH_LENGTH = 25

@@ -769,7 +769,6 @@ function inTeamSelection() {
 var countDown
 
 function parse(type, pack) {
-    console.log("dank: " + type)
 
     switch (type) {
         case Pack.PING_PROBE:

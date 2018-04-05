@@ -190,6 +190,9 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
             var colour = exists(team) ? team.colour : 0xFFFFFF
             this.tint = colour
             this.outline.tint = colour
+            this.ghost.tint = colour
+            this.ghost.outline.tint = colour
+            this.drawLine.tint = colour
             for (var i in this.spawns) {
                 this.spawns[i].tint = colour
             }
@@ -233,10 +236,8 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                 }
             }
         } else {
-            this.shipCount += n
-            this.team.shipCount += n
             for (var i = 0; i < n; i++) {
-                if (this.shipCount < maxDisplayShips) {
+                if (this.shipCount + i < maxDisplayShips) {
                     var ship = new PIXI.Sprite(resources.ship.texture)
 
                     // The position on the planet's surface to place the ship (the angle)
@@ -260,6 +261,9 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
                     this.ships.push(ship)
                 }
             }
+            // Must keep these after the above for loop ^ otherwise the incorrect number of whips will display due to the if statement
+            this.shipCount += n
+            this.team.shipCount += n
         }
     }
 

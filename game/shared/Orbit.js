@@ -1,10 +1,3 @@
-// (Client) The required minimum amount of dashes to draw
-const minDashes = 2
-// (Client) The thickness of the dashes being drawn
-const dashThickness = 1.4
-// (Client) The length of the dashes being drawn
-const dashLength = 25
-
 class Orbit extends(isServer ? Object : PIXI.Graphics) {
     constructor(x, y, radius) {
         super()
@@ -14,22 +7,22 @@ class Orbit extends(isServer ? Object : PIXI.Graphics) {
         this.radius = radius
 
         if (!isServer) {
-            var numOfDashes = Math.max(Math.floor(Math.PI * radius / dashLength), minDashes)
-            var dashRadians = dashLength / radius
+            var numOfDashes = Math.max(Math.floor(Math.PI * radius / DASH_LENGTH), MIN_DASHES)
+            var dashRadians = DASH_LENGTH / radius
             var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
 
             // If it's a full circle, draw it full (more optimised)
             if (spacingRadians <= 0) {
-                this.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+                this.lineStyle(DASH_THICKNESS, Colour.dashedLine) //(thickness, color)
                 this.arc(x, y, radius, 0, 2 * Math.PI)
             } else { // Else, draw it dashed
                 for (var i = 0; i < numOfDashes; i++) {
                     var start = i * (dashRadians + spacingRadians)
                     var end1 = start + dashRadians
                     var end2 = end1 + spacingRadians
-                    this.lineStyle(dashThickness, Colour.dashedLine) //(thickness, color)
+                    this.lineStyle(DASH_THICKNESS, Colour.dashedLine) //(thickness, color)
                     this.arc(x, y, radius, start, end1)
-                    this.lineStyle(dashThickness, Colour.background, 0)
+                    this.lineStyle(DASH_THICKNESS, Colour.background, 0)
                     this.arc(x, y, radius, end1, end2)
                 }
             }

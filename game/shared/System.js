@@ -95,6 +95,7 @@ class System extends(isServer ? Object : PIXI.Container) {
         planet.system = this
 
         if (isServer) {
+            
             planet.id = this.game.createID()
             // Creates the planet on the client-side
             var pack = {
@@ -109,6 +110,9 @@ class System extends(isServer ? Object : PIXI.Container) {
             return planet
         } else {
             this.addChild(planet)
+            var li = new Line(2)
+            li.setPoints(0, 0)
+            planet.drawLine = this.addChild(li)
         }
     }
 

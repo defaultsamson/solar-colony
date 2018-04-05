@@ -23,9 +23,9 @@ function updateSelectedPlanet(mouse) {
     for (var i in system.planets) {
         // Don't draw a line from the sendShipsFrom planet to itself
         if (system.planets[i] != sendShipsFrom) {
+            let planet = system.planets[i]
             // Only draw lines every update cycle
             if (updateLines == 0) {
-                let planet = system.planets[i]
                 planet.outline.visible = false
                 planet.ghost.outline.visible = false
 
@@ -82,7 +82,7 @@ function updateSelectedPlanet(mouse) {
                     }
                 }
 
-                system.drawLines[i].visible = !collides
+                planet.drawLine.visible = !collides
                 planet.ghost.visible = !collides
 
                 if (planet.ghost.visible = !collides) {
@@ -113,8 +113,8 @@ function updateSelectedPlanet(mouse) {
                 }
             }
 
-            system.drawLines[i].setPoints(system.planets[i].ghost.position.x,
-                system.planets[i].ghost.position.y,
+            planet.drawLine.setPoints(planet.ghost.position.x,
+                planet.ghost.position.y,
                 sendShipsFrom.position.x,
                 sendShipsFrom.position.y)
         }
@@ -141,13 +141,11 @@ function goToSendShipsScreen(fromPlanet, amount) {
 }
 
 function cancelSendShips() {
-    for (var i in system.drawLines) {
-        system.drawLines[i].visible = false
-    }
     for (var i in system.planets) {
         system.planets[i].outline.visible = false
         system.planets[i].ghost.visible = false
         system.planets[i].ghost.outline.visible = false
+        system.planets[i].drawLine.visible = false
     }
     sendShipsFrom = null
     sendShipsAmount = 0
