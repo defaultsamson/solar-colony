@@ -3,7 +3,7 @@
 var connectionAttempts = -1
 var connected = false
 
-function isSelected(button) {
+function isSelectedOld(button) {
     return button.box.visible
 }
 
@@ -75,27 +75,7 @@ function gotoTitle() {
     connectionText.visible = connecting
     couldntReachText.visible = connectingError
 
-    setVisible('joinGame') // TODO isSelected
-    joinGameText.visible = false // TODO default should be true
-    joinGameText.box.visible = false
-    createGameText.visible = false // TODO default should be true
-    createGameText.box.visible = false
-
-    setVisible('randomGame')
-    disableButton('randomGame')
-    joinRandomGameText.visible = false // TODO default should be true
-    joinRandomGameText.box.visible = false
-    joinRandomGameText.setEnabled(false)
-    setVisible('withFriends')
-    disableButton('withFriends')
-    joinFriendsGameText.visible = false // TODO default should be true
-    joinFriendsGameText.box.visible = false
-    joinFriendsGameText.setEnabled(false)
-
-    setVisible('userText')
-    setVisible('nameInput')
-    setHidden('idInput')
-    setHidden('gameID')
+    updateGuiClick()
 
     goText.visible = true
     updateStartButton()
@@ -105,6 +85,111 @@ function gotoTitle() {
 
 var nameGotGood = false
 var idGotGood = false
+
+var joinGame = false
+var createGame = false
+
+var randomGame = false
+var withFriends = false
+
+var username = ''
+var gameID = ''
+var players = 2
+
+function updateGuiClick() {
+    // Decides whether to stop showing the gui or continue
+    var showRest = true
+
+    enableButton('randomGame')
+    if (joinGame) {
+        selectButton('joinGame')
+        deselectButton('createGame')
+    } else if (createGame) {
+        deselectButton('joinGame')
+        selectButton('createGame')
+
+        randomGame = false
+        withFriends = true
+        disableButton('randomGame')
+
+    } else {
+        deselectButton('createGame')
+        deselectButton('joinGame')
+        showRest = false
+    }
+
+    // Show the rest of the menu?
+    if (showRest) {
+        setVisible('randomGame')
+        setVisible('withFriends')
+    } else {
+        setHidden('randomGame')
+        setHidden('withFriends')
+    }
+
+    if (randomGame) {
+        selectButton('randomGame')
+        deselectButton('withFriends')
+    } else if (withFriends) {
+        deselectButton('randomGame')
+        selectButton('withFriends')
+    } else {
+        deselectButton('randomGame')
+        deselectButton('withFriends')
+        showRest = false
+    }
+
+    // Show the rest of the menu?
+    if (showRest) {
+        setVisible('userText')
+        setVisible('nameInput')
+
+        if (isSelected('withFriends')) {
+            setVisible('idText')
+            setVisible('idInput')
+        } else {
+            setHidden('idText')
+            setHidden('idInput')
+        }
+    } else {
+        setHidden('userText')
+        setHidden('nameInput')
+        setHidden('idText')
+        setHidden('idInput')
+    }
+
+    playerCount.visible = true
+    let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
+
+    for (var i in playerCounts) {
+        playerCounts[i].visible = true
+    }
+}
+
+
+function joinGameButton() {
+    joinGame = true
+    createGame = false
+    updateGuiClick()
+}
+
+function createGameButton() {
+    joinGame = false
+    createGame = true
+    updateGuiClick()
+}
+
+function randomGameButton() {
+    randomGame = true
+    withFriends = false
+    updateGuiClick()
+}
+
+function withFriendsButton() {
+    randomGame = false
+    withFriends = true
+    updateGuiClick()
+}
 
 function updateStartButton() {
     setHidden('nameCheck')
@@ -124,7 +209,7 @@ function updateStartButton() {
             setVisible('nameCross')
         }
 
-        let idRequired = isSelected(joinGameText) && isSelected(joinFriendsGameText)
+        let idRequired = isSelectedOld(joinGameText) && isSelectedOld(joinFriendsGameText)
 
         let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
         if (idRequired) {
@@ -136,12 +221,12 @@ function updateStartButton() {
             }
         }
 
-        var playerCountRequired = isSelected(joinGameText) && isSelected(joinRandomGameText)
+        var playerCountRequired = isSelectedOld(joinGameText) && isSelectedOld(joinRandomGameText)
         var playerCountCheck = false
         if (playerCountRequired) {
             let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
             for (var i in playerCounts) {
-                if (isSelected(playerCounts[i])) {
+                if (isSelectedOld(playerCounts[i])) {
                     playerCountCheck = true
                     break
                 }
@@ -153,7 +238,7 @@ function updateStartButton() {
         }
 
         // If the Join/Create game and Random/Friend buttons have been selected
-        if (isSelected(joinGameText) || isSelected(createGameText) && (isSelected(joinRandomGameText) || isSelected(joinFriendsGameText))) {
+        if (isSelectedOld(joinGameText) || isSelectedOld(createGameText) && (isSelectedOld(joinRandomGameText) || isSelectedOld(joinFriendsGameText))) {
             if (nameCheck) {
                 if (!idRequired || idCheck) {
                     if (!playerCountRequired || playerCountCheck) {
@@ -183,7 +268,7 @@ document.onkeypress = function keyDownTextField(e) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
-            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {} else if (isSelected(joinGameText) && isSelected(joinFriendsGameText) && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {} else if (updateStartButton()) {
+            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {} else if (isSelectedOld(joinGameText) && isSelectedOld(joinFriendsGameText) && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {} else if (updateStartButton()) {
                 sendForm()
                 e.preventDefault()
                 return false
@@ -224,21 +309,21 @@ function sendForm() {
     sendingFormText.text = 'Please wait while you are connected...'
     sendingFormText.visible = true
 
-    let isHost = isSelected(createGameText)
-    let doID = isSelected(joinFriendsGameText) && !isHost
+    let isHost = isSelectedOld(createGameText)
+    let doID = isSelectedOld(joinFriendsGameText) && !isHost
 
     var players
-    if (isSelected(playerCount2)) {
+    if (isSelectedOld(playerCount2)) {
         players = 2
-    } else if (isSelected(playerCount3)) {
+    } else if (isSelectedOld(playerCount3)) {
         players = 3
-    } else if (isSelected(playerCount4)) {
+    } else if (isSelectedOld(playerCount4)) {
         players = 4
-    } else if (isSelected(playerCount5)) {
+    } else if (isSelectedOld(playerCount5)) {
         players = 5
-    } else if (isSelected(playerCount8)) {
+    } else if (isSelectedOld(playerCount8)) {
         players = 8
-    } else if (isSelected(playerCount10)) {
+    } else if (isSelectedOld(playerCount10)) {
         players = 10
     } else {
         players = -1 // denotes "any"
@@ -267,8 +352,8 @@ function menuSpaghetti(point) {
     }
 
     function showJoinGame() {
-        var withFriends = isSelected(joinFriendsGameText)
-        var withRandom = isSelected(joinRandomGameText)
+        var withFriends = isSelectedOld(joinFriendsGameText)
+        var withRandom = isSelectedOld(joinRandomGameText)
 
         gotoTitle()
 
@@ -285,10 +370,10 @@ function menuSpaghetti(point) {
             playerCounts[i].visible = withRandom
         }
         document.getElementById('idInput').style.visibility = withFriends ? 'visible' : 'hidden'
-
     }
 
-    if (joinGameText.clicked(point)) {
+    if (false) {
+        joinGameClicked = false
         showJoinGame()
 
     } else if (createGameText.clicked(point)) {

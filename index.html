@@ -63,15 +63,31 @@
             white-space: nowrap;
         }
 
+        .btn {
+            pointer-events: auto;
+            position: absolute;
+            border: none;
+            background-color: inherit;
+            padding: 14px 8px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #666;
+        }
+        
         #userText {
             right: 40px;
             top: -58px;
         }
-        
+        #idText {
+            right: 40px;
+            top: 11px;
+        }
         #joinGame {
             text-align: center;
-            width: 190px;
-            right: 11.5px;
+            width: 161px;
+            right: 26px;
             top: -213px;
         }
         #createGame {
@@ -100,20 +116,6 @@
             width: 500px;
             visibility: hidden
         }
-
-        .btn {
-            pointer-events: auto;
-            position: absolute;
-            border: none;
-            background-color: inherit;
-            padding: 14px 8px;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background: #666;
-        }
-
     </style>
 
     <!-- Client libraries -->
@@ -148,11 +150,11 @@
     <div class='inputDiv'>
 
 
-        <p id='joinGame' class='btn textNormal'>Join Game</p>
-        <p id='createGame' class='btn textNormal'>Create Game</p>
+        <p id='joinGame' class='btn textNormal' onmousedown='joinGameButton()'>Join Game</p>
+        <p id='createGame' class='btn textNormal' onmousedown='createGameButton()'>Create Game</p>
         
-        <p id='randomGame' class='btn textNormal'>Random Game</p>
-        <p id='withFriends' class='btn textNormal'>With Friends</p>
+        <p id='randomGame' class='btn textNormal' onmousedown='randomGameButton()'>Random Game</p>
+        <p id='withFriends' class='btn textNormal' onmousedown='withFriendsButton()'>With Friends</p>
         
         <p id='userText' class='textNormal'>Username:</p>
         <form action='#' method='get'>
@@ -162,6 +164,7 @@
         <img id='nameCheck' src='game/assets/check.png' class='nameChecker' />
         <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
 
+        <p id='idText' class='textNormal'>Game ID:</p>
         <form action='#' method='get'>
             <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>

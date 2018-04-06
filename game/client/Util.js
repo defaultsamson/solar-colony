@@ -166,20 +166,46 @@ function setHidden(elemID) {
 }
 
 function disableButton(elemID) {
-    document.getElementById(elemID).style.color = Colour.greyText
-    document.getElementById(elemID).style.cursor = 'default'
-    document.getElementById(elemID).onmouseover = function () {
+    var elem = document.getElementById(elemID)
+    deselectButton(elemID)
+    elem.style.color = Colour.greyText
+    elem.style.cursor = 'default'
+    elem.onmouseover = function () {
         this.style.backgroundColor = 'transparent'
     }
+    elem.setAttribute('enable_click', false)
 }
 
 function enableButton(elemID) {
-    document.getElementById(elemID).style.color = '#FFF'
-    document.getElementById(elemID).style.cursor = 'pointer'
-    document.getElementById(elemID).onmouseover = function () {
+    var elem = document.getElementById(elemID)
+    elem.style.color = '#FFF'
+    elem.style.cursor = 'pointer'
+    elem.onmouseover = function () {
         this.style.backgroundColor = '#666'
     }
-    document.getElementById(elemID).onmouseout = function () {
+    elem.onmouseout = function () {
         this.style.backgroundColor = 'transparent'
     }
+    elem.setAttribute('enable_click', true)
+}
+
+// Draws a box around the button
+function selectButton(elemID) {
+    var elem = document.getElementById(elemID)
+    // by default elems don't have the enable_click attribute, so treat elems without it as enabled by default
+    if (elem.hasAttribute('enable_click') ? elem.getAttribute('enable_click') == 'true' : true) {
+        elem.style.boxShadow = '0 0 0 3px white'
+        elem.setAttribute('button_selected', true)
+    }
+}
+
+function deselectButton(elemID) {
+    var elem = document.getElementById(elemID)
+    elem.style.boxShadow = 'none'
+    elem.setAttribute('button_selected', false)
+}
+
+function isSelected(elemID) {
+    var elem = document.getElementById(elemID)
+    return elem.hasAttribute('button_selected') && elem.getAttribute('button_selected') == 'true'
 }
