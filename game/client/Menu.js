@@ -94,7 +94,7 @@ var withFriends = false
 
 var username = ''
 var gameID = ''
-var players = 2
+var players = 4
 
 function updateGuiClick() {
     // Decides whether to stop showing the gui or continue
@@ -144,28 +144,60 @@ function updateGuiClick() {
         setVisible('userText')
         setVisible('nameInput')
 
-        if (isSelected('withFriends')) {
-            setVisible('idText')
-            setVisible('idInput')
-        } else {
-            setHidden('idText')
-            setHidden('idInput')
+        setVisible('idText', withFriends)
+        setVisible('idInput', withFriends)
+
+        setVisible('playerCount', randomGame)
+        setVisible('player2', randomGame)
+        setVisible('player3', randomGame)
+        setVisible('player4', randomGame)
+        setVisible('player8', randomGame)
+        setVisible('player16', randomGame)
+        setVisible('playerRandom', randomGame)
+
+        if (randomGame) {
+            deselectButton('player2')
+            deselectButton('player3')
+            deselectButton('player4')
+            deselectButton('player8')
+            deselectButton('player16')
+            deselectButton('playerRandom')
+
+            switch (players) {
+                default: selectButton('playerRandom')
+                break
+                case 2:
+                        selectButton('player2')
+                    break
+                case 3:
+                        selectButton('player3')
+                    break
+                case 4:
+                        selectButton('player4')
+                    break
+                case 8:
+                        selectButton('player8')
+                    break
+                case 16:
+                        selectButton('player16')
+                    break
+            }
         }
     } else {
         setHidden('userText')
         setHidden('nameInput')
         setHidden('idText')
         setHidden('idInput')
-    }
 
-    playerCount.visible = true
-    let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
-
-    for (var i in playerCounts) {
-        playerCounts[i].visible = true
+        setHidden('playerCount')
+        setHidden('player2')
+        setHidden('player3')
+        setHidden('player4')
+        setHidden('player8')
+        setHidden('player16')
+        setHidden('playerRandom')
     }
 }
-
 
 function joinGameButton() {
     joinGame = true
@@ -191,12 +223,19 @@ function withFriendsButton() {
     updateGuiClick()
 }
 
+function playerCount(p) {
+    players = p
+    updateGuiClick()
+}
+
+
 function updateStartButton() {
     setHidden('nameCheck')
     setHidden('nameCross')
     setHidden('idCheck')
     setHidden('idCross')
 
+    /*
     if (formSent) {
         goText.setEnabled(false)
         return false
@@ -258,7 +297,7 @@ function updateStartButton() {
         }
         goText.setEnabled(false)
         return false
-    }
+    }*/
 }
 
 
@@ -343,75 +382,6 @@ function sendForm() {
 }
 
 function menuSpaghetti(point) {
-    let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
-
-    function resetPlayerCounts() {
-        for (var i in playerCounts) {
-            playerCounts[i].box.visible = false
-        }
-    }
-
-    function showJoinGame() {
-        var withFriends = isSelectedOld(joinFriendsGameText)
-        var withRandom = isSelectedOld(joinRandomGameText)
-
-        gotoTitle()
-
-        joinGameText.box.visible = true
-        createGameText.box.visible = false
-        joinFriendsGameText.setEnabled(true)
-        joinFriendsGameText.box.visible = withFriends
-        joinRandomGameText.setEnabled(true)
-        joinRandomGameText.box.visible = withRandom
-
-        idEntry.visible = withFriends
-        playerCount.visible = withRandom
-        for (var i in playerCounts) {
-            playerCounts[i].visible = withRandom
-        }
-        document.getElementById('idInput').style.visibility = withFriends ? 'visible' : 'hidden'
-    }
-
-    if (false) {
-        joinGameClicked = false
-        showJoinGame()
-
-    } else if (createGameText.clicked(point)) {
-        gotoTitle()
-        joinGameText.box.visible = false
-        createGameText.box.visible = true
-        joinFriendsGameText.setEnabled(true)
-        joinFriendsGameText.box.visible = true
-    } else if (joinRandomGameText.clicked(point)) {
-        joinFriendsGameText.box.visible = false
-        joinRandomGameText.box.visible = true
-        showJoinGame()
-    } else if (joinFriendsGameText.clicked(point)) {
-        joinFriendsGameText.box.visible = true
-        joinRandomGameText.box.visible = false
-        showJoinGame()
-    } else if (playerCount2.clicked(point)) {
-        resetPlayerCounts()
-        playerCount2.box.visible = true
-    } else if (playerCount3.clicked(point)) {
-        resetPlayerCounts()
-        playerCount3.box.visible = true
-    } else if (playerCount4.clicked(point)) {
-        resetPlayerCounts()
-        playerCount4.box.visible = true
-    } else if (playerCount5.clicked(point)) {
-        resetPlayerCounts()
-        playerCount5.box.visible = true
-    } else if (playerCount8.clicked(point)) {
-        resetPlayerCounts()
-        playerCount8.box.visible = true
-    } else if (playerCount10.clicked(point)) {
-        resetPlayerCounts()
-        playerCount10.box.visible = true
-    } else if (playerCountAny.clicked(point)) {
-        resetPlayerCounts()
-        playerCountAny.box.visible = true
-    }
 
     updateStartButton()
 

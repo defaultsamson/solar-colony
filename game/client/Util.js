@@ -157,8 +157,12 @@ function isChoosingShipSend() {
     return sendShipsFrom
 }
 
-function setVisible(elemID) {
-    document.getElementById(elemID).style.visibility = 'visible'
+function setVisible(elemID, visible) {
+    if (visible || !exists(visible)) {
+        document.getElementById(elemID).style.visibility = 'visible'
+    } else {
+        setHidden(elemID)
+    }
 }
 
 function setHidden(elemID) {
@@ -196,16 +200,27 @@ function selectButton(elemID) {
     if (elem.hasAttribute('enable_click') ? elem.getAttribute('enable_click') == 'true' : true) {
         elem.style.boxShadow = '0 0 0 3px white'
         elem.setAttribute('button_selected', true)
+        setZIndex(elemID, 2) 
+        elem.style.pointerEvents = 'none'
     }
 }
+
+// NOTE
+// setting z-index in selectButton and deselectButton is so that the outline for selected buttons properly draws over the highlighting for unselected buttons
 
 function deselectButton(elemID) {
     var elem = document.getElementById(elemID)
     elem.style.boxShadow = 'none'
     elem.setAttribute('button_selected', false)
+    setZIndex(elemID, 1)
+    elem.style.pointerEvents = 'auto'
 }
 
 function isSelected(elemID) {
     var elem = document.getElementById(elemID)
     return elem.hasAttribute('button_selected') && elem.getAttribute('button_selected') == 'true'
+}
+
+function setZIndex(elemID, z) {
+    document.getElementById(elemID).style.zIndex = z
 }
