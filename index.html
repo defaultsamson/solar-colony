@@ -54,22 +54,33 @@
             height: 0px
         }
 
-        .textNormal {
-            -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+        .text {
             position: absolute;
-            font-size: 28px;
             color: white;
             font-family: Verdana, Geneva, sans-serif;
             white-space: nowrap;
         }
 
+        .normalSize {
+            font-size: 28px;
+        }
+
+        .largeSize {
+            font-size: 48px;
+        }
+
+        .smallSize {
+            font-size: 18px;
+        }
+
         .btn {
-            pointer-events: auto;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+
             position: absolute;
             border: none;
             background-color: inherit;
@@ -125,38 +136,51 @@
         }
 
         #gameID {
-            pointer-events: auto;
             text-align: center;
 
             width: 500px;
             visibility: hidden
         }
-        
+
         #player2 {
             top: -4px;
             left: -16px;
         }
+
         #player3 {
             top: -4px;
             left: 18px;
         }
+
         #player4 {
             top: -4px;
             left: 52px;
         }
+
         #player8 {
             top: -4px;
             left: 86px;
         }
+
         #player16 {
             top: -4px;
             left: 120px;
         }
+
         #playerRandom {
             top: -4px;
             left: 172px;
         }
-        
+
+        #startGame {
+            top: 48px;
+            left: -77px;
+        }
+
+        #connectionText {
+            top: -296px;
+            left: -162px;
+        }
 
     </style>
 
@@ -187,43 +211,48 @@
     <script src='game/client/Util.js'></script>
 
     <script src='game/client/Client.js'></script>
-    
+
     <!-- Form input for username and game ID -->
     <div class='inputDiv'>
 
 
-        <p id='joinGame' class='btn textNormal' onmousedown='joinGameButton()'>Join Game</p>
-        <p id='createGame' class='btn textNormal' onmousedown='createGameButton()'>Create Game</p>
+        <p id='joinGame' class='btn text normalSize' onmousedown='joinGameButton()'>Join Game</p>
+        <p id='createGame' class='btn text normalSize' onmousedown='createGameButton()'>Create Game</p>
 
-        <p id='randomGame' class='btn textNormal' onmousedown='randomGameButton()'>Random Game</p>
-        <p id='withFriends' class='btn textNormal' onmousedown='withFriendsButton()'>With Friends</p>
+        <p id='randomGame' class='btn text normalSize' onmousedown='randomGameButton()'>Random Game</p>
+        <p id='withFriends' class='btn text normalSize' onmousedown='withFriendsButton()'>With Friends</p>
 
-        <p id='userText' class='textNormal'>Username:</p>
+        <p id='userText' class='text normalSize'>Username:</p>
         <form action='#' method='get'>
-            <input id='nameInput' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
+            <input id='nameInput' type='text normalSize' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>
 
         <img id='nameCheck' src='game/assets/check.png' class='nameChecker' />
         <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
 
-        <p id='idText' class='textNormal'>Game ID:</p>
+        <p id='idText' class='text normalSize'>Game ID:</p>
         <form action='#' method='get'>
             <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
         </form>
 
-        <p id='playerCount' class='textNormal'>Player Count:</p>
-        <p id='player2' class='btn textNormal' onmousedown='playerCount(2)'>2</p>
-        <p id='player3' class='btn textNormal' onmousedown='playerCount(3)'>3</p>
-        <p id='player4' class='btn textNormal' onmousedown='playerCount(4)'>4</p>
-        <p id='player8' class='btn textNormal' onmousedown='playerCount(8)'>8</p>
-        <p id='player16' class='btn textNormal' onmousedown='playerCount(16)'>16</p>
-        <p id='playerRandom' class='btn textNormal' onmousedown='playerCount(-1)'>Random</p>
-        
+        <p id='playerCount' class='text normalSize'>Player Count:</p>
+        <p id='player2' class='btn text normalSize' onmousedown='playerCount(2)'>2</p>
+        <p id='player3' class='btn text normalSize' onmousedown='playerCount(3)'>3</p>
+        <p id='player4' class='btn text normalSize' onmousedown='playerCount(4)'>4</p>
+        <p id='player8' class='btn text normalSize' onmousedown='playerCount(8)'>8</p>
+        <p id='player16' class='btn text normalSize' onmousedown='playerCount(16)'>16</p>
+        <p id='playerRandom' class='btn text normalSize' onmousedown='playerCount(-1)'>Random</p>
+
         <img id='idCheck' src='game/assets/check.png' class='idChecker' />
         <img id='idCross' src='game/assets/cross.png' class='idChecker' />
 
         <div class='idDiv'>
-            <p id='gameID' class='textNormal'>Game ID: D3F4LT</p>
+            <p id='gameID' class='text normalSize'>Game ID: D3F4LT</p>
         </div>
+
+        <p id='startGame' class='btn text largeSize' onmousedown='startButton()'>Start!</p>
+
+        <p id='connectionText' class='text normalSize'>Connecting to Server...</p>
+
     </div>
 </body>

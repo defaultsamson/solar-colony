@@ -3,10 +3,6 @@
 var connectionAttempts = -1
 var connected = false
 
-function isSelectedOld(button) {
-    return button.box.visible
-}
-
 function connect() {
 
     connectionText.visible = true
@@ -75,16 +71,15 @@ function gotoTitle() {
     connectionText.visible = connecting
     couldntReachText.visible = connectingError
 
-    updateGuiClick()
-
-    goText.visible = true
-    updateStartButton()
-
     formSent = false
+    shownStart = false
+
+    updateGuiClick()
 }
 
-var nameGotGood = false
-var idGotGood = false
+var shownStart = false
+var serverFail = false
+var formSent = false
 
 var joinGame = false
 var createGame = false
@@ -144,8 +139,8 @@ function updateGuiClick() {
         setVisible('userText')
         setVisible('nameInput')
 
-        setVisible('idText', withFriends)
-        setVisible('idInput', withFriends)
+        setVisible('idText', joinGame && withFriends)
+        setVisible('idInput', joinGame && withFriends)
 
         setVisible('playerCount', randomGame)
         setVisible('player2', randomGame)
@@ -183,6 +178,10 @@ function updateGuiClick() {
                     break
             }
         }
+
+        setVisible('startGame')
+        updateStartButton()
+
     } else {
         setHidden('userText')
         setHidden('nameInput')
@@ -196,6 +195,8 @@ function updateGuiClick() {
         setHidden('player8')
         setHidden('player16')
         setHidden('playerRandom')
+
+        setHidden('startGame')
     }
 }
 
@@ -228,19 +229,26 @@ function playerCount(p) {
     updateGuiClick()
 }
 
+function startButton() {
+
+}
+
+var nameGotGood = false
+var idGotGood = false
 
 function updateStartButton() {
-    setHidden('nameCheck')
-    setHidden('nameCross')
-    setHidden('idCheck')
-    setHidden('idCross')
 
-    /*
     if (formSent) {
-        goText.setEnabled(false)
+        disableButton('startGame')
         return false
-    } else {
-        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
+    } else if (randomGame || withFriends) {
+        setHidden('nameCheck')
+        setHidden('nameCross')
+        setHidden('idCheck')
+        setHidden('idCross')
+
+        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput('nameInput'))
+        console.log('nameCheck: ' + nameCheck)
         if (nameCheck) {
             setVisible('nameCheck')
             nameGotGood = true
@@ -248,10 +256,10 @@ function updateStartButton() {
             setVisible('nameCross')
         }
 
-        let idRequired = isSelectedOld(joinGameText) && isSelectedOld(joinFriendsGameText)
-
-        let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
+        let idRequired = joinGame && withFriends
+        let idCheck
         if (idRequired) {
+            idCheck = /^([A-Za-z0-9]{6})$/.test(getInput('idInput'))
             if (idCheck) {
                 setVisible('idCheck')
                 idGotGood = true
@@ -260,46 +268,29 @@ function updateStartButton() {
             }
         }
 
-        var playerCountRequired = isSelectedOld(joinGameText) && isSelectedOld(joinRandomGameText)
-        var playerCountCheck = false
-        if (playerCountRequired) {
-            let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
-            for (var i in playerCounts) {
-                if (isSelectedOld(playerCounts[i])) {
-                    playerCountCheck = true
-                    break
-                }
-            }
-        }
-
+        // TODO remove this? double check where it's used
         if (!serverFail) {
             sendingFormText.visible = false
         }
 
         // If the Join/Create game and Random/Friend buttons have been selected
-        if (isSelectedOld(joinGameText) || isSelectedOld(createGameText) && (isSelectedOld(joinRandomGameText) || isSelectedOld(joinFriendsGameText))) {
-            if (nameCheck) {
-                if (!idRequired || idCheck) {
-                    if (!playerCountRequired || playerCountCheck) {
-                        if (connected) {
-                            goText.setEnabled()
-                            return true
-                        }
-                    } else {
-                        failSendForm('Please choose a player count')
-                    }
-                } else if (idGotGood) {
-                    failSendForm('Game ID must be 6 characters, letters and numbers only')
-                }
-            } else if (nameGotGood) {
-                failSendForm('Username must be 3-20 characters, letters and numbers only')
-            }
-        }
-        goText.setEnabled(false)
-        return false
-    }*/
-}
 
+        if (nameCheck) {
+            if (!idRequired || idCheck) {
+                if (!connected) {
+                    enableButton('startGame')
+                    return true
+                }
+            } else if (idGotGood) {
+                failSendForm('Game ID must be 6 characters, letters and numbers only')
+            }
+        } else if (nameGotGood) {
+            failSendForm('Username must be 3-20 characters, letters and numbers only')
+        }
+        disableButton('startGame')
+        return false
+    }
+}
 
 document.onkeypress = function keyDownTextField(e) {
     var keyCode = e.keyCode
@@ -307,7 +298,9 @@ document.onkeypress = function keyDownTextField(e) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
-            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {} else if (isSelectedOld(joinGameText) && isSelectedOld(joinFriendsGameText) && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {} else if (updateStartButton()) {
+            if (!/^([A-Za-z0-9]{3,20})$/.test(getInput('nameInput'))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput('idInput'))) {
+
+            } else if (updateStartButton()) {
                 sendForm()
                 e.preventDefault()
                 return false
@@ -330,9 +323,6 @@ document.onkeypress = function keyDownTextField(e) {
     }
 }
 
-var serverFail = false
-var formSent = false
-
 function failSendForm(message) {
     sendingFormText.text = message
     sendingFormText.visible = true
@@ -348,31 +338,13 @@ function sendForm() {
     sendingFormText.text = 'Please wait while you are connected...'
     sendingFormText.visible = true
 
-    let isHost = isSelectedOld(createGameText)
-    let doID = isSelectedOld(joinFriendsGameText) && !isHost
-
-    var players
-    if (isSelectedOld(playerCount2)) {
-        players = 2
-    } else if (isSelectedOld(playerCount3)) {
-        players = 3
-    } else if (isSelectedOld(playerCount4)) {
-        players = 4
-    } else if (isSelectedOld(playerCount5)) {
-        players = 5
-    } else if (isSelectedOld(playerCount8)) {
-        players = 8
-    } else if (isSelectedOld(playerCount10)) {
-        players = 10
-    } else {
-        players = -1 // denotes "any"
-    }
+    let sendID = joinGame && withFriends
 
     var formPacket = {
         type: Pack.FORM_SEND,
-        host: isHost,
-        user: document.getElementById('nameInput').value,
-        id: doID ? document.getElementById('idInput').value : '',
+        host: createGame,
+        user: getInput('nameInput'),
+        id: sendID ? getInput('idInput') : '',
         players: players
     }
 

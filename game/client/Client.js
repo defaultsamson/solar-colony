@@ -653,12 +653,12 @@ function parse(type, pack) {
             break
         case Pack.JOIN_GAME:
             hud.hideAll()
-            document.getElementById('nameInput').style.visibility = 'hidden'
-            document.getElementById('idInput').style.visibility = 'hidden'
-            document.getElementById('nameCheck').style.visibility = 'hidden'
-            document.getElementById('nameCross').style.visibility = 'hidden'
-            document.getElementById('idCheck').style.visibility = 'hidden'
-            document.getElementById('idCross').style.visibility = 'hidden'
+            setHidden('nameInput')
+            setHidden('idInput')
+            setHidden('nameCheck')
+            setHidden('nameCross')
+            setHidden('idCheck')
+            setHidden('idCross')
 
             countDown = COUNTDOWN_TIME
 
@@ -671,8 +671,8 @@ function parse(type, pack) {
             goText.visible = true
             quitText.visible = true
 
-            document.getElementById('gameID').style.visibility = 'visible'
-            document.getElementById('gameID').innerHTML = 'Game ID: ' + gameID
+            setVisible('gameID')
+            setText('gameID', 'Game ID: ' + gameID)
 
             redTeamText.visible = true
             purpleTeamText.visible = true
@@ -739,7 +739,7 @@ function parse(type, pack) {
             break
         case Pack.SHOW_SYSTEM:
             viewport.addChild(system)
-            document.getElementById('gameID').style.visibility = 'hidden'
+            setHidden('gameID')
             hud.hideAll()
             pingText.visible = true
             pixelText.visible = true

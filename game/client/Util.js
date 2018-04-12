@@ -224,3 +224,11 @@ function isSelected(elemID) {
 function setZIndex(elemID, z) {
     document.getElementById(elemID).style.zIndex = z
 }
+
+function getInput(elemID) {
+    return document.getElementById(elemID).value
+}
+
+function setText(elemID, text) {
+    document.getElementById(elemID).innerHTML = text
+}

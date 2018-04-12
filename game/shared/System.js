@@ -95,7 +95,6 @@ class System extends(isServer ? Object : PIXI.Container) {
         planet.system = this
 
         if (isServer) {
-            
             planet.id = this.game.createID()
             // Creates the planet on the client-side
             var pack = {
