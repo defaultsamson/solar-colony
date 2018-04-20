@@ -552,6 +552,8 @@ function resize() {
 
     stopSnap()
     hud.resize(width, height)
+
+    doMenuResize()
 }
 
 function getTeam(id) {
@@ -652,13 +654,7 @@ function parse(type, pack) {
             failSendForm(pack.reason)
             break
         case Pack.JOIN_GAME:
-            hud.hideAll()
-            setHidden('nameInput')
-            setHidden('idInput')
-            setHidden('nameCheck')
-            setHidden('nameCross')
-            setHidden('idCheck')
-            setHidden('idCross')
+            hideMenu()
 
             countDown = COUNTDOWN_TIME
 

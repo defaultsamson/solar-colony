@@ -82,3 +82,25 @@ const MIN_DASHES = 2
 const DASH_THICKNESS = 1.4
 // The length of the dashes being drawn
 const DASH_LENGTH = 25
+
+// The HTML id's of the elements
+const JOIN_GAME_BUTTON = 'b_join'
+const CREATE_GAME_BUTTON = 'b_create'
+const RANDOM_GAME_BUTTON = 'b_random'
+const WITH_FRIENDS_BUTTON = 'b_friends'
+const USERNAME_TEXT = 't_user'
+const ID_TEXT = 't_id'
+const PLAYER_COUNT_TEXT = 't_playerCount'
+const PLAYERS_BUTTON_2 = 'b_p2'
+const PLAYERS_BUTTON_3 = 'b_p3'
+const PLAYERS_BUTTON_4 = 'b_p4'
+const PLAYERS_BUTTON_8 = 'b_p8'
+const PLAYERS_BUTTON_16 = 'b_p16'
+const PLAYERS_BUTTON_RANDOM = 'b_pRnd'
+const START_BUTTON = 'b_start'
+const USERNAME_INPUT = 'i_user'
+const ID_INPUT = 'i_id'
+const USERNAME_CHECK = 'p_userG'
+const USERNAME_CROSS = 'p_userB'
+const ID_CHECK = 'p_idG'
+const ID_CROSS = 'p_idB'

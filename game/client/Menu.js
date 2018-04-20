@@ -11,7 +11,7 @@ function connect() {
 
     ws.onerror = function (evt) {
         console.log('The WebSocket experienced an error')
-        console.log(evt.err)
+        console.log(evt)
     }
 
     ws.onclose = function (evt) {
@@ -74,6 +74,8 @@ function gotoTitle() {
     formSent = false
     shownStart = false
 
+    hideMenu()
+
     updateGuiClick()
 }
 
@@ -95,130 +97,133 @@ function updateGuiClick() {
     // Decides whether to stop showing the gui or continue
     var showRest = true
 
-    enableButton('randomGame')
+    setVisible(JOIN_GAME_BUTTON)
+    setVisible(CREATE_GAME_BUTTON)
+
+    enableButton(RANDOM_GAME_BUTTON)
     if (joinGame) {
-        selectButton('joinGame')
-        deselectButton('createGame')
+        selectButton(JOIN_GAME_BUTTON)
+        deselectButton(CREATE_GAME_BUTTON)
     } else if (createGame) {
-        deselectButton('joinGame')
-        selectButton('createGame')
+        deselectButton(JOIN_GAME_BUTTON)
+        selectButton(CREATE_GAME_BUTTON)
 
         randomGame = false
         withFriends = true
-        disableButton('randomGame')
+        disableButton(RANDOM_GAME_BUTTON)
 
     } else {
-        deselectButton('createGame')
-        deselectButton('joinGame')
+        deselectButton(CREATE_GAME_BUTTON)
+        deselectButton(JOIN_GAME_BUTTON)
         showRest = false
     }
 
     // Show the rest of the menu?
     if (showRest) {
-        setVisible('randomGame')
-        setVisible('withFriends')
+        setVisible(RANDOM_GAME_BUTTON)
+        setVisible(WITH_FRIENDS_BUTTON)
     } else {
-        setHidden('randomGame')
-        setHidden('withFriends')
+        setHidden(RANDOM_GAME_BUTTON)
+        setHidden(WITH_FRIENDS_BUTTON)
     }
 
     if (randomGame) {
-        selectButton('randomGame')
-        deselectButton('withFriends')
+        selectButton(RANDOM_GAME_BUTTON)
+        deselectButton(WITH_FRIENDS_BUTTON)
     } else if (withFriends) {
-        deselectButton('randomGame')
-        selectButton('withFriends')
+        deselectButton(RANDOM_GAME_BUTTON)
+        selectButton(WITH_FRIENDS_BUTTON)
     } else {
-        deselectButton('randomGame')
-        deselectButton('withFriends')
+        deselectButton(RANDOM_GAME_BUTTON)
+        deselectButton(WITH_FRIENDS_BUTTON)
         showRest = false
     }
 
     // Show the rest of the menu?
     if (showRest) {
-        setVisible('userText')
-        setVisible('nameInput')
+        setVisible(USERNAME_TEXT)
+        setVisible(USERNAME_INPUT)
 
-        setVisible('idText', joinGame && withFriends)
-        setVisible('idInput', joinGame && withFriends)
+        setVisible(ID_TEXT, joinGame && withFriends)
+        setVisible(ID_INPUT, joinGame && withFriends)
 
-        setVisible('playerCount', randomGame)
-        setVisible('player2', randomGame)
-        setVisible('player3', randomGame)
-        setVisible('player4', randomGame)
-        setVisible('player8', randomGame)
-        setVisible('player16', randomGame)
-        setVisible('playerRandom', randomGame)
+        setVisible(PLAYER_COUNT_TEXT, randomGame)
+        setVisible(PLAYERS_BUTTON_2, randomGame)
+        setVisible(PLAYERS_BUTTON_3, randomGame)
+        setVisible(PLAYERS_BUTTON_4, randomGame)
+        setVisible(PLAYERS_BUTTON_8, randomGame)
+        setVisible(PLAYERS_BUTTON_16, randomGame)
+        setVisible(PLAYERS_BUTTON_RANDOM, randomGame)
 
         if (randomGame) {
-            deselectButton('player2')
-            deselectButton('player3')
-            deselectButton('player4')
-            deselectButton('player8')
-            deselectButton('player16')
-            deselectButton('playerRandom')
+            deselectButton(PLAYERS_BUTTON_2)
+            deselectButton(PLAYERS_BUTTON_3)
+            deselectButton(PLAYERS_BUTTON_4)
+            deselectButton(PLAYERS_BUTTON_8)
+            deselectButton(PLAYERS_BUTTON_16)
+            deselectButton(PLAYERS_BUTTON_RANDOM)
 
             switch (players) {
-                default: selectButton('playerRandom')
+                default: selectButton(PLAYERS_BUTTON_RANDOM)
                 break
                 case 2:
-                        selectButton('player2')
+                        selectButton(PLAYERS_BUTTON_2)
                     break
                 case 3:
-                        selectButton('player3')
+                        selectButton(PLAYERS_BUTTON_3)
                     break
                 case 4:
-                        selectButton('player4')
+                        selectButton(PLAYERS_BUTTON_4)
                     break
                 case 8:
-                        selectButton('player8')
+                        selectButton(PLAYERS_BUTTON_8)
                     break
                 case 16:
-                        selectButton('player16')
+                        selectButton(PLAYERS_BUTTON_16)
                     break
             }
         }
 
-        setVisible('startGame')
+        setVisible(START_BUTTON)
         updateStartButton()
 
     } else {
-        setHidden('userText')
-        setHidden('nameInput')
-        setHidden('idText')
-        setHidden('idInput')
+        setHidden(USERNAME_TEXT)
+        setHidden(USERNAME_INPUT)
+        setHidden(ID_TEXT)
+        setHidden(ID_INPUT)
 
-        setHidden('playerCount')
-        setHidden('player2')
-        setHidden('player3')
-        setHidden('player4')
-        setHidden('player8')
-        setHidden('player16')
-        setHidden('playerRandom')
+        setHidden(PLAYER_COUNT_TEXT)
+        setHidden(PLAYERS_BUTTON_2)
+        setHidden(PLAYERS_BUTTON_3)
+        setHidden(PLAYERS_BUTTON_4)
+        setHidden(PLAYERS_BUTTON_8)
+        setHidden(PLAYERS_BUTTON_16)
+        setHidden(PLAYERS_BUTTON_RANDOM)
 
-        setHidden('startGame')
+        setHidden(START_BUTTON)
     }
 }
 
-function joinGameButton() {
+function joinButton() {
     joinGame = true
     createGame = false
     updateGuiClick()
 }
 
-function createGameButton() {
+function createButton() {
     joinGame = false
     createGame = true
     updateGuiClick()
 }
 
-function randomGameButton() {
+function randomButton() {
     randomGame = true
     withFriends = false
     updateGuiClick()
 }
 
-function withFriendsButton() {
+function friendsButton() {
     randomGame = false
     withFriends = true
     updateGuiClick()
@@ -239,32 +244,31 @@ var idGotGood = false
 function updateStartButton() {
 
     if (formSent) {
-        disableButton('startGame')
+        disableButton(START_BUTTON)
         return false
     } else if (randomGame || withFriends) {
-        setHidden('nameCheck')
-        setHidden('nameCross')
-        setHidden('idCheck')
-        setHidden('idCross')
+        setHidden(USERNAME_CHECK)
+        setHidden(USERNAME_CROSS)
+        setHidden(ID_CHECK)
+        setHidden(ID_CROSS)
 
-        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput('nameInput'))
-        console.log('nameCheck: ' + nameCheck)
+        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(USERNAME_INPUT))
         if (nameCheck) {
-            setVisible('nameCheck')
+            setVisible(USERNAME_CHECK)
             nameGotGood = true
         } else if (nameGotGood) {
-            setVisible('nameCross')
+            setVisible(USERNAME_CROSS)
         }
 
         let idRequired = joinGame && withFriends
         let idCheck
         if (idRequired) {
-            idCheck = /^([A-Za-z0-9]{6})$/.test(getInput('idInput'))
+            idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(ID_INPUT))
             if (idCheck) {
-                setVisible('idCheck')
+                setVisible(ID_CHECK)
                 idGotGood = true
             } else if (idGotGood) {
-                setVisible('idCross')
+                setVisible(ID_CROSS)
             }
         }
 
@@ -277,8 +281,8 @@ function updateStartButton() {
 
         if (nameCheck) {
             if (!idRequired || idCheck) {
-                if (!connected) {
-                    enableButton('startGame')
+                if (connected) {
+                    enableButton(START_BUTTON)
                     return true
                 }
             } else if (idGotGood) {
@@ -287,7 +291,7 @@ function updateStartButton() {
         } else if (nameGotGood) {
             failSendForm('Username must be 3-20 characters, letters and numbers only')
         }
-        disableButton('startGame')
+        disableButton(START_BUTTON)
         return false
     }
 }
@@ -298,7 +302,7 @@ document.onkeypress = function keyDownTextField(e) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
-            if (!/^([A-Za-z0-9]{3,20})$/.test(getInput('nameInput'))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput('idInput'))) {
+            if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(USERNAME_INPUT))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(ID_INPUT))) {
 
             } else if (updateStartButton()) {
                 sendForm()
@@ -343,8 +347,8 @@ function sendForm() {
     var formPacket = {
         type: Pack.FORM_SEND,
         host: createGame,
-        user: getInput('nameInput'),
-        id: sendID ? getInput('idInput') : '',
+        user: getInput(USERNAME_INPUT),
+        id: sendID ? getInput(ID_INPUT) : '',
         players: players
     }
 
@@ -360,4 +364,55 @@ function menuSpaghetti(point) {
     if (goText.clicked(point)) {
         sendForm()
     }
+}
+
+function hideMenu() {
+    setHidden(JOIN_GAME_BUTTON)
+    setHidden(CREATE_GAME_BUTTON)
+    setHidden(RANDOM_GAME_BUTTON)
+    setHidden(WITH_FRIENDS_BUTTON)
+    setHidden(USERNAME_TEXT)
+    setHidden(ID_TEXT)
+    setHidden(PLAYER_COUNT_TEXT)
+    setHidden(PLAYERS_BUTTON_2)
+    setHidden(PLAYERS_BUTTON_3)
+    setHidden(PLAYERS_BUTTON_4)
+    setHidden(PLAYERS_BUTTON_8)
+    setHidden(PLAYERS_BUTTON_16)
+    setHidden(PLAYERS_BUTTON_RANDOM)
+    setHidden(START_BUTTON)
+    setHidden(USERNAME_INPUT)
+    setHidden(ID_INPUT)
+    setHidden(USERNAME_CHECK)
+    setHidden(USERNAME_CROSS)
+    setHidden(ID_CHECK)
+    setHidden(ID_CROSS)
+}
+
+// Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
+// https://codepen.io/chriscoyier/pen/VvRoWy
+function doMenuResize() {
+
+    var $ui = $("#input")
+
+    const guiX = 500
+    const guiY = 500
+    const scaleX = window.innerWidth / guiX
+    const scaleY = window.innerHeight / guiY
+
+    var scale
+    // viewport is too tall so limit by width
+    if (scaleX < scaleY) {
+        scale = scaleX
+
+    } else { // limit by height
+        scale = scaleY
+    }
+
+    $ui.css({
+        transform: "translate(-50%, -50%) " + "scale(" + scale + ")"
+    })
+
+    // TODO scale font?
+
 }

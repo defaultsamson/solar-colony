@@ -185,7 +185,7 @@ function enableButton(elemID) {
     elem.style.color = '#FFF'
     elem.style.cursor = 'pointer'
     elem.onmouseover = function () {
-        this.style.backgroundColor = '#666'
+        this.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'
     }
     elem.onmouseout = function () {
         this.style.backgroundColor = 'transparent'
@@ -200,8 +200,7 @@ function selectButton(elemID) {
     if (elem.hasAttribute('enable_click') ? elem.getAttribute('enable_click') == 'true' : true) {
         elem.style.boxShadow = '0 0 0 3px white'
         elem.setAttribute('button_selected', true)
-        setZIndex(elemID, 2) 
-        elem.style.pointerEvents = 'none'
+        setZIndex(elemID, 2)
     }
 }
 
@@ -213,7 +212,6 @@ function deselectButton(elemID) {
     elem.style.boxShadow = 'none'
     elem.setAttribute('button_selected', false)
     setZIndex(elemID, 1)
-    elem.style.pointerEvents = 'auto'
 }
 
 function isSelected(elemID) {

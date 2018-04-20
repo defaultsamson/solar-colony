@@ -7,182 +7,186 @@
             background-color: #2A2C31
         }
 
-        .inputDiv {
+        #input {
+            background: #066;
             position: absolute;
-            left: 50%;
-            top: 50%
-        }
-
-        input {
-            position: absolute;
-            width: 188px;
-            height: 30px;
+            width: 500px;
+            height: 500px;
+            padding: 0px;
             text-align: center;
-            left: 40px;
-            font-size: 20px;
-            visibility: hidden
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            transform-origin: center center;
         }
 
-        #idInput {
-            top: 42px;
-            text-transform: uppercase
-        }
-
-        #nameInput {
-            top: -26px
-        }
-
-        img {
+        .txt {
             position: absolute;
-            left: 235px;
-            visibility: hidden
-        }
-
-        .idChecker {
-            top: 43px
-        }
-
-        .nameChecker {
-            top: -25px
-        }
-
-        .idDiv {
-            position: absolute;
-            left: -250px;
-            top: -240px;
-            width: 0px;
-            height: 0px
-        }
-
-        .text {
-            position: absolute;
+            margin: 0px;
             color: white;
             font-family: Verdana, Geneva, sans-serif;
-            white-space: nowrap;
         }
 
-        .normalSize {
-            font-size: 28px;
-        }
-
-        .largeSize {
-            font-size: 48px;
-        }
-
-        .smallSize {
+        .sml {
             font-size: 18px;
         }
 
+        .med {
+            font-size: 28px;
+        }
+
+        .big {
+            font-size: 48px;
+        }
+
         .btn {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
             -moz-user-select: none;
+            -webkit-user-select: none;
             -ms-user-select: none;
             user-select: none;
 
-            position: absolute;
-            border: none;
-            background-color: inherit;
-            padding: 14px 8px;
+            padding: 10px;
             cursor: pointer;
         }
 
         .btn:hover {
-            background: #666;
+            background-color: rgba(200, 200, 200, 0.5);
         }
 
-        #joinGame {
+        #b_join {
+            top: 10%;
+            right: calc(50% + 5px);
+            text-align: right;
+        }
+
+        #b_create {
+            top: 10%;
+            left: calc(50% + 5px);
+            text-align: left;
+        }
+
+        #b_friends {
+            top: 25%;
+            right: calc(50% + 5px);
+            text-align: right;
+        }
+
+        #b_random {
+            top: 25%;
+            left: calc(50% + 5px);
+            text-align: left;
+        }
+
+        #t_user {
+            top: 40%;
+            right: calc(50% + 5px);
+            text-align: right;
+            /* padding-right aligns the colon with above button text */
+            padding-right: 6px;
+            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+            padding-top: 10px;
+        }
+
+        #t_id {
+            top: 55%;
+            right: calc(50% + 5px);
+            text-align: right;
+            /* padding-right aligns the colon with above button text */
+            padding-right: 6px;
+            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+            padding-top: 10px;
+        }
+
+        #t_playerCount {
+            top: 55%;
+            right: calc(50% + 5px);
+            text-align: right;
+            /* padding-right aligns the colon with above button text */
+            padding-right: 6px;
+            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+            padding-top: 10px;
+        }
+
+        #b_p2 {
+            top: 55%;
+            left: calc(50% - 11px);
+        }
+
+        #b_p3 {
+            top: 55%;
+            left: calc(50% + 22px);
+        }
+
+        #b_p4 {
+            top: 55%;
+            left: calc(50% + 55px);
+        }
+
+        #b_p8 {
+            top: 55%;
+            left: calc(50% + 88px);
+        }
+
+        #b_p16 {
+            top: 55%;
+            left: calc(50% + 121px);
+        }
+
+        #b_pRnd {
+            top: 55%;
+            left: calc(50% + 172px);
+        }
+
+        #b_start {
+            top: 70%;
+            text-align: left;
+            /* The below calc is a hardcoding to center the button */
+            left: calc(50% - 79px);
+        }
+
+        #i_user {
+            position: absolute;
+            width: 188px;
+            height: 30px;
             text-align: center;
-            width: 161px;
-            right: 26px;
-            top: -213px;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 20px;
+            top: calc(40% + 15px);
+            left: calc(50% + 17px);
         }
 
-        #createGame {
+        #i_id {
+            position: absolute;
+            width: 188px;
+            height: 30px;
             text-align: center;
-            width: 190px;
-            left: 29px;
-            top: -213px;
+            font-family: Verdana, Geneva, sans-serif;
+            font-size: 20px;
+            top: calc(55% + 15px);
+            left: calc(50% + 17px);
+            text-transform: uppercase
         }
 
-        #randomGame {
-            text-align: center;
-            width: 220px;
-            right: 26px;
-            top: -142px;
+        .userSymbol {
+            position: absolute;
+            top: calc(40% + 15px);
+            right: 2.5%;
         }
 
-        #withFriends {
-            text-align: center;
-            width: 190px;
-            left: 29px;
-            top: -142px;
+        .idSymbol {
+            position: absolute;
+            top: calc(55% + 15px);
+            right: 2.5%;
         }
 
-        #userText {
-            right: 40px;
-            top: -58px;
-        }
-
-        #idText {
-            right: 40px;
-            top: 11px;
-        }
-
-        #playerCount {
-            right: 40px;
-            top: 11px;
-        }
-
-        #gameID {
-            text-align: center;
-
-            width: 500px;
-            visibility: hidden
-        }
-
-        #player2 {
-            top: -4px;
-            left: -16px;
-        }
-
-        #player3 {
-            top: -4px;
-            left: 18px;
-        }
-
-        #player4 {
-            top: -4px;
-            left: 52px;
-        }
-
-        #player8 {
-            top: -4px;
-            left: 86px;
-        }
-
-        #player16 {
-            top: -4px;
-            left: 120px;
-        }
-
-        #playerRandom {
-            top: -4px;
-            left: 172px;
-        }
-
-        #startGame {
-            top: 48px;
-            left: -77px;
-        }
-
-        #connectionText {
-            top: -296px;
-            left: -162px;
+        #t_connecting {
+            top: 2%;
+            left: calc(50% - 96px);
         }
 
     </style>
+
+    <script src="game/client/lib/jquery-3.3.1.slim.min.js"></script>
 
     <!-- Client libraries -->
     <script src='game/client/lib/key.js'></script>
@@ -212,47 +216,48 @@
 
     <script src='game/client/Client.js'></script>
 
-    <!-- Form input for username and game ID -->
+    <div id="input">
+        <p id='t_connecting' class='txt sml'>Connecting to Server...</p>
+
+        <p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join Game</p>
+        <p id='b_create' class='btn txt med' onmousedown='createButton()'>Create Game</p>
+
+        <p id='b_random' class='btn txt med' onmousedown='randomButton()'>Random Game</p>
+        <p id='b_friends' class='btn txt med' onmousedown='friendsButton()'>With Friends</p>
+
+        <p id='t_user' class='txt med'>Username:</p>
+        <form action='#' method='get'>
+            <input id='i_user' type='txt med' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
+        </form>
+
+        <img id='p_userG' src='game/assets/check.png' class='userSymbol' />
+        <img id='p_userB' src='game/assets/cross.png' class='userSymbol' />
+
+        <p id='t_id' class='txt med'>Game ID:</p>
+        <form action='#' method='get'>
+            <input id='i_id' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
+        </form>
+
+        <img id='p_idG' src='game/assets/check.png' class='idSymbol' />
+        <img id='p_idB' src='game/assets/cross.png' class='idSymbol' />
+
+        <p id='t_playerCount' class='txt med'>Player Count:</p>
+        <p id='b_p2' class='btn txt med' onmousedown='playerCount(2)'>2</p>
+        <p id='b_p3' class='btn txt med' onmousedown='playerCount(3)'>3</p>
+        <p id='b_p4' class='btn txt med' onmousedown='playerCount(4)'>4</p>
+        <p id='b_p8' class='btn txt med' onmousedown='playerCount(8)'>8</p>
+        <p id='b_p16' class='btn txt med' onmousedown='playerCount(16)'>16</p>
+        <p id='b_pRnd' class='btn txt med' onmousedown='playerCount(-1)'>Rnd</p>
+
+        <p id='b_start' class='btn txt big' onmousedown='startButton()'>Start!</p>
+    </div>
+
+    <!-- Form input for username and game ID 
     <div class='inputDiv'>
-
-
-        <p id='joinGame' class='btn text normalSize' onmousedown='joinGameButton()'>Join Game</p>
-        <p id='createGame' class='btn text normalSize' onmousedown='createGameButton()'>Create Game</p>
-
-        <p id='randomGame' class='btn text normalSize' onmousedown='randomGameButton()'>Random Game</p>
-        <p id='withFriends' class='btn text normalSize' onmousedown='withFriendsButton()'>With Friends</p>
-
-        <p id='userText' class='text normalSize'>Username:</p>
-        <form action='#' method='get'>
-            <input id='nameInput' type='text normalSize' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
-        </form>
-
-        <img id='nameCheck' src='game/assets/check.png' class='nameChecker' />
-        <img id='nameCross' src='game/assets/cross.png' class='nameChecker' />
-
-        <p id='idText' class='text normalSize'>Game ID:</p>
-        <form action='#' method='get'>
-            <input id='idInput' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
-        </form>
-
-        <p id='playerCount' class='text normalSize'>Player Count:</p>
-        <p id='player2' class='btn text normalSize' onmousedown='playerCount(2)'>2</p>
-        <p id='player3' class='btn text normalSize' onmousedown='playerCount(3)'>3</p>
-        <p id='player4' class='btn text normalSize' onmousedown='playerCount(4)'>4</p>
-        <p id='player8' class='btn text normalSize' onmousedown='playerCount(8)'>8</p>
-        <p id='player16' class='btn text normalSize' onmousedown='playerCount(16)'>16</p>
-        <p id='playerRandom' class='btn text normalSize' onmousedown='playerCount(-1)'>Random</p>
-
-        <img id='idCheck' src='game/assets/check.png' class='idChecker' />
-        <img id='idCross' src='game/assets/cross.png' class='idChecker' />
 
         <div class='idDiv'>
             <p id='gameID' class='text normalSize'>Game ID: D3F4LT</p>
         </div>
 
-        <p id='startGame' class='btn text largeSize' onmousedown='startButton()'>Start!</p>
-
-        <p id='connectionText' class='text normalSize'>Connecting to Server...</p>
-
-    </div>
+    </div>-->
 </body>
