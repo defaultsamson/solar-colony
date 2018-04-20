@@ -5,7 +5,7 @@ var connected = false
 
 function connect() {
 
-    connectionText.visible = true
+    setVisible(CONNECTION_TEXT)
 
     var ws = socket.connect()
 
@@ -27,10 +27,6 @@ function connect() {
         formSent = false
         updateStartButton()
 
-        connectionText.visible = true
-        couldntReachText.visible = true
-        couldntReachText.text = 'Couldn\'t establish connection, retrying... [' + connectionAttempts + ']'
-
         connect()
     }
 
@@ -39,8 +35,7 @@ function connect() {
 
         connectionAttempts = -1
         connected = true
-        connectionText.visible = false
-        couldntReachText.visible = false
+        setHidden(CONNECTION_TEXT)
         formSent = false
         updateStartButton()
     }
@@ -57,8 +52,6 @@ function connect() {
 }
 
 function gotoTitle() {
-    var connecting = connectionText.visible
-    var connectingError = couldntReachText.visible
 
     allowMouseClick = true
 
@@ -68,13 +61,12 @@ function gotoTitle() {
     }
 
     hud.hideAll()
-    connectionText.visible = connecting
-    couldntReachText.visible = connectingError
 
     formSent = false
     shownStart = false
 
     hideMenu()
+    connected ? setHidden(CONNECTION_TEXT) : setVisible(CONNECTION_TEXT)
 
     updateGuiClick()
 }
@@ -235,7 +227,15 @@ function playerCount(p) {
 }
 
 function startButton() {
-
+    if (inTeamSelection()) {
+        var pack = {
+            type: Pack.UPDATE_START_BUTTON
+        }
+        socket.ws.send(JSON.stringify(pack))
+        disableButton(START_BUTTON)
+    } else {
+        sendForm()
+    }
 }
 
 var nameGotGood = false
@@ -298,7 +298,7 @@ function updateStartButton() {
 
 document.onkeypress = function keyDownTextField(e) {
     var keyCode = e.keyCode
-    if (goText.visible) {
+    if (isButtonEnabled(START_BUTTON)) {
         var txt = String.fromCharCode(e.which)
 
         if (keyCode == Key.ENTER) {
@@ -357,15 +357,6 @@ function sendForm() {
     formSent = true
 }
 
-function menuSpaghetti(point) {
-
-    updateStartButton()
-
-    if (goText.clicked(point)) {
-        sendForm()
-    }
-}
-
 function hideMenu() {
     setHidden(JOIN_GAME_BUTTON)
     setHidden(CREATE_GAME_BUTTON)
@@ -391,10 +382,7 @@ function hideMenu() {
 
 // Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
 // https://codepen.io/chriscoyier/pen/VvRoWy
-function doMenuResize() {
-
-    var $ui = $("#input")
-
+function doGuiResize() {
     const guiX = 500
     const guiY = 500
     const scaleX = window.innerWidth / guiX
@@ -409,10 +397,5 @@ function doMenuResize() {
         scale = scaleY
     }
 
-    $ui.css({
-        transform: "translate(-50%, -50%) " + "scale(" + scale + ")"
-    })
-
-    // TODO scale font?
-
+    document.getElementById('input').style.transform = "translate(-50%, -50%) " + "scale(" + scale + ")"
 }

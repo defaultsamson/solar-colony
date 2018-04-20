@@ -104,3 +104,5 @@ const USERNAME_CHECK = 'p_userG'
 const USERNAME_CROSS = 'p_userB'
 const ID_CHECK = 'p_idG'
 const ID_CROSS = 'p_idB'
+
+const CONNECTION_TEXT = 't_connecting'

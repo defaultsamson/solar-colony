@@ -149,18 +149,6 @@ function onLoad(loader, res) {
     sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
     sendShipText.anchor.set(0, 0.5)
 
-    // The menu texts
-
-    connectionText = hud.addChild(new TextButton('Connecting to Server...', style, 0.5, 0.5, 0, -250))
-    connectionText.anchor.set(0.5, 0.5)
-
-    couldntReachText = hud.addChild(new TextButton('Couldn\'t establish connection, retrying... []', smallStyle, 0.5, 0.5, 0, -220))
-    couldntReachText.anchor.set(0.5, 0.5)
-    couldntReachText.visible = false
-
-    goText = hud.addChild(new TextButton('Start!', largeStyle, 0.5, 0.5, 0, 110))
-    goText.anchor.set(0.5, 0)
-
     sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
     sendingFormText.anchor.set(0.5, 0)
 
@@ -486,14 +474,6 @@ function onMouseClick(e) {
                     socket.ws.send(JSON.stringify(pack))
                     return
                 }
-                if (goText.clicked(point)) {
-                    var pack = {
-                        type: Pack.UPDATE_START_BUTTON
-                    }
-                    socket.ws.send(JSON.stringify(pack))
-                    goText.setEnabled(false)
-                    return
-                }
                 if (quitText.clicked(point)) {
                     var pack = {
                         type: Pack.QUIT
@@ -502,9 +482,6 @@ function onMouseClick(e) {
                     gotoTitle()
                     return
                 }
-            } else {
-                // Spaghetti Main Menu code
-                menuSpaghetti(point)
             }
         }
     }
@@ -552,8 +529,7 @@ function resize() {
 
     stopSnap()
     hud.resize(width, height)
-
-    doMenuResize()
+    doGuiResize()
 }
 
 function getTeam(id) {
@@ -664,7 +640,7 @@ function parse(type, pack) {
             teams = []
             myTeam = null
 
-            goText.visible = true
+            setVisible(START_BUTTON)
             quitText.visible = true
 
             setVisible('gameID')
@@ -775,7 +751,7 @@ function parse(type, pack) {
             var started = pack.chosen
             var total = pack.total
 
-            if (goText.enabled) {
+            if (isButtonEnabled(START_BUTTON)) {
                 sendingFormText.text = 'Press Start to confirm teams! (' + started + '/' + total + ')'
             } else {
                 let starting = total - started
@@ -833,7 +809,7 @@ function parse(type, pack) {
             playersText.visible = true
             playersText.text = 'Players: (' + total + '/' + max + ')'
 
-            goText.setEnabled(false)
+            enableButton(START_BUTTON)
             sendingFormText.visible = true
 
             if (total >= 2) {
@@ -847,7 +823,7 @@ function parse(type, pack) {
                     }
 
                     if (populatedTeams > 1) {
-                        goText.setEnabled(true)
+                        enableButton(START_BUTTON)
                         sendingFormText.text = 'Press Start to confirm teams! (0/' + total + ')'
                     } else {
                         sendingFormText.text = 'More than one team must be populated'
