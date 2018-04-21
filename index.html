@@ -171,17 +171,28 @@
             position: absolute;
             top: calc(45% + 15px);
             right: 2.5%;
+            width: 28px;
+            height: 28px;
         }
 
         .idSymbol {
             position: absolute;
             top: calc(60% + 15px);
             right: 2.5%;
+            width: 28px;
+            height: 28px;
         }
 
         #t_connecting {
             top: 7%;
-            left: calc(50% - 96px);
+            text-align: center;
+            width: 100%;
+        }
+        
+        #t_message {
+            top: 72.5%;
+            text-align: center;
+            width: 100%;
         }
 
     </style>
@@ -247,6 +258,8 @@
         <p id='b_pRnd' class='btn txt med' onmousedown='playerCount(-1)'>Rnd</p>
 
         <p id='b_start' class='btn txt big' onmousedown='startButton()'>Start!</p>
+        
+        <p id='t_message' class='txt sml'>This sentence is dynamic!</p>
     </div>
 
     <!-- Form input for username and game ID 

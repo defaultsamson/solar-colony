@@ -149,9 +149,6 @@ function onLoad(loader, res) {
     sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
     sendShipText.anchor.set(0, 0.5)
 
-    sendingFormText = hud.addChild(new TextButton('Please wait while you are connected...', smallStyle, 0.5, 0.5, 0, 170))
-    sendingFormText.anchor.set(0.5, 0)
-
     quitText = hud.addChild(new TextButton('Quit Game', style, 0.5, 0.5, 0, 220))
     quitText.anchor.set(0.5, 0)
 
@@ -705,7 +702,7 @@ function parse(type, pack) {
             myTeam = getTeam(pack.team)
 
             if (waitingMessage) {
-                sendingFormText.text = waitingMessage
+                setText(MESSAGE_TEXT, waitingMessage)
                 waitingMessage = null
             }
             break
@@ -752,10 +749,10 @@ function parse(type, pack) {
             var total = pack.total
 
             if (isButtonEnabled(START_BUTTON)) {
-                sendingFormText.text = 'Press Start to confirm teams! (' + started + '/' + total + ')'
+                setText(MESSAGE_TEXT, 'Press Start to confirm teams (' + started + '/' + total + ')')
             } else {
                 let starting = total - started
-                sendingFormText.text = 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams... (' + started + '/' + total + ')'
+                setText(MESSAGE_TEXT, 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')')
             }
 
             break
@@ -810,7 +807,7 @@ function parse(type, pack) {
             playersText.text = 'Players: (' + total + '/' + max + ')'
 
             enableButton(START_BUTTON)
-            sendingFormText.visible = true
+            setVisible(MESSAGE_TEXT)
 
             if (total >= 2) {
                 if (chosen == total) {
@@ -824,23 +821,21 @@ function parse(type, pack) {
 
                     if (populatedTeams > 1) {
                         enableButton(START_BUTTON)
-                        sendingFormText.text = 'Press Start to confirm teams! (0/' + total + ')'
+                        setText(MESSAGE_TEXT, 'Press Start to confirm teams! (0/' + total + ')')
                     } else {
-                        sendingFormText.text = 'More than one team must be populated'
+                        setText(MESSAGE_TEXT, 'More than one team must be populated')
                     }
                 } else {
                     var choosing = total - chosen
-                    sendingFormText.text = 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team'
+                    setText(MESSAGE_TEXT, 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team')
                 }
             } else {
-                sendingFormText.text = 'Waiting for one or more players to join...'
+                setText(MESSAGE_TEXT, 'Waiting for one or more players to join...')
             }
 
             // If a team hasn't been chosen yet, display a choose team message
             if (!myTeam) {
-                waitingMessage = sendingFormText.text
-
-                sendingFormText.text = 'Click a colour above to join that team!'
+                setText(MESSAGE_TEXT, 'Click a colour above to join that team!')
             }
             break
     }

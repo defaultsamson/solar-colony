@@ -106,3 +106,4 @@ const ID_CHECK = 'p_idG'
 const ID_CROSS = 'p_idB'
 
 const CONNECTION_TEXT = 't_connecting'
+const MESSAGE_TEXT = 't_message'

@@ -274,7 +274,7 @@ function updateStartButton() {
 
         // TODO remove this? double check where it's used
         if (!serverFail) {
-            sendingFormText.visible = false
+            setHidden(MESSAGE_TEXT)
         }
 
         // If the Join/Create game and Random/Friend buttons have been selected
@@ -328,8 +328,8 @@ document.onkeypress = function keyDownTextField(e) {
 }
 
 function failSendForm(message) {
-    sendingFormText.text = message
-    sendingFormText.visible = true
+    setText(MESSAGE_TEXT, message)
+    setVisible(MESSAGE_TEXT)
     if (formSent) {
         serverFail = true
         formSent = false
@@ -339,8 +339,8 @@ function failSendForm(message) {
 }
 
 function sendForm() {
-    sendingFormText.text = 'Please wait while you are connected...'
-    sendingFormText.visible = true
+    setText(MESSAGE_TEXT, 'Joining game...')
+    setVisible(MESSAGE_TEXT)
 
     let sendID = joinGame && withFriends
 
@@ -378,6 +378,7 @@ function hideMenu() {
     setHidden(USERNAME_CROSS)
     setHidden(ID_CHECK)
     setHidden(ID_CROSS)
+    setHidden(MESSAGE_TEXT)
 }
 
 // Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
