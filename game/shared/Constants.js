@@ -6,29 +6,29 @@
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
 const Pack = {
-    CREATE_SPAWN: 0,
-    BUY_SHIPS: 1,
-    PING_PROBE: 2, // Tells the client to respond with this packet
-    PING_SET: 3, // Tells the client what their ping is
-    UPDATE_PIXELS: 4,
-    FORM_FAIL: 5,
-    CREATE_SYSTEM: 6,
-    CREATE_ORBIT: 7,
-    CREATE_PLANET: 8,
-    SET_PLANET_ORBIT: 9,
-    CREATE_TEAM: 10,
-    SET_PLANET_TEAM: 11,
-    SET_CLIENT_TEAM: 12,
-    START_GAME: 13,
-    UPDATE_START_BUTTON: 14,
-    POPULATE_TEAM: 15,
-    CLEAR_TEAMS: 16,
-    CLEAR_TEAM_GUI: 17,
-    UPDATE_PLAYER_COUNT: 18,
-    JOIN_TEAM: 19,
-    QUIT: 20,
-    FORM_SEND: 21,
-    SHOW_SYSTEM: 22
+	CREATE_SPAWN: 0,
+	BUY_SHIPS: 1,
+	PING_PROBE: 2, // Tells the client to respond with this packet
+	PING_SET: 3, // Tells the client what their ping is
+	UPDATE_PIXELS: 4,
+	FORM_FAIL: 5,
+	CREATE_SYSTEM: 6,
+	CREATE_ORBIT: 7,
+	CREATE_PLANET: 8,
+	SET_PLANET_ORBIT: 9,
+	CREATE_TEAM: 10,
+	SET_PLANET_TEAM: 11,
+	SET_CLIENT_TEAM: 12,
+	START_GAME: 13,
+	UPDATE_START_BUTTON: 14,
+	POPULATE_TEAM: 15,
+	CLEAR_TEAMS: 16,
+	CLEAR_TEAM_GUI: 17,
+	UPDATE_PLAYER_COUNT: 18,
+	JOIN_TEAM: 19,
+	QUIT: 20,
+	FORM_SEND: 21,
+	SHOW_SYSTEM: 22
 }
 
 // Note: make sure that GAME_COUNTDOWN_TIME is divisible by PACKET_INTERVAL
@@ -46,13 +46,13 @@ const COUNTDOWN_PACKET_SENDS = COUNTDOWN_TIME / COUNTDOWN_INTERVAL
 const MIN_PLAYERS = 2 // minimum players required to start a game
 
 if (isServer) {
-    global.Pack = Pack
+	global.Pack = Pack
 
-    global.COUNTDOWN_TIME = COUNTDOWN_TIME
-    global.COUNTDOWN_INTERVAL = COUNTDOWN_INTERVAL
-    global.COUNTDOWN_PACKET_SENDS = COUNTDOWN_PACKET_SENDS
+	global.COUNTDOWN_TIME = COUNTDOWN_TIME
+	global.COUNTDOWN_INTERVAL = COUNTDOWN_INTERVAL
+	global.COUNTDOWN_PACKET_SENDS = COUNTDOWN_PACKET_SENDS
 
-    global.MIN_PLAYERS = MIN_PLAYERS
+	global.MIN_PLAYERS = MIN_PLAYERS
 }
 
 //   _____ _ _            _   

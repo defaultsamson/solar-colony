@@ -1,273 +1,264 @@
 <head>
-    <title>Solar Colony</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #2A2C31
-        }
+	<title>Solar Colony</title>
+	<style>
+	body {
+		margin: 0;
+		padding: 0;
+		background-color: #2A2C31
+	}
 
-        #input {
-            /*background: #066;*/
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            padding: 0px;
-            text-align: center;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            transform-origin: center center;
-        }
+	#input {
+		/*background: #066;*/
+		position: absolute;
+		width: 500px;
+		height: 500px;
+		padding: 0px;
+		text-align: center;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+		transform-origin: center center;
+	}
 
-        .txt {
-            position: absolute;
-            margin: 0px;
-            color: white;
-            font-family: Verdana, Geneva, sans-serif;
-        }
+	.txt {
+		position: absolute;
+		margin: 0px;
+		color: white;
+		font-family: Verdana, Geneva, sans-serif;
+	}
 
-        .sml {
-            font-size: 18px;
-        }
+	.sml {
+		font-size: 18px;
+	}
 
-        .med {
-            font-size: 28px;
-        }
+	.med {
+		font-size: 28px;
+	}
 
-        .big {
-            font-size: 48px;
-        }
+	.big {
+		font-size: 48px;
+	}
 
-        .btn {
-            -moz-user-select: none;
-            -webkit-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+	.btn {
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		user-select: none;
 
-            padding: 10px;
-            cursor: pointer;
-        }
+		padding: 10px;
+		cursor: pointer;
+	}
 
-        .btn:hover {
-            background-color: rgba(200, 200, 200, 0.5);
-        }
+	.btn:hover {
+		background-color: rgba(200, 200, 200, 0.5);
+	}
 
-        #b_join {
-            top: 15%;
-            right: calc(50% + 5px);
-            text-align: right;
-        }
+	#b_join {
+		top: 15%;
+		right: calc(50% + 5px);
+		text-align: right;
+	}
 
-        #b_create {
-            top: 15%;
-            left: calc(50% + 5px);
-            text-align: left;
-        }
+	#b_create {
+		top: 15%;
+		left: calc(50% + 5px);
+		text-align: left;
+	}
 
-        #b_friends {
-            top: 30%;
-            right: calc(50% + 5px);
-            text-align: right;
-        }
+	#b_friends {
+		top: 30%;
+		right: calc(50% + 5px);
+		text-align: right;
+	}
 
-        #b_random {
-            top: 30%;
-            left: calc(50% + 5px);
-            text-align: left;
-        }
+	#b_random {
+		top: 30%;
+		left: calc(50% + 5px);
+		text-align: left;
+	}
 
-        #t_user {
-            top: 45%;
-            right: calc(50% + 5px);
-            text-align: right;
-            /* padding-right aligns the colon with above button text */
-            padding-right: 6px;
-            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
-            padding-top: 10px;
-        }
+	#t_user {
+		top: 45%;
+		right: calc(50% + 5px);
+		text-align: right;
+		/* padding-right aligns the colon with above button text */
+		padding-right: 6px;
+		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+		padding-top: 10px;
+	}
 
-        #t_id {
-            top: 60%;
-            right: calc(50% + 5px);
-            text-align: right;
-            /* padding-right aligns the colon with above button text */
-            padding-right: 6px;
-            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
-            padding-top: 10px;
-        }
+	#t_id {
+		top: 60%;
+		right: calc(50% + 5px);
+		text-align: right;
+		/* padding-right aligns the colon with above button text */
+		padding-right: 6px;
+		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+		padding-top: 10px;
+	}
 
-        #t_playerCount {
-            top: 60%;
-            right: calc(50% + 5px);
-            text-align: right;
-            /* padding-right aligns the colon with above button text */
-            padding-right: 6px;
-            /* padding-top compensates for the 'top' property, lining it up with the buttons properly */
-            padding-top: 10px;
-        }
+	#t_playerCount {
+		top: 60%;
+		right: calc(50% + 5px);
+		text-align: right;
+		/* padding-right aligns the colon with above button text */
+		padding-right: 6px;
+		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+		padding-top: 10px;
+	}
 
-        #b_p2 {
-            top: 60%;
-            left: calc(50% - 11px);
-        }
+	#b_p2 {
+		top: 60%;
+		left: calc(50% - 11px);
+	}
 
-        #b_p3 {
-            top: 60%;
-            left: calc(50% + 22px);
-        }
+	#b_p3 {
+		top: 60%;
+		left: calc(50% + 22px);
+	}
 
-        #b_p4 {
-            top: 60%;
-            left: calc(50% + 55px);
-        }
+	#b_p4 {
+		top: 60%;
+		left: calc(50% + 55px);
+	}
 
-        #b_p8 {
-            top: 60%;
-            left: calc(50% + 88px);
-        }
+	#b_p8 {
+		top: 60%;
+		left: calc(50% + 88px);
+	}
 
-        #b_p16 {
-            top: 60%;
-            left: calc(50% + 121px);
-        }
+	#b_p16 {
+		top: 60%;
+		left: calc(50% + 121px);
+	}
 
-        #b_pRnd {
-            top: 60%;
-            left: calc(50% + 172px);
-        }
+	#b_pRnd {
+		top: 60%;
+		left: calc(50% + 172px);
+	}
 
-        #b_start {
-            top: 75%;
-            text-align: left;
-            /* The below calc is a hardcoding to center the button */
-            left: calc(50% - 79px);
-        }
+	#b_start {
+		top: 75%;
+		text-align: left;
+		/* The below calc is a hardcoding to center the button */
+		left: calc(50% - 79px);
+	}
 
-        #i_user {
-            position: absolute;
-            width: 188px;
-            height: 30px;
-            text-align: center;
-            font-family: Verdana, Geneva, sans-serif;
-            font-size: 20px;
-            top: calc(45% + 15px);
-            left: calc(50% + 17px);
-        }
+	#i_user {
+		position: absolute;
+		width: 188px;
+		height: 30px;
+		text-align: center;
+		font-family: Verdana, Geneva, sans-serif;
+		font-size: 20px;
+		top: calc(45% + 15px);
+		left: calc(50% + 17px);
+	}
 
-        #i_id {
-            position: absolute;
-            width: 188px;
-            height: 30px;
-            text-align: center;
-            font-family: Verdana, Geneva, sans-serif;
-            font-size: 20px;
-            top: calc(60% + 15px);
-            left: calc(50% + 17px);
-            text-transform: uppercase
-        }
+	#i_id {
+		position: absolute;
+		width: 188px;
+		height: 30px;
+		text-align: center;
+		font-family: Verdana, Geneva, sans-serif;
+		font-size: 20px;
+		top: calc(60% + 15px);
+		left: calc(50% + 17px);
+		text-transform: uppercase
+	}
 
-        .userSymbol {
-            position: absolute;
-            top: calc(45% + 15px);
-            right: 2.5%;
-            width: 28px;
-            height: 28px;
-        }
+	.userSymbol {
+		position: absolute;
+		top: calc(45% + 15px);
+		right: 2.5%;
+		width: 28px;
+		height: 28px;
+	}
 
-        .idSymbol {
-            position: absolute;
-            top: calc(60% + 15px);
-            right: 2.5%;
-            width: 28px;
-            height: 28px;
-        }
+	.idSymbol {
+		position: absolute;
+		top: calc(60% + 15px);
+		right: 2.5%;
+		width: 28px;
+		height: 28px;
+	}
 
-        #t_connecting {
-            top: 7%;
-            text-align: center;
-            width: 100%;
-        }
-        
-        #t_message {
-            top: 72.5%;
-            text-align: center;
-            width: 100%;
-        }
+	#t_connecting {
+		top: 7%;
+		text-align: center;
+		width: 100%;
+	}
 
-    </style>
+	#t_message {
+		top: 72.5%;
+		text-align: center;
+		width: 100%;
+	}
 
-    <!-- Client libraries -->
-    <script src='game/client/lib/key.js'></script>
-    <script src='game/client/lib/colours.js'></script>
-    <script src='game/client/lib/particle.js'></script>
-    <script src='game/client/lib/libraries.js'></script>
+</style>
 
-    <!-- Shared (Always load Util first, as it may be used in other files) -->
-    <script src='game/shared/Util.js'></script>
+<!-- Client libraries -->
+<script src='game/client/lib/key.js'></script>
+<script src='game/client/lib/colours.js'></script>
+<script src='game/client/lib/particle.js'></script>
+<script src='game/client/lib/libraries.js'></script>
 
-    <script src='game/shared/Orbit.js'></script>
-    <script src='game/shared/Constants.js'></script>
-    <script src='game/shared/Planet.js'></script>
-    <script src='game/shared/Ship.js'></script>
-    <script src='game/shared/System.js'></script>
-    <script src='game/shared/Team.js'></script>
+<!-- Shared (Always load Util first, as it may be used in other files) -->
+<script src='game/shared/Util.js'></script>
+
+<script src='game/shared/Orbit.js'></script>
+<script src='game/shared/Constants.js'></script>
+<script src='game/shared/Planet.js'></script>
+<script src='game/shared/Ship.js'></script>
+<script src='game/shared/System.js'></script>
+<script src='game/shared/Team.js'></script>
 </head>
 
 <body>
-    <!-- Load Client -->
-    <script src='game/client/Hud.js'></script>
-    <script src='game/client/Line.js'></script>
-    <script src='game/client/Menu.js'></script>
-    <script src='game/client/Player.js'></script>
-    <script src='game/client/SocketManager.js'></script>
+	<!-- Load Client -->
+	<script src='game/client/Hud.js'></script>
+	<script src='game/client/Line.js'></script>
+	<script src='game/client/Menu.js'></script>
+	<script src='game/client/Player.js'></script>
+	<script src='game/client/SocketManager.js'></script>
 
-    <script src='game/client/Client.js'></script>
+	<script src='game/client/Client.js'></script>
 
-    <div id="input">
-        <p id='t_connecting' class='txt sml'>Connecting to Server...</p>
+	<div id="input">
+		<p id='t_connecting' class='txt sml'>Connecting to Server...</p>
 
-        <p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join Game</p>
-        <p id='b_create' class='btn txt med' onmousedown='createButton()'>Create Game</p>
+		<p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join Game</p>
+		<p id='b_create' class='btn txt med' onmousedown='createButton()'>Create Game</p>
 
-        <p id='b_random' class='btn txt med' onmousedown='randomButton()'>Random Game</p>
-        <p id='b_friends' class='btn txt med' onmousedown='friendsButton()'>With Friends</p>
+		<p id='b_random' class='btn txt med' onmousedown='randomButton()'>Random Game</p>
+		<p id='b_friends' class='btn txt med' onmousedown='friendsButton()'>With Friends</p>
 
-        <p id='t_user' class='txt med'>Username:</p>
-        <form action='#' method='get'>
-            <input id='i_user' type='txt med' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
-        </form>
+		<p id='t_user' class='txt med'>Username:</p>
+		<form action='#' method='get'>
+			<input id='i_user' type='text' name='username' pattern='[A-Za-z0-9]{3,20}' maxlength='20' title='3-20 characters, letters and numbers only' onkeyup='updateStartButton()' required>
+		</form>
 
-        <img id='p_userG' src='game/assets/check.png' class='userSymbol' />
-        <img id='p_userB' src='game/assets/cross.png' class='userSymbol' />
+		<img id='p_userG' alt="acceptable" src='game/assets/check.png' class='userSymbol' />
+		<img id='p_userB' alt="failed" src='game/assets/cross.png' class='userSymbol' />
 
-        <p id='t_id' class='txt med'>Game ID:</p>
-        <form action='#' method='get'>
-            <input id='i_id' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
-        </form>
+		<p id='t_id' class='txt med'>Game ID:</p>
+		<form action='#' method='get'>
+			<input id='i_id' type='text' name='gameid' pattern='[A-Za-z0-9]{6}' maxlength='6' title='6 characters, letters and numbers only' onkeyup='updateStartButton()' required>
+		</form>
 
-        <img id='p_idG' src='game/assets/check.png' class='idSymbol' />
-        <img id='p_idB' src='game/assets/cross.png' class='idSymbol' />
+		<img id='p_idG' alt="acceptable" src='game/assets/check.png' class='idSymbol' />
+		<img id='p_idB' alt="failed" src='game/assets/cross.png' class='idSymbol' />
 
-        <p id='t_playerCount' class='txt med'>Player Count:</p>
-        <p id='b_p2' class='btn txt med' onmousedown='playerCount(2)'>2</p>
-        <p id='b_p3' class='btn txt med' onmousedown='playerCount(3)'>3</p>
-        <p id='b_p4' class='btn txt med' onmousedown='playerCount(4)'>4</p>
-        <p id='b_p8' class='btn txt med' onmousedown='playerCount(8)'>8</p>
-        <p id='b_p16' class='btn txt med' onmousedown='playerCount(16)'>16</p>
-        <p id='b_pRnd' class='btn txt med' onmousedown='playerCount(-1)'>Rnd</p>
+		<p id='t_playerCount' class='txt med'>Player Count:</p>
+		<p id='b_p2' class='btn txt med' onmousedown='playerCount(2)'>2</p>
+		<p id='b_p3' class='btn txt med' onmousedown='playerCount(3)'>3</p>
+		<p id='b_p4' class='btn txt med' onmousedown='playerCount(4)'>4</p>
+		<p id='b_p8' class='btn txt med' onmousedown='playerCount(8)'>8</p>
+		<p id='b_p16' class='btn txt med' onmousedown='playerCount(16)'>16</p>
+		<p id='b_pRnd' class='btn txt med' onmousedown='playerCount(-1)'>Rnd</p>
 
-        <p id='b_start' class='btn txt big' onmousedown='startButton()'>Start!</p>
-        
-        <p id='t_message' class='txt sml'>This sentence is dynamic!</p>
-    </div>
+		<p id='b_start' class='btn txt big' onmousedown='startButton()'>Start!</p>
 
-    <!-- Form input for username and game ID 
-    <div class='inputDiv'>
-
-        <div class='idDiv'>
-            <p id='gameID' class='text normalSize'>Game ID: D3F4LT</p>
-        </div>
-
-    </div>-->
+		<p id='t_message' class='txt sml'>This sentence is dynamic!</p>
+	</div>
 </body>
