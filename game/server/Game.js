@@ -18,11 +18,11 @@ class Game extends Object {
 		this.teams = []
 
 		this.redTeam = this.addTeam(new Team(0xFF8888, 0))
-		this.purpleTeam = this.addTeam(new Team(0xBB88DD, 1))
-		this.blueTeam = this.addTeam(new Team(0xAAAAFF, 2))
+		this.orangeTeam = this.addTeam(new Team(0xFFAA55, 1))
+		this.yellowTeam = this.addTeam(new Team(0xFFFF66, 2))
 		this.greenTeam = this.addTeam(new Team(0xAAFFAA, 3))
-		this.yellowTeam = this.addTeam(new Team(0xFFFF66, 4))
-		this.orangeTeam = this.addTeam(new Team(0xFFAA55, 5))
+		this.blueTeam = this.addTeam(new Team(0xAAAAFF, 4))
+		this.purpleTeam = this.addTeam(new Team(0xBB88DD, 5))
 
 		this.system = null
 	}

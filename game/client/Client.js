@@ -422,62 +422,7 @@ function onMouseClick(e) {
 			centerView()
 		} else {
 			if (inTeamSelection()) {
-				if (redTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 0
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (purpleTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 1
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (blueTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 2
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (greenTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 3
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (yellowTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 4
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (orangeTeamText.clicked(point)) {
-					var pack = {
-						type: Pack.JOIN_TEAM,
-						team: 5
-					}
-					socket.ws.send(JSON.stringify(pack))
-					return
-				}
-				if (quitText.clicked(point)) {
-					var pack = {
-						type: Pack.QUIT
-					}
-					socket.ws.send(JSON.stringify(pack))
-					gotoTitle()
-					return
-				}
+
 			}
 		}
 	}
@@ -639,15 +584,15 @@ function parse(type, pack) {
 		setVisible(START_BUTTON)
 		quitText.visible = true
 
-		setVisible('gameID')
-		setText('gameID', 'Game ID: ' + gameID)
+		setVisible('t_id')
+		setText('t_id', 'Game ID: ' + gameID)
 
-		redTeamText.visible = true
-		purpleTeamText.visible = true
-		blueTeamText.visible = true
-		greenTeamText.visible = true
-		yellowTeamText.visible = true
-		orangeTeamText.visible = true
+		setVisible(TEAM_RED)
+		setVisible(TEAM_ORANGE)
+		setVisible(TEAM_YELLOW)
+		setVisible(TEAM_GREEN)
+		setVisible(TEAM_BLUE)
+		setVisible(TEAM_PURPLE)
 
 		redPlayersText.visible = true
 		purplePlayersText.visible = true
@@ -700,10 +645,11 @@ function parse(type, pack) {
 			case Pack.SET_CLIENT_TEAM:
 			myTeam = getTeam(pack.team)
 
+			/*
 			if (waitingMessage) {
 				setText(MESSAGE_TEXT, waitingMessage)
 				waitingMessage = null
-			}
+			}*/
 			break
 			case Pack.SHOW_SYSTEM:
 			viewport.addChild(system)

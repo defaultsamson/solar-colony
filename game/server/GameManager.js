@@ -77,14 +77,14 @@ class GameManager extends Object {
 	}
 
 	removeGame(game) {
+		this.removeQueue(game)
+
 		// Remove the game from the server
 		var i = this.games.indexOf(game)
 		if (i != -1) {
 			this.games.splice(i, 1)
 			console.log('Removing Game: ' + game.gameID)
 		}
-
-		this.removeQueue(game)
 	}
 
 	removeQueue(game) {

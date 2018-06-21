@@ -84,26 +84,35 @@ const DASH_THICKNESS = 1.4
 const DASH_LENGTH = 25
 
 // The HTML id's of the elements
-const JOIN_GAME_BUTTON = 'b_join'
-const CREATE_GAME_BUTTON = 'b_create'
-const RANDOM_GAME_BUTTON = 'b_random'
-const WITH_FRIENDS_BUTTON = 'b_friends'
-const USERNAME_TEXT = 't_user'
-const ID_TEXT = 't_id'
-const PLAYER_COUNT_TEXT = 't_playerCount'
-const PLAYERS_BUTTON_2 = 'b_p2'
-const PLAYERS_BUTTON_3 = 'b_p3'
-const PLAYERS_BUTTON_4 = 'b_p4'
-const PLAYERS_BUTTON_8 = 'b_p8'
-const PLAYERS_BUTTON_16 = 'b_p16'
-const PLAYERS_BUTTON_RANDOM = 'b_pRnd'
-const START_BUTTON = 'b_start'
-const USERNAME_INPUT = 'i_user'
-const ID_INPUT = 'i_id'
-const USERNAME_CHECK = 'p_userG'
-const USERNAME_CROSS = 'p_userB'
-const ID_CHECK = 'p_idG'
-const ID_CROSS = 'p_idB'
+const ALL_ELEMS = []
 
-const CONNECTION_TEXT = 't_connecting'
-const MESSAGE_TEXT = 't_message'
+const JOIN_GAME_BUTTON = 'b_join'			;ALL_ELEMS.push(JOIN_GAME_BUTTON)
+const CREATE_GAME_BUTTON = 'b_create'		;ALL_ELEMS.push(CREATE_GAME_BUTTON)
+const RANDOM_GAME_BUTTON = 'b_random'		;ALL_ELEMS.push(RANDOM_GAME_BUTTON)
+const WITH_FRIENDS_BUTTON = 'b_friends'		;ALL_ELEMS.push(WITH_FRIENDS_BUTTON)
+const USERNAME_TEXT = 't_user'				;ALL_ELEMS.push(USERNAME_TEXT)
+const ID_TEXT = 't_id'						;ALL_ELEMS.push(ID_TEXT)
+const PLAYER_COUNT_TEXT = 't_playerCount'	;ALL_ELEMS.push(PLAYER_COUNT_TEXT)
+const PLAYERS_BUTTON_2 = 'b_p2'				;ALL_ELEMS.push(PLAYERS_BUTTON_2)
+const PLAYERS_BUTTON_3 = 'b_p3'				;ALL_ELEMS.push(PLAYERS_BUTTON_3)
+const PLAYERS_BUTTON_4 = 'b_p4'				;ALL_ELEMS.push(PLAYERS_BUTTON_4)
+const PLAYERS_BUTTON_8 = 'b_p8'				;ALL_ELEMS.push(PLAYERS_BUTTON_8)
+const PLAYERS_BUTTON_16 = 'b_p16'			;ALL_ELEMS.push(PLAYERS_BUTTON_16)
+const PLAYERS_BUTTON_RANDOM = 'b_pRnd'		;ALL_ELEMS.push(PLAYERS_BUTTON_RANDOM)
+const START_BUTTON = 'b_start'				;ALL_ELEMS.push(START_BUTTON)
+const USERNAME_INPUT = 'i_user'				;ALL_ELEMS.push(USERNAME_INPUT)
+const ID_INPUT = 'i_id'						;ALL_ELEMS.push(ID_INPUT)
+const USERNAME_CHECK = 'p_userG'			;ALL_ELEMS.push(USERNAME_CHECK)
+const USERNAME_CROSS = 'p_userB'			;ALL_ELEMS.push(USERNAME_CROSS)
+const ID_CHECK = 'p_idG'					;ALL_ELEMS.push(ID_CHECK)
+const ID_CROSS = 'p_idB'					;ALL_ELEMS.push(ID_CROSS)
+
+const CONNECTION_TEXT = 't_connecting'		;ALL_ELEMS.push(CONNECTION_TEXT)
+const MESSAGE_TEXT = 't_message'			;ALL_ELEMS.push(MESSAGE_TEXT)
+
+const TEAM_RED = 'b_team_red'				;ALL_ELEMS.push(TEAM_RED)
+const TEAM_ORANGE = 'b_team_orange'			;ALL_ELEMS.push(TEAM_ORANGE)
+const TEAM_YELLOW = 'b_team_yellow'			;ALL_ELEMS.push(TEAM_YELLOW)
+const TEAM_GREEN = 'b_team_green'			;ALL_ELEMS.push(TEAM_GREEN)
+const TEAM_BLUE = 'b_team_blue'				;ALL_ELEMS.push(TEAM_BLUE)
+const TEAM_PURPLE = 'b_team_purple'			;ALL_ELEMS.push(TEAM_PURPLE)

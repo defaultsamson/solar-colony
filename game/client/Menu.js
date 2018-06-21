@@ -210,20 +210,32 @@ function createButton() {
 }
 
 function randomButton() {
-	randomGame = true
-	withFriends = false
-	updateGuiClick()
+	if (joinGame) {
+		randomGame = true
+		withFriends = false
+		updateGuiClick()
+	}
 }
 
 function friendsButton() {
-	randomGame = false
-	withFriends = true
-	updateGuiClick()
+	if (joinGame || createGame) {
+		randomGame = false
+		withFriends = true
+		updateGuiClick()
+	}
 }
 
 function playerCount(p) {
 	players = p
 	updateGuiClick()
+}
+
+function joinTeam(i) {
+	var pack = {
+		type: Pack.JOIN_TEAM,
+		team: i
+	}
+	socket.ws.send(JSON.stringify(pack))
 }
 
 function startButton() {
@@ -234,7 +246,8 @@ function startButton() {
 		socket.ws.send(JSON.stringify(pack))
 		disableButton(START_BUTTON)
 	} else {
-		sendForm()
+		if (updateStartButton())
+			sendForm()
 	}
 }
 
@@ -358,27 +371,9 @@ function sendForm() {
 }
 
 function hideMenu() {
-	setHidden(JOIN_GAME_BUTTON)
-	setHidden(CREATE_GAME_BUTTON)
-	setHidden(RANDOM_GAME_BUTTON)
-	setHidden(WITH_FRIENDS_BUTTON)
-	setHidden(USERNAME_TEXT)
-	setHidden(ID_TEXT)
-	setHidden(PLAYER_COUNT_TEXT)
-	setHidden(PLAYERS_BUTTON_2)
-	setHidden(PLAYERS_BUTTON_3)
-	setHidden(PLAYERS_BUTTON_4)
-	setHidden(PLAYERS_BUTTON_8)
-	setHidden(PLAYERS_BUTTON_16)
-	setHidden(PLAYERS_BUTTON_RANDOM)
-	setHidden(START_BUTTON)
-	setHidden(USERNAME_INPUT)
-	setHidden(ID_INPUT)
-	setHidden(USERNAME_CHECK)
-	setHidden(USERNAME_CROSS)
-	setHidden(ID_CHECK)
-	setHidden(ID_CROSS)
-	setHidden(MESSAGE_TEXT)
+	for (i in ALL_ELEMS) {
+		setHidden(ALL_ELEMS[i])
+	}
 }
 
 // Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
