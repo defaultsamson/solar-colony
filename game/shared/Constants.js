@@ -116,3 +116,5 @@ const TEAM_YELLOW = 'b_team_yellow'			;ALL_ELEMS.push(TEAM_YELLOW)
 const TEAM_GREEN = 'b_team_green'			;ALL_ELEMS.push(TEAM_GREEN)
 const TEAM_BLUE = 'b_team_blue'				;ALL_ELEMS.push(TEAM_BLUE)
 const TEAM_PURPLE = 'b_team_purple'			;ALL_ELEMS.push(TEAM_PURPLE)
+
+const ID_DISPLAY = 't_id_display'			;ALL_ELEMS.push(ID_DISPLAY) // Displays on team selection

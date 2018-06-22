@@ -105,7 +105,19 @@
 		padding-top: 10px;
 	}
 
+	/*displays on main menu*/
 	#t_id {
+		top: 60%;
+		right: calc(50% + 5px);
+		text-align: right;
+		/* padding-right aligns the colon with above button text */
+		padding-right: 6px;
+		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+		padding-top: 10px;
+	}
+
+	/*displays in the team selection*/
+	#t_id_display {
 		top: 15%;
 		text-align: center;
 		width: 100%;
@@ -294,6 +306,7 @@
 
 		<p id='b_start' class='btn txt big' onmousedown='startButton()'>Start!</p>
 
+		<p id='t_id_display' class='txt med'>Game ID: DEF4LT</p>
 
 		<p id='b_team_red' class='btn txt sml' onmousedown='joinTeam(0)'>Red</p>
 		<p id='b_team_orange' class='btn txt sml' onmousedown='joinTeam(1)'>Orange</p>

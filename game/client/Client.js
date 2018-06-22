@@ -584,8 +584,8 @@ function parse(type, pack) {
 		setVisible(START_BUTTON)
 		quitText.visible = true
 
-		setVisible('t_id')
-		setText('t_id', 'Game ID: ' + gameID)
+		setVisible(ID_DISPLAY)
+		setText(ID_DISPLAY, 'Game ID: ' + gameID)
 
 		setVisible(TEAM_RED)
 		setVisible(TEAM_ORANGE)
@@ -633,6 +633,7 @@ function parse(type, pack) {
 				planet.createSpawn(false)
 				planet.spawnCounter += planet.spawnRate * ping
 			}
+
 			break
 			case Pack.CREATE_TEAM:
 			teams.push(new Team(pack.colour, pack.id))
@@ -645,8 +646,7 @@ function parse(type, pack) {
 			case Pack.SET_CLIENT_TEAM:
 			myTeam = getTeam(pack.team)
 
-			/*
-			if (waitingMessage) {
+			/*if (waitingMessage) {
 				setText(MESSAGE_TEXT, waitingMessage)
 				waitingMessage = null
 			}*/
