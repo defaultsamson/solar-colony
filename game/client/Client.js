@@ -626,164 +626,164 @@ function parse(type, pack) {
 		if (pack.force) {
 			planet.createSpawn(true)
 		} else {
-				// 1. subtract the counter that has happened while this packet sent
-				// 2. update the spawn counter by creating a spawn
-				// 3. push the spawn counter forward by the new rate
-				planet.spawnCounter -= planet.spawnRate * ping
-				planet.createSpawn(false)
-				planet.spawnCounter += planet.spawnRate * ping
-			}
+			// 1. subtract the counter that has happened while this packet sent
+			// 2. update the spawn counter by creating a spawn
+			// 3. push the spawn counter forward by the new rate
+			planet.spawnCounter -= planet.spawnRate * ping
+			planet.createSpawn(false)
+			planet.spawnCounter += planet.spawnRate * ping
+		}
 
+		break
+		case Pack.CREATE_TEAM:
+		teams.push(new Team(pack.colour, pack.id))
+		break
+		case Pack.SET_PLANET_TEAM:
+		var planet = system.getPlanetByID(pack.planet)
+		var team = getTeam(pack.team)
+		planet.setTeam(team)
+		break
+		case Pack.SET_CLIENT_TEAM:
+		myTeam = getTeam(pack.team)
+
+		/*if (waitingMessage) {
+			setText(MESSAGE_TEXT, waitingMessage)
+			waitingMessage = null
+		}*/
+		break
+		case Pack.SHOW_SYSTEM:
+		viewport.addChild(system)
+		setHidden('gameID')
+		hud.hideAll()
+		pingText.visible = true
+		pixelText.visible = true
+		shipsText.visible = true
+
+		// A little hack to get planets to go to their correct positions when the game starts
+		system.play() // This lets us update the planets
+		system.update(0) // this updates them from their default pos
+		system.pause() // This reverts the game state to being paused
+
+		countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
+		countDownText.visible = true
+
+		viewport.pausePlugin('drag')
+		viewport.pausePlugin('pinch')
+		viewport.pausePlugin('wheel')
+		allowMouseClick = false
+		break
+		case Pack.START_GAME:
+		countDown -= COUNTDOWN_INTERVAL
+		countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
+
+		if (countDown <= 0) {
+			system.play()
+			system.update(ping / 1000) // fast forward based on our ping
+
+			countDownText.visible = false
+
+			viewport.resumePlugin('drag')
+			viewport.resumePlugin('pinch')
+			viewport.resumePlugin('wheel')
+			allowMouseClick = true
+		}
+
+		break
+		case Pack.UPDATE_START_BUTTON:
+		var started = pack.chosen
+		var total = pack.total
+
+		if (isButtonEnabled(START_BUTTON)) {
+			setText(MESSAGE_TEXT, 'Press Start to confirm teams (' + started + '/' + total + ')')
+		} else {
+			let starting = total - started
+			setText(MESSAGE_TEXT, 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')')
+		}
+
+		break
+		case Pack.POPULATE_TEAM:
+		var team = getTeam(pack.team)
+		var name = pack.name
+
+		switch (pack.team) {
+			case 0:
+			redPlayersText.text += name + '\n'
 			break
-			case Pack.CREATE_TEAM:
-			teams.push(new Team(pack.colour, pack.id))
+			case 1:
+			purplePlayersText.text += name + '\n'
 			break
-			case Pack.SET_PLANET_TEAM:
-			var planet = system.getPlanetByID(pack.planet)
-			var team = getTeam(pack.team)
-			planet.setTeam(team)
+			case 2:
+			bluePlayersText.text += name + '\n'
 			break
-			case Pack.SET_CLIENT_TEAM:
-			myTeam = getTeam(pack.team)
-
-			/*if (waitingMessage) {
-				setText(MESSAGE_TEXT, waitingMessage)
-				waitingMessage = null
-			}*/
+			case 3:
+			greenPlayersText.text += name + '\n'
 			break
-			case Pack.SHOW_SYSTEM:
-			viewport.addChild(system)
-			setHidden('gameID')
-			hud.hideAll()
-			pingText.visible = true
-			pixelText.visible = true
-			shipsText.visible = true
-
-			// A little hack to get planets to go to their correct positions when the game starts
-			system.play() // This lets us update the planets
-			system.update(0) // this updates them from their default pos
-			system.pause() // This reverts the game state to being paused
-
-			countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
-			countDownText.visible = true
-
-			viewport.pausePlugin('drag')
-			viewport.pausePlugin('pinch')
-			viewport.pausePlugin('wheel')
-			allowMouseClick = false
+			case 4:
+			yellowPlayersText.text += name + '\n'
 			break
-			case Pack.START_GAME:
-			countDown -= COUNTDOWN_INTERVAL
-			countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
-
-			if (countDown <= 0) {
-				system.play()
-				system.update(ping / 1000) // fast forward based on our ping
-
-				countDownText.visible = false
-
-				viewport.resumePlugin('drag')
-				viewport.resumePlugin('pinch')
-				viewport.resumePlugin('wheel')
-				allowMouseClick = true
-			}
-
-			break
-			case Pack.UPDATE_START_BUTTON:
-			var started = pack.chosen
-			var total = pack.total
-
-			if (isButtonEnabled(START_BUTTON)) {
-				setText(MESSAGE_TEXT, 'Press Start to confirm teams (' + started + '/' + total + ')')
-			} else {
-				let starting = total - started
-				setText(MESSAGE_TEXT, 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')')
-			}
-
-			break
-			case Pack.POPULATE_TEAM:
-			var team = getTeam(pack.team)
-			var name = pack.name
-
-			switch (pack.team) {
-				case 0:
-				redPlayersText.text += name + '\n'
-				break
-				case 1:
-				purplePlayersText.text += name + '\n'
-				break
-				case 2:
-				bluePlayersText.text += name + '\n'
-				break
-				case 3:
-				greenPlayersText.text += name + '\n'
-				break
-				case 4:
-				yellowPlayersText.text += name + '\n'
-				break
-				case 5:
-				orangePlayersText.text += name + '\n'
-				break
-			}
-
-			team.addPlayer(new Player(name))
-
-			break
-			case Pack.CLEAR_TEAMS:
-			teams = []
-			break
-			case Pack.CLEAR_TEAM_GUI:
-			for (var i in teams) {
-				teams[i].players = []
-			}
-			redPlayersText.text = ''
-			purplePlayersText.text = ''
-			bluePlayersText.text = ''
-			greenPlayersText.text = ''
-			yellowPlayersText.text = ''
-			orangePlayersText.text = ''
-			break
-			case Pack.UPDATE_PLAYER_COUNT:
-			var chosen = pack.chosen
-			var total = pack.total
-			var max = pack.max
-
-			playersText.visible = true
-			playersText.text = 'Players: (' + total + '/' + max + ')'
-
-			enableButton(START_BUTTON)
-			setVisible(MESSAGE_TEXT)
-
-			if (total >= 2) {
-				if (chosen == total) {
-					// Double checks to make sure that more than one team is populated populated
-					var populatedTeams = 0
-					for (var i in teams) {
-						if (teams[i].players.length > 0) {
-							populatedTeams++
-						}
-					}
-
-					if (populatedTeams > 1) {
-						enableButton(START_BUTTON)
-						setText(MESSAGE_TEXT, 'Press Start to confirm teams! (0/' + total + ')')
-					} else {
-						setText(MESSAGE_TEXT, 'More than one team must be populated')
-					}
-				} else {
-					var choosing = total - chosen
-					setText(MESSAGE_TEXT, 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team')
-				}
-			} else {
-				setText(MESSAGE_TEXT, 'Waiting for one or more players to join...')
-			}
-
-			// If a team hasn't been chosen yet, display a choose team message
-			if (!myTeam) {
-				setText(MESSAGE_TEXT, 'Click a colour above to join that team!')
-			}
+			case 5:
+			orangePlayersText.text += name + '\n'
 			break
 		}
+
+		team.addPlayer(new Player(name))
+
+		break
+		case Pack.CLEAR_TEAMS:
+		teams = []
+		break
+		case Pack.CLEAR_TEAM_GUI:
+		for (var i in teams) {
+			teams[i].players = []
+		}
+		redPlayersText.text = ''
+		purplePlayersText.text = ''
+		bluePlayersText.text = ''
+		greenPlayersText.text = ''
+		yellowPlayersText.text = ''
+		orangePlayersText.text = ''
+		break
+		case Pack.UPDATE_PLAYER_COUNT:
+		var chosen = pack.chosen
+		var total = pack.total
+		var max = pack.max
+
+		playersText.visible = true
+		playersText.text = 'Players: (' + total + '/' + max + ')'
+
+		enableButton(START_BUTTON)
+		setVisible(MESSAGE_TEXT)
+
+		if (total >= 2) {
+			if (chosen == total) {
+				// Double checks to make sure that more than one team is populated populated
+				var populatedTeams = 0
+				for (var i in teams) {
+					if (teams[i].players.length > 0) {
+						populatedTeams++
+					}
+				}
+
+				if (populatedTeams > 1) {
+					enableButton(START_BUTTON)
+					setText(MESSAGE_TEXT, 'Press Start to confirm teams! (0/' + total + ')')
+				} else {
+					setText(MESSAGE_TEXT, 'More than one team must be populated')
+				}
+			} else {
+				var choosing = total - chosen
+				setText(MESSAGE_TEXT, 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team')
+			}
+		} else {
+			setText(MESSAGE_TEXT, 'Waiting for one or more players to join...')
+		}
+
+		// If a team hasn't been chosen yet, display a choose team message
+		if (!myTeam) {
+			setText(MESSAGE_TEXT, 'Click a colour above to join that team!')
+		}
+		break
+	}
 
 	//console.log('type: ' + type)
 	//console.log('pack: ' + pack)

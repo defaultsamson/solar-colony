@@ -46,173 +46,173 @@ class Game extends Object {
 			this.system.getPlanetByID(pack.pl).createSpawn()
 			break
 			case Pack.JOIN_TEAM:
-				// Reset the start status
-				for (var i in this.players) {
-					this.players[i].start = false
-				}
-				// Remove the players from their previous team
-				if (sender.team != null) {
-					sender.team.removePlayer(sender)
-				}
-				// TODO more efficient way of switching teams than resending the list each time?
-				this.getTeam(pack.team).addPlayer(sender)
-				this.sendTeamPlayers()
-				this.updatePlayerCount()
-
-				var packet = {
-					type: Pack.SET_CLIENT_TEAM,
-					team: sender.team.id
-				}
-				sender.send(JSON.stringify(packet))
-				break
-				case Pack.UPDATE_START_BUTTON:
-				if (!sender.start && sender.team) {
-					sender.start = true
-					var chosen = 0
-					for (var i in this.players) {
-						if (this.players[i].start) {
-							chosen++
-						}
-					}
-
-					// Start the game if there's more than two players and all players have chosen a team
-					if (chosen >= MIN_PLAYERS && chosen == this.players.length) {
-						this.start()
-					} else {
-						// Else tell the other players to choose
-						var packet2 = {
-							type: Pack.UPDATE_START_BUTTON,
-							chosen: chosen,
-							total: this.players.length
-						}
-						this.sendPlayers(packet2)
-					}
-				}
-				break
-				case Pack.QUIT:
-				this.removePlayer(sender)
-				sender.approved = false
-				break
+			// Reset the start status
+			for (var i in this.players) {
+				this.players[i].start = false
 			}
-		}
-
-		canAddPlayer() {
-			return this.players.length < this.maxPlayers
-		}
-
-		addTeam(team) {
-			this.teams.push(team)
-			return team
-		}
-
-		getTeam(id) {
-			for (var i in this.teams) {
-				if (this.teams[i].id == id) {
-					return this.teams[i]
-				}
+			// Remove the players from their previous team
+			if (sender.team != null) {
+				sender.team.removePlayer(sender)
 			}
-			return null
-		}
-
-		sendTeams() {
-			var pack = {
-				type: Pack.CLEAR_TEAMS
-			}
-			this.sendPlayers(pack)
-
-			for (var i in this.teams) {
-				pack = {
-					type: Pack.CREATE_TEAM,
-					id: this.teams[i].id,
-					colour: this.teams[i].colour
-				}
-				this.sendPlayers(pack)
-			}
+			// TODO more efficient way of switching teams than resending the list each time?
+			this.getTeam(pack.team).addPlayer(sender)
 			this.sendTeamPlayers()
-		}
-
-		sendTeamPlayers() {
-			var pack = {
-				type: Pack.CLEAR_TEAM_GUI
-			}
-			this.sendPlayers(pack)
-
-			for (var i in this.teams) {
-				for (var j in this.teams[i].players) {
-					pack = {
-						type: Pack.POPULATE_TEAM,
-						team: this.teams[i].id,
-						name: this.teams[i].players[j].name
-					}
-					this.sendPlayers(pack)
-				}
-			}
-		}
-
-		addPlayer(sock, name) {
-			sock.name = name
-			sock.game = this
-			sock.approved = true
-			sock.pinger = new Timeskewer(sock)
-			this.players.push(sock)
+			this.updatePlayerCount()
 
 			var packet = {
-				type: Pack.JOIN_GAME,
-				gameID: this.gameID,
-				player: this.players.length
+				type: Pack.SET_CLIENT_TEAM,
+				team: sender.team.id
 			}
-			sock.send(JSON.stringify(packet))
+			sender.send(JSON.stringify(packet))
+			break
+			case Pack.UPDATE_START_BUTTON:
+			if (!sender.start && sender.team) {
+				sender.start = true
+				var chosen = 0
+				for (var i in this.players) {
+					if (this.players[i].start) {
+						chosen++
+					}
+				}
 
-			this.updatePlayerCount()
-			this.sendTeams()
-		}
-
-		removePlayer(sock) {
-			if (sock.team) {
-				sock.team.removePlayer(sock)
+			// Start the game if there's more than two players and all players have chosen a team
+			if (chosen >= MIN_PLAYERS && chosen == this.players.length) {
+				this.start()
+			} else {
+				// Else tell the other players to choose
+				var packet2 = {
+					type: Pack.UPDATE_START_BUTTON,
+					chosen: chosen,
+					total: this.players.length
+				}
+				this.sendPlayers(packet2)
 			}
-
-		// Removes the player from the list of players
-		var i = this.players.indexOf(sock)
-		if (i != -1) {
-			this.players.splice(i, 1)
 		}
+		break
+		case Pack.QUIT:
+		this.removePlayer(sender)
+		sender.approved = false
+		break
+	}
+}
 
-		// If there's still players left in the game
-		if (this.players.length > 0) {
-			// Update the teams for them
-			// TODO may break if performed mid-game
-			this.sendTeamPlayers()
-			this.updatePlayerCount()
-		} else {
-			this.server.removeGame(this)
+canAddPlayer() {
+	return this.players.length < this.maxPlayers
+}
+
+addTeam(team) {
+	this.teams.push(team)
+	return team
+}
+
+getTeam(id) {
+	for (var i in this.teams) {
+		if (this.teams[i].id == id) {
+			return this.teams[i]
+		}
+	}
+	return null
+}
+
+sendTeams() {
+	var pack = {
+		type: Pack.CLEAR_TEAMS
+	}
+	this.sendPlayers(pack)
+
+	for (var i in this.teams) {
+		pack = {
+			type: Pack.CREATE_TEAM,
+			id: this.teams[i].id,
+			colour: this.teams[i].colour
+		}
+		this.sendPlayers(pack)
+	}
+	this.sendTeamPlayers()
+}
+
+sendTeamPlayers() {
+	var pack = {
+		type: Pack.CLEAR_TEAM_GUI
+	}
+	this.sendPlayers(pack)
+
+	for (var i in this.teams) {
+		for (var j in this.teams[i].players) {
+			pack = {
+				type: Pack.POPULATE_TEAM,
+				team: this.teams[i].id,
+				name: this.teams[i].players[j].name
+			}
+			this.sendPlayers(pack)
+		}
+	}
+}
+
+addPlayer(sock, name) {
+	sock.name = name
+	sock.game = this
+	sock.approved = true
+	sock.pinger = new Timeskewer(sock)
+	this.players.push(sock)
+
+	var packet = {
+		type: Pack.JOIN_GAME,
+		gameID: this.gameID,
+		player: this.players.length
+	}
+	sock.send(JSON.stringify(packet))
+
+	this.updatePlayerCount()
+	this.sendTeams()
+}
+
+removePlayer(sock) {
+	if (sock.team) {
+		sock.team.removePlayer(sock)
+	}
+
+	// Removes the player from the list of players
+	var i = this.players.indexOf(sock)
+	if (i != -1) {
+		this.players.splice(i, 1)
+	}
+
+	// If there's still players left in the game
+	if (this.players.length > 0) {
+		// Update the teams for them
+		// TODO may break if performed mid-game
+		this.sendTeamPlayers()
+		this.updatePlayerCount()
+	} else {
+		this.server.removeGame(this)
+	}
+}
+
+updatePlayerCount() {
+	var chosen = 0
+	for (var i in this.players) {
+		if (this.players[i].team != null) {
+			chosen++
 		}
 	}
 
-	updatePlayerCount() {
-		var chosen = 0
-		for (var i in this.players) {
-			if (this.players[i].team != null) {
-				chosen++
-			}
-		}
-
-		var packet = {
-			type: Pack.UPDATE_PLAYER_COUNT,
-			chosen: chosen,
-			total: this.players.length,
-			max: this.maxPlayers
-		}
-		this.sendPlayers(packet)
+	var packet = {
+		type: Pack.UPDATE_PLAYER_COUNT,
+		chosen: chosen,
+		total: this.players.length,
+		max: this.maxPlayers
 	}
+	this.sendPlayers(packet)
+}
 
-	start() {
-		console.log('Starting Game: ' + this.gameID)
+start() {
+	console.log('Starting Game: ' + this.gameID)
 
-		this.server.removeQueue(this)
+	this.server.removeQueue(this)
 
-		this.system = new System()
-		this.system.game = this
+	this.system = new System()
+	this.system.game = this
 
 		// Creates the system on the client-side
 		var pack = {
