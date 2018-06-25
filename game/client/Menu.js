@@ -393,5 +393,6 @@ function doGuiResize() {
 		scale = scaleY
 	}
 
-	document.getElementById('input').style.transform = "translate(-50%, -50%) " + "scale(" + scale + ")"
+	document.getElementById(INPUT_DIV).style.transform = "translate(-50%, -50%) " + "scale(" + scale + ")"
+	document.getElementById(PING).style.transform = "scale(" + scale + ")"
 }

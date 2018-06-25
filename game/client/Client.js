@@ -123,11 +123,6 @@ function onLoad(loader, res) {
 	countDownText = hud.addChild(new TextButton('Starting Game in 3', largeStyle, 0.5, 0, 0, 30))
 	countDownText.anchor.set(0.5, 0)
 
-	pingText = hud.addChild(new TextButton('Ping: 200ms', smallStyle, 1, 0, -10, 10))
-	pingText.anchor.set(1, 0)
-	playersText = hud.addChild(new TextButton('Players: (0/0)', smallStyle, 1, 0, -10, 30))
-	playersText.anchor.set(1, 0)
-
 	buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
 	buy10ShipText.anchor.set(1, 0.5)
 	buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
@@ -503,9 +498,8 @@ function parse(type, pack) {
 		socket.ws.send(JSON.stringify(pPack))
 		break
 		case Pack.PING_SET:
-		pingText.visible = true
 		ping = pack.ping
-		pingText.text = 'Ping: ' + ping + 'ms'
+		setText(PING, 'Ping: ' + ping + 'ms')
 		break
 		case Pack.UPDATE_PIXELS: // update pixel count
 		var pl = pack.pl
@@ -549,6 +543,7 @@ function parse(type, pack) {
 		setVisible(TEAM_LIST_BLUE)
 		setVisible(TEAM_LIST_PURPLE)
 
+		setVisible(PING)
 		break
 		case Pack.CREATE_SYSTEM:
 		system = new System()
@@ -601,9 +596,8 @@ function parse(type, pack) {
 		break
 		case Pack.SHOW_SYSTEM:
 		viewport.addChild(system)
-		setHidden('gameID')
-		hud.hideAll()
-		pingText.visible = true
+		hideMenu()
+		setVisible(PING)
 		pixelText.visible = true
 		shipsText.visible = true
 
@@ -702,8 +696,8 @@ function parse(type, pack) {
 		var total = pack.total
 		var max = pack.max
 
-		playersText.visible = true
-		playersText.text = 'Players: (' + total + '/' + max + ')'
+		setVisible(PLAYER_COUNT)
+		setText(PLAYER_COUNT, 'Players: (' + total + '/' + max + ')')
 
 		enableButton(START_BUTTON)
 		setVisible(MESSAGE_TEXT)

@@ -113,6 +113,8 @@ const DASH_LENGTH = 25
 // The HTML id's of the elements
 const ALL_ELEMS = []
 
+const INPUT_DIV = 'input'
+
 const JOIN_GAME_BUTTON = 'b_join'			;ALL_ELEMS.push(JOIN_GAME_BUTTON)
 const CREATE_GAME_BUTTON = 'b_create'		;ALL_ELEMS.push(CREATE_GAME_BUTTON)
 const RANDOM_GAME_BUTTON = 'b_random'		;ALL_ELEMS.push(RANDOM_GAME_BUTTON)
@@ -152,6 +154,9 @@ const TEAM_LIST_BLUE = 'l_team_blue'		;ALL_ELEMS.push(TEAM_LIST_BLUE)
 const TEAM_LIST_PURPLE = 'l_team_purple'	;ALL_ELEMS.push(TEAM_LIST_PURPLE)
 
 const ID_DISPLAY = 't_id_display'			;ALL_ELEMS.push(ID_DISPLAY) // Displays on team selection
+
+const PING = 't_ping' 						;ALL_ELEMS.push(PING)
+const PLAYER_COUNT = 't_players' 			;ALL_ELEMS.push(PLAYER_COUNT)
 
 const Key = {
 	BACKSPACE: 8,
