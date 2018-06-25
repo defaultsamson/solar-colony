@@ -5,6 +5,8 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
+const localDebug = false
+
 const Pack = {
 	CREATE_SPAWN: 0,
 	BUY_SHIPS: 1,

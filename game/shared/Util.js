@@ -5,8 +5,6 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
-const localDebug = true
-
 function distSqr(x1, y1, x2, y2) {
 	let x = (x2 - x1)
 	let y = (y2 - y1)
