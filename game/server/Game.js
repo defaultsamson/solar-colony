@@ -17,12 +17,12 @@ class Game extends Object {
 		this.players = []
 		this.teams = []
 
-		this.redTeam = this.addTeam(new Team(0xFF8888, 0))
-		this.orangeTeam = this.addTeam(new Team(0xFFAA55, 1))
-		this.yellowTeam = this.addTeam(new Team(0xFFFF66, 2))
-		this.greenTeam = this.addTeam(new Team(0xAAFFAA, 3))
-		this.blueTeam = this.addTeam(new Team(0xAAAAFF, 4))
-		this.purpleTeam = this.addTeam(new Team(0xBB88DD, 5))
+		this.redTeam = this.addTeam(new Team(Colour.red, 0))
+		this.orangeTeam = this.addTeam(new Team(Colour.orange, 1))
+		this.yellowTeam = this.addTeam(new Team(Colour.yellow, 2))
+		this.greenTeam = this.addTeam(new Team(Colour.green, 3))
+		this.blueTeam = this.addTeam(new Team(Colour.blue, 4))
+		this.purpleTeam = this.addTeam(new Team(Colour.purple, 5))
 
 		this.system = null
 	}
@@ -114,11 +114,11 @@ getTeam(id) {
 	return null
 }
 
-sendTeams() {
+sendTeams(sock) {
 	var pack = {
 		type: Pack.CLEAR_TEAMS
 	}
-	this.sendPlayers(pack)
+	sock.send(JSON.stringify(pack))
 
 	for (var i in this.teams) {
 		pack = {
@@ -126,16 +126,20 @@ sendTeams() {
 			id: this.teams[i].id,
 			colour: this.teams[i].colour
 		}
-		this.sendPlayers(pack)
+		sock.send(JSON.stringify(pack))
 	}
-	this.sendTeamPlayers()
+	this.sendTeamPlayers(sock)
 }
 
-sendTeamPlayers() {
+sendTeamPlayers(sock) {
 	var pack = {
 		type: Pack.CLEAR_TEAM_GUI
 	}
-	this.sendPlayers(pack)
+	if (exists(sock)) {
+		sock.send(JSON.stringify(pack))
+	} else {
+		this.sendPlayers(pack)
+	}
 
 	for (var i in this.teams) {
 		for (var j in this.teams[i].players) {
@@ -144,7 +148,11 @@ sendTeamPlayers() {
 				team: this.teams[i].id,
 				name: this.teams[i].players[j].name
 			}
-			this.sendPlayers(pack)
+			if (exists(sock)) {
+				sock.send(JSON.stringify(pack))
+			} else {
+				this.sendPlayers(pack)
+			}
 		}
 	}
 }
@@ -163,8 +171,8 @@ addPlayer(sock, name) {
 	}
 	sock.send(JSON.stringify(packet))
 
+	this.sendTeams(sock)
 	this.updatePlayerCount()
-	this.sendTeams()
 }
 
 removePlayer(sock) {
