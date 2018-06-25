@@ -59,13 +59,6 @@ viewport
 .clampZoom(clampOptions)
 .decelerate()
 
-/*
-var graphics = new PIXI.Graphics()
-graphics.beginFill(0xFFFF00)
-graphics.lineStyle(5, 0xFF0000)
-graphics.drawRect(0, 0, 100, 100)
-viewport.addChild(graphics)*/
-
 PIXI.loader
 .add('sunTexture', 'game/assets/sun.png')
 .add('planet1', 'game/assets/planet1.png')
@@ -150,44 +143,6 @@ function onLoad(loader, res) {
 
 	quitText = hud.addChild(new TextButton('Quit Game', style, 0.5, 0.5, 0, 220))
 	quitText.anchor.set(0.5, 0)
-
-	// All the team texts
-
-	redTeamText = hud.addChild(new TextButton('Red', style, 0.5, 0.5, -300, -160))
-	redTeamText.anchor.set(0.5, 0)
-	redTeamText.tint = Colour.red
-	redPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -300, -120))
-	redPlayersText.anchor.set(0.5, 0)
-
-	purpleTeamText = hud.addChild(new TextButton('Purple', style, 0.5, 0.5, -180, -160))
-	purpleTeamText.anchor.set(0.5, 0)
-	purpleTeamText.tint = Colour.purple
-	purplePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -180, -120))
-	purplePlayersText.anchor.set(0.5, 0)
-
-	blueTeamText = hud.addChild(new TextButton('Blue', style, 0.5, 0.5, -60, -160))
-	blueTeamText.anchor.set(0.5, 0)
-	blueTeamText.tint = Colour.blue
-	bluePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, -60, -120))
-	bluePlayersText.anchor.set(0.5, 0)
-
-	greenTeamText = hud.addChild(new TextButton('Green', style, 0.5, 0.5, 60, -160))
-	greenTeamText.anchor.set(0.5, 0)
-	greenTeamText.tint = Colour.green
-	greenPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 60, -120))
-	greenPlayersText.anchor.set(0.5, 0)
-
-	yellowTeamText = hud.addChild(new TextButton('Yellow', style, 0.5, 0.5, 180, -160))
-	yellowTeamText.anchor.set(0.5, 0)
-	yellowTeamText.tint = Colour.yellow
-	yellowPlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 180, -120))
-	yellowPlayersText.anchor.set(0.5, 0)
-
-	orangeTeamText = hud.addChild(new TextButton('Orange', style, 0.5, 0.5, 300, -160))
-	orangeTeamText.anchor.set(0.5, 0)
-	orangeTeamText.tint = Colour.orange
-	orangePlayersText = hud.addChild(new TextButton('', style, 0.5, 0.5, 300, -120))
-	orangePlayersText.anchor.set(0.5, 0)
 
 	resize()
 
@@ -420,10 +375,6 @@ function onMouseClick(e) {
 			// If nothing was clicked on, remove the follow plugin
 			stopFollow()
 			centerView()
-		} else {
-			if (inTeamSelection()) {
-
-			}
 		}
 	}
 }
@@ -539,11 +490,7 @@ function gameLoop() {
 
 var gameID = null
 var player = 0
-
-function inTeamSelection() {
-	return redTeamText.visible
-}
-
+var inTeamSelection = false
 var countDown
 
 function parse(type, pack) {
@@ -574,6 +521,7 @@ function parse(type, pack) {
 		hideMenu()
 
 		countDown = COUNTDOWN_TIME
+		inTeamSelection = true
 
 		gameID = pack.gameID
 		player = pack.player
@@ -594,12 +542,12 @@ function parse(type, pack) {
 		setVisible(TEAM_BLUE)
 		setVisible(TEAM_PURPLE)
 
-		redPlayersText.visible = true
-		purplePlayersText.visible = true
-		bluePlayersText.visible = true
-		greenPlayersText.visible = true
-		yellowPlayersText.visible = true
-		orangePlayersText.visible = true
+		setVisible(TEAM_LIST_RED)
+		setVisible(TEAM_LIST_ORANGE)
+		setVisible(TEAM_LIST_YELLOW)
+		setVisible(TEAM_LIST_GREEN)
+		setVisible(TEAM_LIST_BLUE)
+		setVisible(TEAM_LIST_PURPLE)
 
 		break
 		case Pack.CREATE_SYSTEM:
@@ -705,26 +653,32 @@ function parse(type, pack) {
 		var team = getTeam(pack.team)
 		var name = pack.name
 
+		var list
+
 		switch (pack.team) {
 			case 0:
-			redPlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_RED)
 			break
 			case 1:
-			purplePlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_ORANGE)
 			break
 			case 2:
-			bluePlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_YELLOW)
 			break
 			case 3:
-			greenPlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_GREEN)
 			break
 			case 4:
-			yellowPlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_BLUE)
 			break
 			case 5:
-			orangePlayersText.text += name + '\n'
+			list = document.getElementById(TEAM_LIST_PURPLE)
 			break
 		}
+
+		var entry = document.createElement('li');
+		entry.appendChild(document.createTextNode(name));
+		list.appendChild(entry);
 
 		team.addPlayer(new Player(name))
 
@@ -736,12 +690,12 @@ function parse(type, pack) {
 		for (var i in teams) {
 			teams[i].players = []
 		}
-		redPlayersText.text = ''
-		purplePlayersText.text = ''
-		bluePlayersText.text = ''
-		greenPlayersText.text = ''
-		yellowPlayersText.text = ''
-		orangePlayersText.text = ''
+		document.getElementById(TEAM_LIST_RED).innerHTML = "";
+		document.getElementById(TEAM_LIST_ORANGE).innerHTML = "";
+		document.getElementById(TEAM_LIST_YELLOW).innerHTML = "";
+		document.getElementById(TEAM_LIST_GREEN).innerHTML = "";
+		document.getElementById(TEAM_LIST_BLUE).innerHTML = "";
+		document.getElementById(TEAM_LIST_PURPLE).innerHTML = "";
 		break
 		case Pack.UPDATE_PLAYER_COUNT:
 		var chosen = pack.chosen

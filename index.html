@@ -207,14 +207,13 @@
 
 	#b_team_red {
 		top: 20%;
-		left: 3%;
+		left: 5%;
 		color: #FF8888;
-		position: absolute;
 	}
 
 	#b_team_orange {
 		top: 20%;
-		left: 16%;
+		left: 18%;
 		color: #FFBB4A;
 	}
 
@@ -238,9 +237,42 @@
 
 	#b_team_purple {
 		top: 20%;
-		left: 82%;
+		left: 83%;
 		color: #BB88DD;
 	}
+
+	ul {
+		top: 29%;
+		position: absolute;
+		list-style-type: none;
+		text-align: center;
+		width:88px;
+	}
+
+	#l_team_red {
+		left: -7%;
+	}
+
+	#l_team_orange {
+		left: 9%;
+	}
+
+	#l_team_yellow {
+		left: 25%;
+	}
+
+	#l_team_green {
+		left: 41%;
+	}
+
+	#l_team_blue {
+		left: 57%;
+	}
+
+	#l_team_purple {
+		left: 73%;
+	}
+
 
 </style>
 
@@ -311,6 +343,13 @@
 		<p id='b_team_green' class='btn txt sml' onmousedown='joinTeam(3)'>Green</p>
 		<p id='b_team_blue' class='btn txt sml' onmousedown='joinTeam(4)'>Blue</p>
 		<p id='b_team_purple' class='btn txt sml' onmousedown='joinTeam(5)'>Purple</p>
+
+		<ul id='l_team_red' class='txt sml'></ul>
+		<ul id='l_team_orange' class='txt sml'></ul>
+		<ul id='l_team_yellow' class='txt sml'></ul>
+		<ul id='l_team_green' class='txt sml'></ul>
+		<ul id='l_team_blue' class='txt sml'></ul>
+		<ul id='l_team_purple' class='txt sml'></ul>
 
 		<p id='t_message' class='txt sml'>This sentence is dynamic!</p>
 	</div>

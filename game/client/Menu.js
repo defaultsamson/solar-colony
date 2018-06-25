@@ -239,12 +239,12 @@ function joinTeam(i) {
 }
 
 function startButton() {
-	if (inTeamSelection()) {
+	if (inTeamSelection) {
 		var pack = {
 			type: Pack.UPDATE_START_BUTTON
 		}
 		socket.ws.send(JSON.stringify(pack))
-		disableButton(START_BUTTON)
+		//disableButton(START_BUTTON)
 	} else {
 		if (updateStartButton())
 			sendForm()
