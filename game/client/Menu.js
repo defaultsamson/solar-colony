@@ -54,6 +54,7 @@ function connect() {
 function gotoTitle() {
 
 	allowMouseClick = true
+	inTeamSelection = false
 
 	if (system) {
 		viewport.removeChild(system)
@@ -251,6 +252,14 @@ function startButton() {
 	}
 }
 
+function quitButton() {
+	gotoTitle()
+	var pack = {
+		type: Pack.QUIT
+	}
+	socket.ws.send(JSON.stringify(pack))
+}
+
 var nameGotGood = false
 var idGotGood = false
 
@@ -372,6 +381,7 @@ function sendForm() {
 
 function hideMenu() {
 	for (i in ALL_ELEMS) {
+		//console.log("Hiding " + ALL_ELEMS[i])
 		setHidden(ALL_ELEMS[i])
 	}
 }

@@ -190,6 +190,9 @@ removePlayer(sock) {
 	if (this.players.length > 0) {
 		// Update the teams for them
 		// TODO may break if performed mid-game
+		// TODO remove team if it is empty
+		// TODO end game if only one team remaining
+		// TODO pause game and wait for players?
 		this.sendTeamPlayers()
 		this.updatePlayerCount()
 	} else {

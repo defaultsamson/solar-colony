@@ -129,6 +129,7 @@ const PLAYERS_BUTTON_8 = 'b_p8'				;ALL_ELEMS.push(PLAYERS_BUTTON_8)
 const PLAYERS_BUTTON_16 = 'b_p16'			;ALL_ELEMS.push(PLAYERS_BUTTON_16)
 const PLAYERS_BUTTON_RANDOM = 'b_pRnd'		;ALL_ELEMS.push(PLAYERS_BUTTON_RANDOM)
 const START_BUTTON = 'b_start'				;ALL_ELEMS.push(START_BUTTON)
+const QUIT_BUTTON = 'b_quit'				;ALL_ELEMS.push(QUIT_BUTTON)
 const USERNAME_INPUT = 'i_user'				;ALL_ELEMS.push(USERNAME_INPUT)
 const ID_INPUT = 'i_id'						;ALL_ELEMS.push(ID_INPUT)
 const USERNAME_CHECK = 'p_userG'			;ALL_ELEMS.push(USERNAME_CHECK)
@@ -154,7 +155,6 @@ const TEAM_LIST_BLUE = 'l_team_blue'		;ALL_ELEMS.push(TEAM_LIST_BLUE)
 const TEAM_LIST_PURPLE = 'l_team_purple'	;ALL_ELEMS.push(TEAM_LIST_PURPLE)
 
 const ID_DISPLAY = 't_id_display'			;ALL_ELEMS.push(ID_DISPLAY) // Displays on team selection
-
 const PING = 't_ping' 						;ALL_ELEMS.push(PING)
 const PLAYER_COUNT = 't_players' 			;ALL_ELEMS.push(PLAYER_COUNT)
 

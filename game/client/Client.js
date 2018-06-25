@@ -136,9 +136,6 @@ function onLoad(loader, res) {
 	sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
 	sendShipText.anchor.set(0, 0.5)
 
-	quitText = hud.addChild(new TextButton('Quit Game', style, 0.5, 0.5, 0, 220))
-	quitText.anchor.set(0.5, 0)
-
 	resize()
 
 	socket = new SocketManager()
@@ -524,7 +521,7 @@ function parse(type, pack) {
 		myTeam = null
 
 		setVisible(START_BUTTON)
-		quitText.visible = true
+		setVisible(QUIT_BUTTON)
 
 		setVisible(ID_DISPLAY)
 		setText(ID_DISPLAY, 'Game ID: ' + gameID)
@@ -615,6 +612,7 @@ function parse(type, pack) {
 		allowMouseClick = false
 		break
 		case Pack.START_GAME:
+		inTeamSelection = false
 		countDown -= COUNTDOWN_INTERVAL
 		countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
 
