@@ -403,6 +403,42 @@ function doGuiResize() {
 		scale = scaleY
 	}
 
-	document.getElementById(INPUT_DIV).style.transform = "translate(-50%, -50%) " + "scale(" + scale + ")"
-	document.getElementById(PING).style.transform = "scale(" + scale + ")"
+	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
+	document.getElementById(PING).style.transform = 'scale(' + scale + ')'
+}
+
+function hoverButton(elem) {
+	elem.style.background = "rgba(200, 200, 200, 0.5)"
+}
+
+function unhoverButton(elem) {
+	elem.style.background = "rgba(0, 0, 0, 0)"
+}
+
+function menuInit() {
+	// Adds the hover behaviours to all buttons
+	for (i in ALL_ELEMS) {
+		var elem = document.getElementById(ALL_ELEMS[i])
+		if (elem.classList.contains('btn')) {
+			
+			if (mobile) {
+				// Small hack, shows hover colour then unhovers when the user clicks
+				elem.addEventListener('mousedown', function(e)
+				{
+					hoverButton(e.target)
+					setTimeout(function() {
+						unhoverButton(e.target)
+					}, 100)
+				}, false);
+			} else {
+				// Usual hover behaviour for mouse
+				elem.addEventListener('mouseover', function(e) {
+					hoverButton(e.target)
+				}, false);
+				elem.addEventListener('mouseleave', function(e) {
+					unhoverButton(e.target)
+				}, false);
+			}
+		}
+	}
 }
