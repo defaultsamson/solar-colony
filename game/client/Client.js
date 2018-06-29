@@ -87,6 +87,7 @@ var resources
 
 function onLoad(loader, res) {
 
+	hideMenu()
 	setVisible(INPUT_DIV)
 
 	resources = res
@@ -505,8 +506,7 @@ function parse(type, pack) {
 		break
 
 		case Pack.UPDATE_PIXELS: // update pixel count
-		var pl = pack.pl
-		myTeam.pixels = pl
+		myTeam.pixels = pack.pl
 		break
 
 		case Pack.BUY_SHIPS: // buy ships
