@@ -37,7 +37,6 @@ if (isServer) {
 	global.distSqr = distSqr
 	global.exists = exists
 	global.isBetween = isBetween
-	global.localDebug = localDebug
 }
 
 //   _____                          
@@ -255,17 +254,21 @@ function disableButton(elemID) {
 	elem.setAttribute('enable_click', false)
 }
 
-function enableButton(elemID) {
-	var elem = document.getElementById(elemID)
-	elem.style.color = '#FFF'
-	elem.style.cursor = 'pointer'
-	elem.onmouseover = function () {
-		this.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'
+function enableButton(elemID, visible) {
+	if (visible || !exists(visible)) {
+		var elem = document.getElementById(elemID)
+		elem.style.color = '#FFF'
+		elem.style.cursor = 'pointer'
+		elem.onmouseover = function () {
+			this.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'
+		}
+		elem.onmouseout = function () {
+			this.style.backgroundColor = 'transparent'
+		}
+		elem.setAttribute('enable_click', true)
+	} else {
+		disableButton(elemID)
 	}
-	elem.onmouseout = function () {
-		this.style.backgroundColor = 'transparent'
-	}
-	elem.setAttribute('enable_click', true)
 }
 
 function isButtonEnabled(elemID) {

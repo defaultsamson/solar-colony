@@ -11,14 +11,13 @@
 const h = 600
 const w = 600
 
-window.onorientationchange = resize
-
 // Creates the PIXI application
-const game = new PIXI.Application(w, h, {
+var game = new PIXI.Application(w, h, {
 	antialias: true,
 	transparent: false
 })
 
+window.onorientationchange = resize
 // Sets up the element
 game.view.style.position = 'absolute'
 game.view.style.display = 'block'
@@ -37,9 +36,8 @@ const viewportOptions = {
 	ticker: game.ticker
 }
 
-const viewport = new Viewport(viewportOptions)
+var viewport = new Viewport(viewportOptions)
 game.stage.addChild(viewport)
-
 
 const clampOptions = {
 	minWidth: 1,
@@ -88,6 +86,9 @@ var ping = 200
 var resources
 
 function onLoad(loader, res) {
+
+	setVisible(INPUT_DIV)
+
 	resources = res
 
 	lastElapsed = Date.now()
@@ -497,20 +498,25 @@ function parse(type, pack) {
 		}
 		socket.ws.send(JSON.stringify(pPack))
 		break
+		
 		case Pack.PING_SET:
 		ping = pack.ping
 		setText(PING, 'Ping: ' + ping + 'ms')
 		break
+
 		case Pack.UPDATE_PIXELS: // update pixel count
 		var pl = pack.pl
 		myTeam.pixels = pl
 		break
+
 		case Pack.BUY_SHIPS: // buy ships
 		system.getPlanetByID(pack.pl).createShips(pack.n)
 		break
+
 		case Pack.FORM_FAIL:
 		failSendForm(pack.reason)
 		break
+
 		case Pack.JOIN_GAME:
 		hideMenu()
 
@@ -545,24 +551,29 @@ function parse(type, pack) {
 
 		setVisible(PING)
 		break
+
 		case Pack.CREATE_SYSTEM:
 		system = new System()
 		break
+
 		case Pack.CREATE_ORBIT:
 		var orbit = new Orbit(pack.x, pack.y, pack.radius)
 		orbit.id = pack.id
 		system.addOrbit(orbit)
 		break
+
 		case Pack.CREATE_PLANET:
 		var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
 		planet.id = pack.id
 		system.addPlanet(planet)
 		break
+
 		case Pack.SET_PLANET_ORBIT:
 		var planet = system.getPlanetByID(pack.planet)
 		var orbit = system.getOrbit(pack.orbit)
 		planet.setOrbit(orbit)
 		break
+
 		case Pack.CREATE_SPAWN:
 		var planet = system.getPlanetByID(pack.planet)
 
@@ -578,22 +589,13 @@ function parse(type, pack) {
 		}
 
 		break
-		case Pack.CREATE_TEAM:
-		teams.push(new Team(pack.colour, pack.id))
-		break
+
 		case Pack.SET_PLANET_TEAM:
 		var planet = system.getPlanetByID(pack.planet)
 		var team = getTeam(pack.team)
 		planet.setTeam(team)
 		break
-		case Pack.SET_CLIENT_TEAM:
-		myTeam = getTeam(pack.team)
 
-		/*if (waitingMessage) {
-			setText(MESSAGE_TEXT, waitingMessage)
-			waitingMessage = null
-		}*/
-		break
 		case Pack.SHOW_SYSTEM:
 		viewport.addChild(system)
 		hideMenu()
@@ -614,6 +616,7 @@ function parse(type, pack) {
 		viewport.pausePlugin('wheel')
 		allowMouseClick = false
 		break
+
 		case Pack.START_GAME:
 		inTeamSelection = false
 		countDown -= COUNTDOWN_INTERVAL
@@ -630,110 +633,89 @@ function parse(type, pack) {
 			viewport.resumePlugin('wheel')
 			allowMouseClick = true
 		}
-
 		break
-		case Pack.UPDATE_START_BUTTON:
-		var started = pack.chosen
-		var total = pack.total
 
-		if (isButtonEnabled(START_BUTTON)) {
-			setText(MESSAGE_TEXT, 'Press Start to confirm teams (' + started + '/' + total + ')')
-		} else {
-			let starting = total - started
-			setText(MESSAGE_TEXT, 'Waiting for ' + starting + ' player' + (starting != 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')')
-		}
-
-		break
-		case Pack.POPULATE_TEAM:
-		var team = getTeam(pack.team)
-		var name = pack.name
-
-		var list
-
-		switch (pack.team) {
-			case 0:
-			list = document.getElementById(TEAM_LIST_RED)
-			break
-			case 1:
-			list = document.getElementById(TEAM_LIST_ORANGE)
-			break
-			case 2:
-			list = document.getElementById(TEAM_LIST_YELLOW)
-			break
-			case 3:
-			list = document.getElementById(TEAM_LIST_GREEN)
-			break
-			case 4:
-			list = document.getElementById(TEAM_LIST_BLUE)
-			break
-			case 5:
-			list = document.getElementById(TEAM_LIST_PURPLE)
-			break
-		}
-
-		var entry = document.createElement('li');
-		entry.appendChild(document.createTextNode(name));
-		list.appendChild(entry);
-
-		team.addPlayer(new Player(name))
-
-		break
-		case Pack.CLEAR_TEAMS:
+		case Pack.CREATE_TEAMS:
 		teams = []
-		break
-		case Pack.CLEAR_TEAM_GUI:
-		for (var i in teams) {
-			teams[i].players = []
+		for (var i in pack.teams) {
+			var id = pack.teams[i].id
+			var colour = pack.teams[i].colour
+			teams.push(new Team(colour, id))
 		}
+		break
+
+		case Pack.UPDATE_TEAMS:
+		// Clear the GUI
 		document.getElementById(TEAM_LIST_RED).innerHTML = "";
 		document.getElementById(TEAM_LIST_ORANGE).innerHTML = "";
 		document.getElementById(TEAM_LIST_YELLOW).innerHTML = "";
 		document.getElementById(TEAM_LIST_GREEN).innerHTML = "";
 		document.getElementById(TEAM_LIST_BLUE).innerHTML = "";
 		document.getElementById(TEAM_LIST_PURPLE).innerHTML = "";
-		break
-		case Pack.UPDATE_PLAYER_COUNT:
-		var chosen = pack.chosen
-		var total = pack.total
-		var max = pack.max
+
+		for (var i in teams) {
+			teams[i].players = []
+		}
+
+		var playerCount = 0
+
+		for (var i in pack.teams) {
+			// Team Object and teamID
+			var team = pack.teams[i]
+			var teamID = team.id
+			for (var j in team.players) {
+				playerCount++
+				// player name
+				var name = team.players[j]
+
+				// Adds new player object to the team object
+				var teamObj = getTeam(teamID)
+				teamObj.addPlayer(new Player(name))
+
+				var list
+				// Chooses a list to add the player to based on ID
+				switch (teamID) {
+					case 0:
+					list = document.getElementById(TEAM_LIST_RED)
+					break
+					case 1:
+					list = document.getElementById(TEAM_LIST_ORANGE)
+					break
+					case 2:
+					list = document.getElementById(TEAM_LIST_YELLOW)
+					break
+					case 3:
+					list = document.getElementById(TEAM_LIST_GREEN)
+					break
+					case 4:
+					list = document.getElementById(TEAM_LIST_BLUE)
+					break
+					case 5:
+					list = document.getElementById(TEAM_LIST_PURPLE)
+					break
+				}
+
+				// Creates the HTML list entry for the GUI
+				var entry = document.createElement('li');
+				entry.appendChild(document.createTextNode(name));
+				list.appendChild(entry);
+			}
+		}
 
 		setVisible(PLAYER_COUNT)
-		setText(PLAYER_COUNT, 'Players: (' + total + '/' + max + ')')
+		setText(PLAYER_COUNT, 'Players: (' + playerCount + '/' + pack.maxPlayers + ')')
 
-		enableButton(START_BUTTON)
+		break
+
+		case Pack.UPDATE_MESSAGE:
+		enableButton(START_BUTTON, pack.startEnabled)
 		setVisible(MESSAGE_TEXT)
+		setText(MESSAGE_TEXT, pack.message)
+		myTeam = getTeam(pack.id)
 
-		if (total >= 2) {
-			if (chosen == total) {
-				// Double checks to make sure that more than one team is populated populated
-				var populatedTeams = 0
-				for (var i in teams) {
-					if (teams[i].players.length > 0) {
-						populatedTeams++
-					}
-				}
-
-				if (populatedTeams > 1) {
-					enableButton(START_BUTTON)
-					setText(MESSAGE_TEXT, 'Press Start to confirm teams! (0/' + total + ')')
-				} else {
-					setText(MESSAGE_TEXT, 'More than one team must be populated')
-				}
-			} else {
-				var choosing = total - chosen
-				setText(MESSAGE_TEXT, 'Waiting for ' + choosing + ' player' + (choosing != 1 ? 's' : '') + ' to choose a team')
-			}
-		} else {
-			setText(MESSAGE_TEXT, 'Waiting for one or more players to join...')
-		}
-
-		// If a team hasn't been chosen yet, display a choose team message
-		if (!myTeam) {
-			setText(MESSAGE_TEXT, 'Click a colour above to join that team!')
-		}
 		break
 	}
 
 	//console.log('type: ' + type)
-	//console.log('pack: ' + pack)
+	//console.log('pack: ' + JSON.stringify(pack))
 }

@@ -242,7 +242,7 @@ function joinTeam(i) {
 function startButton() {
 	if (inTeamSelection) {
 		var pack = {
-			type: Pack.UPDATE_START_BUTTON
+			type: Pack.START_BUTTON
 		}
 		socket.ws.send(JSON.stringify(pack))
 		//disableButton(START_BUTTON)
@@ -402,6 +402,12 @@ function doGuiResize() {
 	} else { // limit by height
 		scale = scaleY
 	}
+
+	// Scale the desktop version to be smaller
+	if (!mobile) {
+		scale *= 0.75
+	}
+	scale = Math.max(scale, 0.5)
 
 	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
 	document.getElementById(PING).style.transform = 'scale(' + scale + ')'

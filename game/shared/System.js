@@ -11,19 +11,19 @@ class System extends(isServer ? Object : PIXI.Container) {
 		this.planets = []
 
 		// TODO implement game pausing when a player leaves
-		this.updating = false
+		this.paused = true
 	}
 
 	play() {
-		this.updating = true
+		this.paused = false
 	}
 
 	pause() {
-		this.updating = false
+		this.paused = true
 	}
 
 	update(delta) {
-		if (this.updating) {
+		if (!this.paused) {
 			for (var i in this.planets) {
 				this.planets[i].update(delta)
 			}
@@ -33,7 +33,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 			// Update the sun particle emitter regardless of this.update
 			this.sun.update(delta)
 
-			if (this.updating) {
+			if (!this.paused) {
 				// If drawing the ship travel lines
 				if (isChoosingShipSend()) {
 					updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))

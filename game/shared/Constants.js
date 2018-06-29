@@ -5,7 +5,7 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
-const localDebug = false
+const localDebug = true
 
 const Pack = {
 	CREATE_SPAWN: 0,
@@ -18,19 +18,21 @@ const Pack = {
 	CREATE_ORBIT: 7,
 	CREATE_PLANET: 8,
 	SET_PLANET_ORBIT: 9,
-	CREATE_TEAM: 10,
+	CREATE_TEAMS: 10,
 	SET_PLANET_TEAM: 11,
 	SET_CLIENT_TEAM: 12,
 	START_GAME: 13,
-	UPDATE_START_BUTTON: 14,
+	START_BUTTON: 14,
 	POPULATE_TEAM: 15,
 	CLEAR_TEAMS: 16,
 	CLEAR_TEAM_GUI: 17,
-	UPDATE_PLAYER_COUNT: 18,
+	JOIN_GAME: 18,
 	JOIN_TEAM: 19,
 	QUIT: 20,
 	FORM_SEND: 21,
-	SHOW_SYSTEM: 22
+	SHOW_SYSTEM: 22,
+	UPDATE_TEAMS: 23,
+	UPDATE_MESSAGE: 24
 }
 
 // Note: make sure that GAME_COUNTDOWN_TIME is divisible by PACKET_INTERVAL
@@ -73,6 +75,7 @@ const Colour = {
 const MIN_PLAYERS = 2 // minimum players required to start a game
 
 if (isServer) {
+	global.localDebug = localDebug
 	global.Pack = Pack
 
 	global.COUNTDOWN_TIME = COUNTDOWN_TIME
