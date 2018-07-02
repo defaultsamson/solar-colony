@@ -5,7 +5,7 @@ var connected = false
 
 function connect() {
 
-	setVisible(CONNECTION_TEXT)
+	setVisible(Elem.Text.CONNECTION_MESSAGE)
 
 	var ws = socket.connect()
 
@@ -35,7 +35,7 @@ function connect() {
 
 		connectionAttempts = -1
 		connected = true
-		setHidden(CONNECTION_TEXT)
+		setHidden(Elem.Text.CONNECTION_MESSAGE)
 		formSent = false
 		updateStartButton()
 	}
@@ -67,7 +67,7 @@ function gotoTitle() {
 	shownStart = false
 
 	hideMenu()
-	connected ? setHidden(CONNECTION_TEXT) : setVisible(CONNECTION_TEXT)
+	setVisible(Elem.Text.CONNECTION_MESSAGE, !connected)
 
 	updateGuiClick()
 }
@@ -90,111 +90,109 @@ function updateGuiClick() {
 	// Decides whether to stop showing the gui or continue
 	var showRest = true
 
-	setVisible(JOIN_GAME_BUTTON)
-	setVisible(CREATE_GAME_BUTTON)
+	setVisible(Elem.Button.JOIN)
+	setVisible(Elem.Button.CREATE)
 
-	enableButton(RANDOM_GAME_BUTTON)
+	enableButton(Elem.Button.RANDOM)
 	if (joinGame) {
-		selectButton(JOIN_GAME_BUTTON)
-		deselectButton(CREATE_GAME_BUTTON)
+		selectButton(Elem.Button.JOIN)
+		deselectButton(Elem.Button.CREATE)
 	} else if (createGame) {
-		deselectButton(JOIN_GAME_BUTTON)
-		selectButton(CREATE_GAME_BUTTON)
+		deselectButton(Elem.Button.JOIN)
+		selectButton(Elem.Button.CREATE)
 
 		randomGame = false
 		withFriends = true
-		disableButton(RANDOM_GAME_BUTTON)
+		disableButton(Elem.Button.RANDOM)
 
 	} else {
-		deselectButton(CREATE_GAME_BUTTON)
-		deselectButton(JOIN_GAME_BUTTON)
+		deselectButton(Elem.Button.CREATE)
+		deselectButton(Elem.Button.JOIN)
 		showRest = false
 	}
 
 	// Show the rest of the menu?
 	if (showRest) {
-		setVisible(RANDOM_GAME_BUTTON)
-		setVisible(WITH_FRIENDS_BUTTON)
+		setVisible(Elem.Button.RANDOM)
+		setVisible(Elem.Button.WITH_FRIENDS)
 	} else {
-		setHidden(RANDOM_GAME_BUTTON)
-		setHidden(WITH_FRIENDS_BUTTON)
+		setHidden(Elem.Button.RANDOM)
+		setHidden(Elem.Button.WITH_FRIENDS)
 	}
 
 	if (randomGame) {
-		selectButton(RANDOM_GAME_BUTTON)
-		deselectButton(WITH_FRIENDS_BUTTON)
+		selectButton(Elem.Button.RANDOM)
+		deselectButton(Elem.Button.WITH_FRIENDS)
 	} else if (withFriends) {
-		deselectButton(RANDOM_GAME_BUTTON)
-		selectButton(WITH_FRIENDS_BUTTON)
+		deselectButton(Elem.Button.RANDOM)
+		selectButton(Elem.Button.WITH_FRIENDS)
 	} else {
-		deselectButton(RANDOM_GAME_BUTTON)
-		deselectButton(WITH_FRIENDS_BUTTON)
+		deselectButton(Elem.Button.RANDOM)
+		deselectButton(Elem.Button.WITH_FRIENDS)
 		showRest = false
 	}
 
 	// Show the rest of the menu?
 	if (showRest) {
-		setVisible(USERNAME_TEXT)
-		setVisible(USERNAME_INPUT)
+		setVisible(Elem.Text.USERNAME)
+		setVisible(Elem.Input.USERNAME)
 
-		setVisible(ID_TEXT, joinGame && withFriends)
-		setVisible(ID_INPUT, joinGame && withFriends)
+		setVisible(Elem.Text.ID, joinGame && withFriends)
+		setVisible(Elem.Input.ID, joinGame && withFriends)
 
-		setVisible(PLAYER_COUNT_TEXT, randomGame)
-		setVisible(PLAYERS_BUTTON_2, randomGame)
-		setVisible(PLAYERS_BUTTON_3, randomGame)
-		setVisible(PLAYERS_BUTTON_4, randomGame)
-		setVisible(PLAYERS_BUTTON_8, randomGame)
-		setVisible(PLAYERS_BUTTON_16, randomGame)
-		setVisible(PLAYERS_BUTTON_RANDOM, randomGame)
+		setVisible(Elem.Button.PLAYERS_2, randomGame)
+		setVisible(Elem.Button.PLAYERS_3, randomGame)
+		setVisible(Elem.Button.PLAYERS_4, randomGame)
+		setVisible(Elem.Button.PLAYERS_8, randomGame)
+		setVisible(Elem.Button.PLAYERS_16, randomGame)
+		setVisible(Elem.Button.ANY_PLAYERS, randomGame)
 
 		if (randomGame) {
-			deselectButton(PLAYERS_BUTTON_2)
-			deselectButton(PLAYERS_BUTTON_3)
-			deselectButton(PLAYERS_BUTTON_4)
-			deselectButton(PLAYERS_BUTTON_8)
-			deselectButton(PLAYERS_BUTTON_16)
-			deselectButton(PLAYERS_BUTTON_RANDOM)
+			deselectButton(Elem.Button.PLAYERS_2)
+			deselectButton(Elem.Button.PLAYERS_3)
+			deselectButton(Elem.Button.PLAYERS_4)
+			deselectButton(Elem.Button.PLAYERS_8)
+			deselectButton(Elem.Button.PLAYERS_16)
+			deselectButton(Elem.Button.ANY_PLAYERS)
 
 			switch (players) {
-				default: selectButton(PLAYERS_BUTTON_RANDOM)
+				default: selectButton(Elem.Button.ANY_PLAYERS)
 				break
 				case 2:
-				selectButton(PLAYERS_BUTTON_2)
+				selectButton(Elem.Button.PLAYERS_2)
 				break
 				case 3:
-				selectButton(PLAYERS_BUTTON_3)
+				selectButton(Elem.Button.PLAYERS_3)
 				break
 				case 4:
-				selectButton(PLAYERS_BUTTON_4)
+				selectButton(Elem.Button.PLAYERS_4)
 				break
 				case 8:
-				selectButton(PLAYERS_BUTTON_8)
+				selectButton(Elem.Button.PLAYERS_8)
 				break
 				case 16:
-				selectButton(PLAYERS_BUTTON_16)
+				selectButton(Elem.Button.PLAYERS_16)
 				break
 			}
 		}
 
-		setVisible(START_BUTTON)
+		setVisible(Elem.Button.START)
 		updateStartButton()
 
 	} else {
-		setHidden(USERNAME_TEXT)
-		setHidden(USERNAME_INPUT)
-		setHidden(ID_TEXT)
-		setHidden(ID_INPUT)
+		setHidden(Elem.Text.USERNAME)
+		setHidden(Elem.Input.USERNAME)
+		setHidden(Elem.Text.ID)
+		setHidden(Elem.Input.ID)
 
-		setHidden(PLAYER_COUNT_TEXT)
-		setHidden(PLAYERS_BUTTON_2)
-		setHidden(PLAYERS_BUTTON_3)
-		setHidden(PLAYERS_BUTTON_4)
-		setHidden(PLAYERS_BUTTON_8)
-		setHidden(PLAYERS_BUTTON_16)
-		setHidden(PLAYERS_BUTTON_RANDOM)
+		setHidden(Elem.Button.PLAYERS_2)
+		setHidden(Elem.Button.PLAYERS_3)
+		setHidden(Elem.Button.PLAYERS_4)
+		setHidden(Elem.Button.PLAYERS_8)
+		setHidden(Elem.Button.PLAYERS_16)
+		setHidden(Elem.Button.ANY_PLAYERS)
 
-		setHidden(START_BUTTON)
+		setHidden(Elem.Button.START)
 	}
 }
 
@@ -245,7 +243,7 @@ function startButton() {
 			type: Pack.START_BUTTON
 		}
 		socket.ws.send(JSON.stringify(pack))
-		//disableButton(START_BUTTON)
+		//disableButton(Elem.Button.START)
 	} else {
 		if (updateStartButton())
 			sendForm()
@@ -266,37 +264,37 @@ var idGotGood = false
 function updateStartButton() {
 
 	if (formSent) {
-		disableButton(START_BUTTON)
+		disableButton(Elem.Button.START)
 		return false
 	} else if (randomGame || withFriends) {
-		setHidden(USERNAME_CHECK)
-		setHidden(USERNAME_CROSS)
-		setHidden(ID_CHECK)
-		setHidden(ID_CROSS)
+		setHidden(Elem.Image.USERNAME_CHECK)
+		setHidden(Elem.Image.USERNAME_CROSS)
+		setHidden(Elem.Image.ID_CHECK)
+		setHidden(Elem.Image.ID_CROSS)
 
-		let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(USERNAME_INPUT))
+		let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))
 		if (nameCheck) {
-			setVisible(USERNAME_CHECK)
+			setVisible(Elem.Image.USERNAME_CHECK)
 			nameGotGood = true
 		} else if (nameGotGood) {
-			setVisible(USERNAME_CROSS)
+			setVisible(Elem.Image.USERNAME_CROSS)
 		}
 
 		let idRequired = joinGame && withFriends
 		let idCheck
 		if (idRequired) {
-			idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(ID_INPUT))
+			idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))
 			if (idCheck) {
-				setVisible(ID_CHECK)
+				setVisible(Elem.Image.ID_CHECK)
 				idGotGood = true
 			} else if (idGotGood) {
-				setVisible(ID_CROSS)
+				setVisible(Elem.Image.ID_CROSS)
 			}
 		}
 
 		// TODO remove this? double check where it's used
 		if (!serverFail) {
-			setHidden(MESSAGE_TEXT)
+			setHidden(Elem.Text.MESSAGE)
 		}
 
 		// If the Join/Create game and Random/Friend buttons have been selected
@@ -304,7 +302,7 @@ function updateStartButton() {
 		if (nameCheck) {
 			if (!idRequired || idCheck) {
 				if (connected) {
-					enableButton(START_BUTTON)
+					enableButton(Elem.Button.START)
 					return true
 				}
 			} else if (idGotGood) {
@@ -313,18 +311,18 @@ function updateStartButton() {
 		} else if (nameGotGood) {
 			failSendForm('Username must be 3-20 characters, letters and numbers only')
 		}
-		disableButton(START_BUTTON)
+		disableButton(Elem.Button.START)
 		return false
 	}
 }
 
 document.onkeypress = function keyDownTextField(e) {
 	var keyCode = e.keyCode
-	if (isButtonEnabled(START_BUTTON)) {
+	if (isButtonEnabled(Elem.Button.START)) {
 		var txt = String.fromCharCode(e.which)
 
 		if (keyCode == Key.ENTER) {
-			if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(USERNAME_INPUT))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(ID_INPUT))) {
+			if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))) {
 
 			} else if (updateStartButton()) {
 				sendForm()
@@ -350,8 +348,8 @@ document.onkeypress = function keyDownTextField(e) {
 }
 
 function failSendForm(message) {
-	setText(MESSAGE_TEXT, message)
-	setVisible(MESSAGE_TEXT)
+	setText(Elem.Text.MESSAGE, message)
+	setVisible(Elem.Text.MESSAGE)
 	if (formSent) {
 		serverFail = true
 		formSent = false
@@ -361,16 +359,16 @@ function failSendForm(message) {
 }
 
 function sendForm() {
-	setText(MESSAGE_TEXT, 'Joining game...')
-	setVisible(MESSAGE_TEXT)
+	setText(Elem.Text.MESSAGE, 'Joining game...')
+	setVisible(Elem.Text.MESSAGE)
 
 	let sendID = joinGame && withFriends
 
 	var formPacket = {
 		type: Pack.FORM_SEND,
 		host: createGame,
-		user: getInput(USERNAME_INPUT),
-		id: sendID ? getInput(ID_INPUT) : '',
+		user: getInput(Elem.Input.USERNAME),
+		id: sendID ? getInput(Elem.Input.ID) : '',
 		players: players
 	}
 
@@ -380,9 +378,20 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (i in ALL_ELEMS) {
-		//console.log("Hiding " + ALL_ELEMS[i])
-		setHidden(ALL_ELEMS[i])
+	for (i in Elem.Button) {
+		setHidden(Elem.Button[i])
+	}
+	for (i in Elem.Text) {
+		setHidden(Elem.Text[i])
+	}
+	for (i in Elem.List) {
+		setHidden(Elem.List[i])
+	}
+	for (i in Elem.Input) {
+		setHidden(Elem.Input[i])
+	}
+	for (i in Elem.Image) {
+		setHidden(Elem.Image[i])
 	}
 }
 
@@ -410,7 +419,7 @@ function doGuiResize() {
 	scale = Math.max(scale, 0.5)
 
 	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
-	document.getElementById(PING).style.transform = 'scale(' + scale + ')'
+	document.getElementById(Elem.Text.PING).style.transform = 'scale(' + scale + ')'
 }
 
 function hoverButton(elem) {
@@ -423,9 +432,9 @@ function unhoverButton(elem) {
 
 function menuInit() {
 	// Adds the hover behaviours to all buttons
-	for (i in ALL_ELEMS) {
-		var elem = document.getElementById(ALL_ELEMS[i])
-		if (elem.classList.contains('btn')) {
+	for (i in Elem.Button) {
+		var elem = document.getElementById(Elem.Button[i])
+		//if (elem.classList.contains('btn')) {
 			
 			if (mobile) {
 				// Small hack, shows hover colour then unhovers when the user clicks
@@ -445,6 +454,6 @@ function menuInit() {
 					unhoverButton(e.target)
 				}, false);
 			}
-		}
+		//}
 	}
 }

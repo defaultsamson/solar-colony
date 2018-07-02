@@ -5,7 +5,8 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
-const localDebug = true
+const LOCAL_DEBUG = true
+const PORT = 3141
 
 const Pack = {
 	CREATE_SPAWN: 0,
@@ -41,28 +42,28 @@ const COUNTDOWN_INTERVAL = 250 // interval between packets send to client
 const COUNTDOWN_PACKET_SENDS = COUNTDOWN_TIME / COUNTDOWN_INTERVAL
 
 const Colour = {
-	background: 0x2A2C31,
-	dashedLine: 0x484B51,
+	BACKGROUND: 0x2A2C31,
+	DASHED_LINE: 0x484B51,
 
-	dark1: 0x1E2124,
-	dark2: 0x2A2C31,
-	dark3: 0x2F3136,
-	dark4: 0x32343A,
-	dark5: 0x36393E,
-	dark6: 0x484B51,
-	dark7: 0x6C6D70,
-	dark8: 0x7E8084,
-	dark9: 0xA9AAAC,
-	white: 0xFFFFFF,
+	DARK1: 0x1E2124,
+	DARK2: 0x2A2C31,
+	DARK3: 0x2F3136,
+	DARK4: 0x32343A,
+	DARK5: 0x36393E,
+	DARK6: 0x484B51,
+	DARK7: 0x6C6D70,
+	DARK8: 0x7E8084,
+	DARK9: 0xA9AAAC,
+	WHITE: 0xFFFFFF,
 
-	greyText: '#888',
+	GREY_TEXT: '#888',
 
-	red: 0xFF8888,
-	orange: 0xFFBB4A,
-	yellow: 0xFFFF66,
-	green: 0xAAFFAA,
-	blue: 0x7799FF,
-	purple: 0xBB88DD
+	RED: 0xFF8888,
+	ORANGE: 0xFFBB4A,
+	YELLOW: 0xFFFF66,
+	GREEN: 0xAAFFAA,
+	BLUE: 0x7799FF,
+	PURPLE: 0xBB88DD
 }
 
 //   _____                          
@@ -75,7 +76,9 @@ const Colour = {
 const MIN_PLAYERS = 2 // minimum players required to start a game
 
 if (isServer) {
-	global.localDebug = localDebug
+	global.LOCAL_DEBUG = LOCAL_DEBUG
+	global.PORT = PORT
+
 	global.Pack = Pack
 
 	global.COUNTDOWN_TIME = COUNTDOWN_TIME
@@ -116,52 +119,69 @@ const DASH_THICKNESS = 1.4
 const DASH_LENGTH = 25
 
 // The HTML id's of the elements
-const ALL_ELEMS = []
+// const ALL_ELEMS = []
 
 const INPUT_DIV = 'input'
 
-const JOIN_GAME_BUTTON = 'b_join'			;ALL_ELEMS.push(JOIN_GAME_BUTTON)
-const CREATE_GAME_BUTTON = 'b_create'		;ALL_ELEMS.push(CREATE_GAME_BUTTON)
-const RANDOM_GAME_BUTTON = 'b_random'		;ALL_ELEMS.push(RANDOM_GAME_BUTTON)
-const WITH_FRIENDS_BUTTON = 'b_friends'		;ALL_ELEMS.push(WITH_FRIENDS_BUTTON)
-const USERNAME_TEXT = 't_user'				;ALL_ELEMS.push(USERNAME_TEXT)
-const ID_TEXT = 't_id'						;ALL_ELEMS.push(ID_TEXT)
-const PLAYER_COUNT_TEXT = 't_playerCount'	;ALL_ELEMS.push(PLAYER_COUNT_TEXT)
-const PLAYERS_BUTTON_2 = 'b_p2'				;ALL_ELEMS.push(PLAYERS_BUTTON_2)
-const PLAYERS_BUTTON_3 = 'b_p3'				;ALL_ELEMS.push(PLAYERS_BUTTON_3)
-const PLAYERS_BUTTON_4 = 'b_p4'				;ALL_ELEMS.push(PLAYERS_BUTTON_4)
-const PLAYERS_BUTTON_8 = 'b_p8'				;ALL_ELEMS.push(PLAYERS_BUTTON_8)
-const PLAYERS_BUTTON_16 = 'b_p16'			;ALL_ELEMS.push(PLAYERS_BUTTON_16)
-const PLAYERS_BUTTON_RANDOM = 'b_pRnd'		;ALL_ELEMS.push(PLAYERS_BUTTON_RANDOM)
-const START_BUTTON = 'b_start'				;ALL_ELEMS.push(START_BUTTON)
-const QUIT_BUTTON = 'b_quit'				;ALL_ELEMS.push(QUIT_BUTTON)
-const USERNAME_INPUT = 'i_user'				;ALL_ELEMS.push(USERNAME_INPUT)
-const ID_INPUT = 'i_id'						;ALL_ELEMS.push(ID_INPUT)
-const USERNAME_CHECK = 'p_userG'			;ALL_ELEMS.push(USERNAME_CHECK)
-const USERNAME_CROSS = 'p_userB'			;ALL_ELEMS.push(USERNAME_CROSS)
-const ID_CHECK = 'p_idG'					;ALL_ELEMS.push(ID_CHECK)
-const ID_CROSS = 'p_idB'					;ALL_ELEMS.push(ID_CROSS)
+const Elem = {
+	Button: {
+		JOIN: 'b_join',
+		CREATE: 'b_create',
+		RANDOM: 'b_random',
+		WITH_FRIENDS: 'b_friends',
 
-const CONNECTION_TEXT = 't_connecting'		;ALL_ELEMS.push(CONNECTION_TEXT)
-const MESSAGE_TEXT = 't_message'			;ALL_ELEMS.push(MESSAGE_TEXT)
+		PLAYERS_2: 'b_p2',
+		PLAYERS_3: 'b_p3',
+		PLAYERS_4: 'b_p4',
+		PLAYERS_8: 'b_p8',
+		PLAYERS_16: 'b_p16',
+		ANY_PLAYERS: 'b_pRnd',
 
-const TEAM_RED = 'b_team_red'				;ALL_ELEMS.push(TEAM_RED)
-const TEAM_ORANGE = 'b_team_orange'			;ALL_ELEMS.push(TEAM_ORANGE)
-const TEAM_YELLOW = 'b_team_yellow'			;ALL_ELEMS.push(TEAM_YELLOW)
-const TEAM_GREEN = 'b_team_green'			;ALL_ELEMS.push(TEAM_GREEN)
-const TEAM_BLUE = 'b_team_blue'				;ALL_ELEMS.push(TEAM_BLUE)
-const TEAM_PURPLE = 'b_team_purple'			;ALL_ELEMS.push(TEAM_PURPLE)
+		START: 'b_start',
+		QUIT: 'b_quit',
 
-const TEAM_LIST_RED = 'l_team_red'			;ALL_ELEMS.push(TEAM_LIST_RED)
-const TEAM_LIST_ORANGE = 'l_team_orange'	;ALL_ELEMS.push(TEAM_LIST_ORANGE)
-const TEAM_LIST_YELLOW = 'l_team_yellow'	;ALL_ELEMS.push(TEAM_LIST_YELLOW)
-const TEAM_LIST_GREEN = 'l_team_green'		;ALL_ELEMS.push(TEAM_LIST_GREEN)
-const TEAM_LIST_BLUE = 'l_team_blue'		;ALL_ELEMS.push(TEAM_LIST_BLUE)
-const TEAM_LIST_PURPLE = 'l_team_purple'	;ALL_ELEMS.push(TEAM_LIST_PURPLE)
+		TEAM_RED: 'b_team_red',
+		TEAM_ORANGE: 'b_team_orange',
+		TEAM_YELLOW: 'b_team_yellow',
+		TEAM_GREEN: 'b_team_green',
+		TEAM_BLUE: 'b_team_blue',
+		TEAM_PURPLE: 'b_team_purple'
+	},
 
-const ID_DISPLAY = 't_id_display'			;ALL_ELEMS.push(ID_DISPLAY) // Displays on team selection
-const PING = 't_ping' 						;ALL_ELEMS.push(PING)
-const PLAYER_COUNT = 't_players' 			;ALL_ELEMS.push(PLAYER_COUNT)
+	Text: {
+		ID_DISPLAY: 't_id_display', // Displays on team selection
+		PING: 't_ping',
+		PLAYER_COUNT: 't_players',
+
+		USERNAME: 't_user',
+		ID: 't_id',
+
+		CONNECTION_MESSAGE: 't_connecting',
+		MESSAGE: 't_message'
+	},
+
+	List: {
+		TEAM_RED: 'l_team_red',
+		TEAM_ORANGE: 'l_team_orange',
+		TEAM_YELLOW: 'l_team_yellow',
+		TEAM_GREEN: 'l_team_green',
+		TEAM_BLUE: 'l_team_blue',
+		TEAM_PURPLE: 'l_team_purple'
+
+	},
+
+	Input: {
+		USERNAME: 'i_user',
+		ID: 'i_id'
+	},
+
+	Image: {
+		USERNAME_CHECK: 'p_userG',
+		USERNAME_CROSS: 'p_userB',
+		ID_CHECK: 'p_idG',
+		ID_CROSS: 'p_idB'
+	}
+}
 
 const Key = {
 	BACKSPACE: 8,
@@ -264,100 +284,102 @@ const Key = {
 	SINGLE_QUOTE: 222
 }
 
-const sunParticle = {
-	alpha: {
-		start: 0.2,
-		end: 0
+const Particle = {
+	Infantry: {
+		alpha: {
+			start: 1,
+			end: 0
+		},
+		scale: {
+			start: 2,
+			end: 1,
+			minimumScaleMultiplier: 1
+		},
+		color: {
+			start: 'ffffff',
+			end: 'f0ffff'
+		},
+		speed: {
+			start: 195,
+			end: 2,
+			minimumSpeedMultiplier: 1
+		},
+		acceleration: {
+			x: 0,
+			y: 0
+		},
+		maxSpeed: 0,
+		startRotation: {
+			min: 0,
+			max: 360
+		},
+		noRotation: true,
+		rotationSpeed: {
+			min: 0,
+			max: 0
+		},
+		lifetime: {
+			min: 1,
+			max: 1
+		},
+		blendMode: 'normal',
+		frequency: 0.5,
+		emitterLifetime: -1,
+		maxParticles: 1,
+		pos: {
+			x: 0,
+			y: 0
+		},
+		addAtBack: false,
+		spawnType: 'point'
 	},
-	scale: {
-		start: 1,
-		end: 1,
-		minimumScaleMultiplier: 1
-	},
-	color: {
-		start: 'ffffff',
-		end: 'f0ffff'
-	},
-	speed: {
-		start: 20,
-		end: 0,
-		minimumSpeedMultiplier: 0.2
-	},
-	acceleration: {
-		x: 1,
-		y: 1
-	},
-	maxSpeed: 0,
-	startRotation: {
-		min: 0,
-		max: 360
-	},
-	noRotation: true,
-	rotationSpeed: {
-		min: 0,
-		max: 0
-	},
-	lifetime: {
-		min: 1,
-		max: 1
-	},
-	blendMode: 'normal',
-	frequency: 0.03333,
-	emitterLifetime: -1,
-	maxParticles: 32,
-	pos: {
-		x: 0,
-		y: 0
-	},
-	addAtBack: false,
-	spawnType: 'point'
-}
 
-const infantryParticle = {
-	alpha: {
-		start: 1,
-		end: 0
-	},
-	scale: {
-		start: 2,
-		end: 1,
-		minimumScaleMultiplier: 1
-	},
-	color: {
-		start: 'ffffff',
-		end: 'f0ffff'
-	},
-	speed: {
-		start: 195,
-		end: 2,
-		minimumSpeedMultiplier: 1
-	},
-	acceleration: {
-		x: 0,
-		y: 0
-	},
-	maxSpeed: 0,
-	startRotation: {
-		min: 0,
-		max: 360
-	},
-	noRotation: true,
-	rotationSpeed: {
-		min: 0,
-		max: 0
-	},
-	lifetime: {
-		min: 1,
-		max: 1
-	},
-	blendMode: 'normal',
-	frequency: 0.5,
-	emitterLifetime: -1,
-	maxParticles: 1,
-	pos: {
-		x: 0,
-		y: 0
-	},
-	addAtBack: false,
-	spawnType: 'point'
+	Sun: {
+		alpha: {
+			start: 0.2,
+			end: 0
+		},
+		scale: {
+			start: 1,
+			end: 1,
+			minimumScaleMultiplier: 1
+		},
+		color: {
+			start: 'ffffff',
+			end: 'f0ffff'
+		},
+		speed: {
+			start: 20,
+			end: 0,
+			minimumSpeedMultiplier: 0.2
+		},
+		acceleration: {
+			x: 1,
+			y: 1
+		},
+		maxSpeed: 0,
+		startRotation: {
+			min: 0,
+			max: 360
+		},
+		noRotation: true,
+		rotationSpeed: {
+			min: 0,
+			max: 0
+		},
+		lifetime: {
+			min: 1,
+			max: 1
+		},
+		blendMode: 'normal',
+		frequency: 0.03333,
+		emitterLifetime: -1,
+		maxParticles: 32,
+		pos: {
+			x: 0,
+			y: 0
+		},
+		addAtBack: false,
+		spawnType: 'point'
+	}
 }

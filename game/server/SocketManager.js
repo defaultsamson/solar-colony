@@ -1,5 +1,3 @@
-const port = 3141
-
 const WebSocket = require('ws');
 const express = require('express')
 const https = require('https')
@@ -14,9 +12,9 @@ class SocketManager extends Object {
 	}
 
 	connect() {
-		if (localDebug) {
+		if (LOCAL_DEBUG) {
 			this.wss = new WebSocket.Server({
-				port: port
+				port: PORT
 			})
 		} else {
 			// This line is from the Node.js HTTPS documentation.
@@ -29,7 +27,7 @@ class SocketManager extends Object {
 			var app = express()
 
 			// Create an HTTPS service 
-			var httpsServer = https.createServer(options, app).listen(port)
+			var httpsServer = https.createServer(options, app).listen(PORT)
 
 			this.wss = new WebSocket.Server({
 				server: httpsServer

@@ -23,7 +23,7 @@ game.view.style.position = 'absolute'
 game.view.style.display = 'block'
 document.body.appendChild(game.view)
 game.renderer.autoResize = true
-game.renderer.backgroundColor = Colour.background
+game.renderer.backgroundColor = Colour.BACKGROUND
 document.addEventListener('contextmenu', event => event.preventDefault())
 
 // Viewport options. Not very important because it can vary (see resize() )
@@ -101,22 +101,22 @@ function onLoad(loader, res) {
 	var style = {
 		fontFamily: 'Verdana',
 		fontSize: 28,
-		fill: Colour.white,
-		disabledFill: Colour.greyText
+		fill: Colour.WHITE,
+		disabledFill: Colour.GREY_TEXT
 	}
 
 	var smallStyle = {
 		fontFamily: 'Verdana',
 		fontSize: 18,
-		fill: Colour.white,
-		disabledFill: Colour.greyText
+		fill: Colour.WHITE,
+		disabledFill: Colour.GREY_TEXT
 	}
 
 	var largeStyle = {
 		fontFamily: 'Verdana',
 		fontSize: 48,
-		fill: Colour.white,
-		disabledFill: Colour.greyText
+		fill: Colour.WHITE,
+		disabledFill: Colour.GREY_TEXT
 	}
 
 	hud = game.stage.addChild(new Hud())
@@ -502,7 +502,7 @@ function parse(type, pack) {
 		
 		case Pack.PING_SET:
 		ping = pack.ping
-		setText(PING, 'Ping: ' + ping + 'ms')
+		setText(Elem.Text.PING, 'Ping: ' + ping + 'ms')
 		break
 
 		case Pack.UPDATE_PIXELS: // update pixel count
@@ -529,27 +529,27 @@ function parse(type, pack) {
 		teams = []
 		myTeam = null
 
-		setVisible(START_BUTTON)
-		setVisible(QUIT_BUTTON)
+		setVisible(Elem.Button.START)
+		setVisible(Elem.Button.QUIT)
 
-		setVisible(ID_DISPLAY)
-		setText(ID_DISPLAY, 'Game ID: ' + gameID)
+		setVisible(Elem.Text.ID_DISPLAY)
+		setText(Elem.Text.ID_DISPLAY, 'Game ID: ' + gameID)
 
-		setVisible(TEAM_RED)
-		setVisible(TEAM_ORANGE)
-		setVisible(TEAM_YELLOW)
-		setVisible(TEAM_GREEN)
-		setVisible(TEAM_BLUE)
-		setVisible(TEAM_PURPLE)
+		setVisible(Elem.Button.TEAM_RED)
+		setVisible(Elem.Button.TEAM_ORANGE)
+		setVisible(Elem.Button.TEAM_YELLOW)
+		setVisible(Elem.Button.TEAM_GREEN)
+		setVisible(Elem.Button.TEAM_BLUE)
+		setVisible(Elem.Button.TEAM_PURPLE)
 
-		setVisible(TEAM_LIST_RED)
-		setVisible(TEAM_LIST_ORANGE)
-		setVisible(TEAM_LIST_YELLOW)
-		setVisible(TEAM_LIST_GREEN)
-		setVisible(TEAM_LIST_BLUE)
-		setVisible(TEAM_LIST_PURPLE)
+		setVisible(Elem.List.TEAM_RED)
+		setVisible(Elem.List.TEAM_ORANGE)
+		setVisible(Elem.List.TEAM_YELLOW)
+		setVisible(Elem.List.TEAM_GREEN)
+		setVisible(Elem.List.TEAM_BLUE)
+		setVisible(Elem.List.TEAM_PURPLE)
 
-		setVisible(PING)
+		setVisible(Elem.Text.PING)
 		break
 
 		case Pack.CREATE_SYSTEM:
@@ -599,7 +599,7 @@ function parse(type, pack) {
 		case Pack.SHOW_SYSTEM:
 		viewport.addChild(system)
 		hideMenu()
-		setVisible(PING)
+		setVisible(Elem.Text.PING)
 		pixelText.visible = true
 		shipsText.visible = true
 
@@ -646,25 +646,22 @@ function parse(type, pack) {
 
 		case Pack.UPDATE_TEAMS:
 		// Clear the GUI
-		document.getElementById(TEAM_LIST_RED).innerHTML = "";
-		document.getElementById(TEAM_LIST_ORANGE).innerHTML = "";
-		document.getElementById(TEAM_LIST_YELLOW).innerHTML = "";
-		document.getElementById(TEAM_LIST_GREEN).innerHTML = "";
-		document.getElementById(TEAM_LIST_BLUE).innerHTML = "";
-		document.getElementById(TEAM_LIST_PURPLE).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_RED).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_GREEN).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_BLUE).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = "";
 
 		for (var i in teams) {
 			teams[i].players = []
 		}
-
-		var playerCount = 0
 
 		for (var i in pack.teams) {
 			// Team Object and teamID
 			var team = pack.teams[i]
 			var teamID = team.id
 			for (var j in team.players) {
-				playerCount++
 				// player name
 				var name = team.players[j]
 
@@ -676,22 +673,22 @@ function parse(type, pack) {
 				// Chooses a list to add the player to based on ID
 				switch (teamID) {
 					case 0:
-					list = document.getElementById(TEAM_LIST_RED)
+					list = document.getElementById(Elem.List.TEAM_RED)
 					break
 					case 1:
-					list = document.getElementById(TEAM_LIST_ORANGE)
+					list = document.getElementById(Elem.List.TEAM_ORANGE)
 					break
 					case 2:
-					list = document.getElementById(TEAM_LIST_YELLOW)
+					list = document.getElementById(Elem.List.TEAM_YELLOW)
 					break
 					case 3:
-					list = document.getElementById(TEAM_LIST_GREEN)
+					list = document.getElementById(Elem.List.TEAM_GREEN)
 					break
 					case 4:
-					list = document.getElementById(TEAM_LIST_BLUE)
+					list = document.getElementById(Elem.List.TEAM_BLUE)
 					break
 					case 5:
-					list = document.getElementById(TEAM_LIST_PURPLE)
+					list = document.getElementById(Elem.List.TEAM_PURPLE)
 					break
 				}
 
@@ -702,15 +699,15 @@ function parse(type, pack) {
 			}
 		}
 
-		setVisible(PLAYER_COUNT)
-		setText(PLAYER_COUNT, 'Players: (' + playerCount + '/' + pack.maxPlayers + ')')
+		setVisible(Elem.Text.PLAYER_COUNT)
+		setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
 
 		break
 
 		case Pack.UPDATE_MESSAGE:
-		enableButton(START_BUTTON, pack.startEnabled)
-		setVisible(MESSAGE_TEXT)
-		setText(MESSAGE_TEXT, pack.message)
+		enableButton(Elem.Button.START, pack.startEnabled)
+		setVisible(Elem.Text.MESSAGE)
+		setText(Elem.Text.MESSAGE, pack.message)
 		myTeam = getTeam(pack.id)
 
 		break

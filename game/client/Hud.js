@@ -7,9 +7,9 @@ class Hud extends PIXI.Container {
 
 	updateText() {
 		// If the number of pixels has been updated
-		buy1ShipText.tint = myTeam.pixels < 10 ? Colour.greyText : Colour.white
-		buy10ShipText.tint = myTeam.pixels < 90 ? Colour.greyText : Colour.white
-		buy100ShipText.tint = myTeam.pixels < 800 ? Colour.greyText : Colour.white
+		buy1ShipText.tint = myTeam.pixels < 10 ? Colour.GREY_TEXT : Colour.WHITE
+		buy10ShipText.tint = myTeam.pixels < 90 ? Colour.GREY_TEXT : Colour.WHITE
+		buy100ShipText.tint = myTeam.pixels < 800 ? Colour.GREY_TEXT : Colour.WHITE
 
 		if (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) {
 			buySpawnText.text = 'MAX SPAWNS'
@@ -17,9 +17,9 @@ class Hud extends PIXI.Container {
 			buySpawnText.text = '1 Spawn (1000 pixels)'
 		}
 
-		buySpawnText.tint = myTeam.pixels < 1000 || (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) ? Colour.greyText : Colour.white
+		buySpawnText.tint = myTeam.pixels < 1000 || (focusPlanet && focusPlanet.spawnCount() >= maxSpawns) ? Colour.GREY_TEXT : Colour.WHITE
 
-		sendShipText.tint = myTeam.shipCount < 100 ? Colour.greyText : Colour.white
+		sendShipText.tint = myTeam.shipCount < 100 ? Colour.GREY_TEXT : Colour.WHITE
 
 		hud.resize()
 	}

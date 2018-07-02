@@ -3,7 +3,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 		super()
 
 		if (!isServer) {
-			this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, sunParticle)
+			this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, Particle.Sun)
 			this.sun.emit = true
 		}
 

@@ -246,7 +246,7 @@ function setHidden(elemID) {
 function disableButton(elemID) {
 	var elem = document.getElementById(elemID)
 	deselectButton(elemID)
-	elem.style.color = Colour.greyText
+	elem.style.color = Colour.GREY_TEXT
 	elem.style.cursor = 'default'
 	elem.onmouseover = function () {
 		this.style.backgroundColor = 'transparent'

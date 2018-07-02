@@ -17,12 +17,12 @@ class Game extends Object {
 		this.players = []
 		this.teams = []
 
-		this.redTeam = this.addTeam(new Team(Colour.red, 0))
-		this.orangeTeam = this.addTeam(new Team(Colour.orange, 1))
-		this.yellowTeam = this.addTeam(new Team(Colour.yellow, 2))
-		this.greenTeam = this.addTeam(new Team(Colour.green, 3))
-		this.blueTeam = this.addTeam(new Team(Colour.blue, 4))
-		this.purpleTeam = this.addTeam(new Team(Colour.purple, 5))
+		this.redTeam = this.addTeam(new Team(Colour.RED, 0))
+		this.orangeTeam = this.addTeam(new Team(Colour.ORANGE, 1))
+		this.yellowTeam = this.addTeam(new Team(Colour.YELLOW, 2))
+		this.greenTeam = this.addTeam(new Team(Colour.GREEN, 3))
+		this.blueTeam = this.addTeam(new Team(Colour.BLUE, 4))
+		this.purpleTeam = this.addTeam(new Team(Colour.PURPLE, 5))
 
 		this.system = null
 	}
@@ -138,7 +138,8 @@ class Game extends Object {
 
 		var pack = {
 			type: Pack.UPDATE_TEAMS,
-			maxPlayers: this.maxPlayers
+			maxPlayers: this.maxPlayers,
+			playerCount: this.players.length
 		}
 
 		pack.teams = []
