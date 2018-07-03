@@ -268,6 +268,7 @@ viewport.on('pinch-end', function() {
 })
 viewport.on('tap', function (e) {
 	if (tapHack == 0) {
+		handleClick(e)
 	} else {
 		tapHack -= 1
 	}
