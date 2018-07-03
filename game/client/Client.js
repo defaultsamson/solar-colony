@@ -261,7 +261,17 @@ viewport.on('drag-start', function (e) {
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
 viewport.on('click', handleClick)
-viewport.on('tap', handleClick)
+var tapHack = 0
+viewport.on('pinch-end', function() {
+	tapHack = 2
+	console.log("pinch-end")
+})
+viewport.on('tap', function (e) {
+	if (tapHack == 0) {
+	} else {
+		tapHack -= 1
+	}
+})
 
 function handleClick(e) {
 	if (!dragging) {
