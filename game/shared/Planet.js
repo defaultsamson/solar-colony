@@ -24,14 +24,14 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
 			// Selection ring
 			var ring = new PIXI.Graphics()
-			ring.lineStyle(dashThickness * 46, Colour.DARK8)
+			ring.lineStyle(DASH_THICKNESS * 46, Colour.DARK8)
 			ring.arc(this.radius, this.radius, this.radius * 3, 0, 7)
 			ring.visible = false
 			this.outline = this.addChild(ring)
 
 			// Ghost selection ring
 			var gring = new PIXI.Graphics()
-			gring.lineStyle(scale * dashThickness * 46, Colour.DARK8)
+			gring.lineStyle(scale * DASH_THICKNESS * 46, Colour.DARK8)
 			gring.arc(scale * this.radius, scale * this.radius, scale * this.radius * 3, 0, 7)
 			gring.visible = false
 
@@ -51,7 +51,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		if (!isServer) {
 			// Ghosting ring
 			var ghost = new PIXI.Graphics()
-			ghost.lineStyle(dashThickness * 2, Colour.DARK8)
+			ghost.lineStyle(DASH_THICKNESS * 2, Colour.DARK8)
 			ghost.arc(this.radius, this.radius, this.radius, 0, 7)
 			ghost.visible = false
 			ghost.pivot.set(this.radius, this.radius)

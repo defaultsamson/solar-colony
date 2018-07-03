@@ -532,8 +532,9 @@ function parse(type, pack) {
 		setVisible(Elem.Button.START)
 		setVisible(Elem.Button.QUIT)
 
-		setVisible(Elem.Text.ID_DISPLAY)
-		setText(Elem.Text.ID_DISPLAY, 'Game ID: ' + gameID)
+		setVisible(Elem.Text.ID_DISPLAY1)
+		setVisible(Elem.Text.ID_DISPLAY2)
+		setText(Elem.Text.ID_DISPLAY2, gameID)
 
 		setVisible(Elem.Button.TEAM_RED)
 		setVisible(Elem.Button.TEAM_ORANGE)
@@ -699,17 +700,19 @@ function parse(type, pack) {
 			}
 		}
 
-		setVisible(Elem.Text.PLAYER_COUNT)
-		setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
-
 		break
 
 		case Pack.UPDATE_MESSAGE:
 		enableButton(Elem.Button.START, pack.startEnabled)
+
 		setVisible(Elem.Text.MESSAGE)
 		setText(Elem.Text.MESSAGE, pack.message)
-		myTeam = getTeam(pack.id)
 
+		setVisible(Elem.Text.PLAYER_COUNT)
+		setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
+		
+		myTeam = getTeam(pack.team)
+		
 		break
 	}
 

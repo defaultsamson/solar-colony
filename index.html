@@ -14,6 +14,11 @@
 		margin: 0;
 		color: white;
 		font-family: Verdana, Geneva, sans-serif;
+
+		-webkit-user-select: none; /* Safari */        
+		-moz-user-select: none; /* Firefox */
+		-ms-user-select: none; /* IE10+/Edge */
+		user-select: none; /* Standard */
 	}
 
 	.tny {
@@ -33,18 +38,17 @@
 	}
 
 	.btn {
-		-webkit-touch-callout:none;
-		-webkit-user-select:none;
-		-khtml-user-select:none;
-		-moz-user-select:none;
-		-ms-user-select:none;
-		user-select:none;
 		-webkit-tap-highlight-color:rgba(0,0,0,0); 
 
 		padding: 10px;
 		cursor: pointer;
 
 		touch-action: manipulation;
+		pointer-events: auto;
+	}
+
+	input {
+		pointer-events: auto;
 	}
 
 	.userSymbol {
@@ -75,6 +79,8 @@
 		transform: translate(-50%, -50%);
 		transform-origin: center center;
 		visibility: hidden;
+		/** lets div be click-through-able */
+		pointer-events: none;
 	}
 	
 	#b_join {
@@ -122,11 +128,25 @@
 		padding-top: 10px;
 	}
 
-	/*displays in the team selection*/
-	#t_id_display {
+	/* id_display displays in the team selection*/
+	#t_id_display1 {
 		top: 15%;
-		text-align: center;
-		width: 100%;
+		text-align: left;
+		width: 200px;
+		left: 27%;
+	}
+
+	#t_id_display2 {
+		top: 15%;
+		text-align: left;
+		width: 200px;
+		left: 53%;
+
+		pointer-events: auto;
+		-webkit-user-select: auto; /* Safari */        
+		-moz-user-select: auto; /* Firefox */
+		-ms-user-select: auto; /* IE10+/Edge */
+		user-select: auto; /* Standard */
 	}
 
 	#t_playerCount {
@@ -361,7 +381,8 @@
 
 		<p id='b_quit' class='btn txt sml' onmousedown='quitButton()'>Quit</p>
 
-		<p id='t_id_display' class='txt med'>Game ID: DEF4LT</p>
+		<p id='t_id_display1' class='txt med'>Game ID:</p>
+		<p id='t_id_display2' class='txt med'>DEF4LT</p>
 
 		<p id='b_team_red' class='btn txt sml' onmousedown='joinTeam(0)'>Red</p>
 		<p id='b_team_orange' class='btn txt sml' onmousedown='joinTeam(1)'>Orange</p>

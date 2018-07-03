@@ -137,9 +137,7 @@ class Game extends Object {
 		var socks = exists(sock) ? [sock] : this.players
 
 		var pack = {
-			type: Pack.UPDATE_TEAMS,
-			maxPlayers: this.maxPlayers,
-			playerCount: this.players.length
+			type: Pack.UPDATE_TEAMS
 		}
 
 		pack.teams = []
@@ -178,7 +176,9 @@ class Game extends Object {
 		}
 
 		var pack = {
-			type: Pack.UPDATE_MESSAGE
+			type: Pack.UPDATE_MESSAGE,
+			maxPlayers: this.maxPlayers,
+			playerCount: this.players.length
 		}
 
 		// Customizes start text and button text

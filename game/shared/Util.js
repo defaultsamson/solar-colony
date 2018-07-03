@@ -11,9 +11,8 @@ function distSqr(x1, y1, x2, y2) {
 	return (x * x) + (y * y)
 }
 
-// Tells if a value n exists
-function exists(n) {
-	return typeof n !== 'undefined' && n !== null
+function exists(a) {
+	return a !== undefined && a !== null;
 }
 
 // Tells if the value x is between or equal to y and z within the error margin (error should be positive)

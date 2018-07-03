@@ -5,7 +5,7 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
-const LOCAL_DEBUG = true
+const LOCAL_DEBUG = false
 const PORT = 3141
 
 const Pack = {
@@ -149,7 +149,8 @@ const Elem = {
 	},
 
 	Text: {
-		ID_DISPLAY: 't_id_display', // Displays on team selection
+		ID_DISPLAY1: 't_id_display1', // Displays on team selection
+		ID_DISPLAY2: 't_id_display2',
 		PING: 't_ping',
 		PLAYER_COUNT: 't_players',
 
