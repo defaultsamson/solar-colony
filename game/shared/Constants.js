@@ -152,10 +152,11 @@ const Elem = {
 		ID_DISPLAY1: 't_id_display1', // Displays on team selection
 		ID_DISPLAY2: 't_id_display2',
 		PING: 't_ping',
-		PLAYER_COUNT: 't_players',
+		PLAYER_COUNT: 't_players_display',
 
 		USERNAME: 't_user',
 		ID: 't_id',
+		PLAYERS: 't_players',
 
 		CONNECTION_MESSAGE: 't_connecting',
 		MESSAGE: 't_message'

@@ -128,12 +128,22 @@
 		padding-top: 10px;
 	}
 
+	#t_players {
+		top: 60%;
+		right: calc(50% + 5px);
+		text-align: right;
+		/* padding-right aligns the colon with above button text */
+		padding-right: 6px;
+		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
+		padding-top: 10px;
+	}
+
 	/* id_display displays in the team selection*/
 	#t_id_display1 {
 		top: 15%;
 		text-align: left;
 		width: 200px;
-		left: 27%;
+		left: 25%;
 	}
 
 	#t_id_display2 {
@@ -147,16 +157,6 @@
 		-moz-user-select: auto; /* Firefox */
 		-ms-user-select: auto; /* IE10+/Edge */
 		user-select: auto; /* Standard */
-	}
-
-	#t_playerCount {
-		top: 60%;
-		right: calc(50% + 5px);
-		text-align: right;
-		/* padding-right aligns the colon with above button text */
-		padding-right: 6px;
-		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
-		padding-top: 10px;
 	}
 
 	#b_p2 {
@@ -306,7 +306,7 @@
 		transform-origin: top left;
 	}
 
-	#t_players {
+	#t_players_display {
 		top: 9%;
 		text-align: center;
 		width: 100%;
@@ -348,11 +348,11 @@
 	<div id="input">
 		<p id='t_connecting' class='txt sml'>Connecting to Server...</p>
 
-		<p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join Game</p>
-		<p id='b_create' class='btn txt med' onmousedown='createButton()'>Create Game</p>
+		<p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join</p>
+		<p id='b_create' class='btn txt med' onmousedown='createButton()'>Create</p>
 
 		<p id='b_random' class='btn txt med' onmousedown='randomButton()'>Random Game</p>
-		<p id='b_friends' class='btn txt med' onmousedown='friendsButton()'>With Friends</p>
+		<p id='b_friends' class='btn txt med' onmousedown='friendsButton()'>Normal Game</p>
 
 		<p id='t_user' class='txt med'>Username:</p>
 		<form action='#' method='get'>
@@ -369,6 +369,8 @@
 
 		<img id='p_idG' alt="acceptable" src='game/assets/check.png' class='idSymbol' />
 		<img id='p_idB' alt="failed" src='game/assets/cross.png' class='idSymbol' />
+
+		<p id='t_players' class='txt med'>Players:</p>
 
 		<p id='b_p2' class='btn txt med' onmousedown='playerCount(2)'>2</p>
 		<p id='b_p3' class='btn txt med' onmousedown='playerCount(3)'>3</p>
@@ -398,7 +400,7 @@
 		<ul id='l_team_blue' class='txt sml'></ul>
 		<ul id='l_team_purple' class='txt sml'></ul>
 
-		<p id='t_players' class='txt sml'>Players: None</p>
+		<p id='t_players_display' class='txt sml'>Players: None</p>
 
 		<p id='t_message' class='txt sml'>This sentence is dynamic!</p>
 	</div>

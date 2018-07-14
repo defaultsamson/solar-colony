@@ -140,6 +140,7 @@ function updateGuiClick() {
 		setVisible(Elem.Text.ID, joinGame && withFriends)
 		setVisible(Elem.Input.ID, joinGame && withFriends)
 
+		setVisible(Elem.Text.PLAYERS, randomGame)
 		setVisible(Elem.Button.PLAYERS_2, randomGame)
 		setVisible(Elem.Button.PLAYERS_3, randomGame)
 		setVisible(Elem.Button.PLAYERS_4, randomGame)

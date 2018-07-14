@@ -266,13 +266,14 @@ viewport.on('pinch-end', function() {
 	tapHack = 2
 	console.log("pinch-end")
 })
+/*
 viewport.on('tap', function (e) {
 	if (tapHack == 0) {
 		handleClick(e)
 	} else {
 		tapHack -= 1
 	}
-})
+})*/
 
 function handleClick(e) {
 	if (!dragging) {
