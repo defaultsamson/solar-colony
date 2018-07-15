@@ -1,5 +1,5 @@
-# space-territory
-Another space game (very different from the first)
+# Solar Colony
+A multiplayer team-based space colonisation game. https://samsonclose.me/space/
 
 ## To Build ./game/client/lib/libraries.js
 
