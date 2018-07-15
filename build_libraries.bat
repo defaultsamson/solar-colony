@@ -1,1 +1,1 @@
-browserify libraries.js -o ./game/client/lib/libraries.js
+browserify libraries.js -o ./game/client/libraries.js

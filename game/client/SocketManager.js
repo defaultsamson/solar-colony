@@ -1,26 +1,25 @@
-let port = 3141
-let ip = localDebug ? 'localhost' : 'samsonclose.me'
+let ip = LOCAL_DEBUG ? 'localhost' : 'samsonclose.me'
 
 class SocketManager extends Object {
-    constructor() {
-        super()
+	constructor() {
+		super()
 
-        this.ws = null
-    }
+		this.ws = null
+	}
 
-    connect(secure) {
-        secure = exists(secure) ? secure : !localDebug
+	connect(secure) {
+		secure = exists(secure) ? secure : !LOCAL_DEBUG
 
-        if (secure) {
-            this.ws = new WebSocket('wss://' + ip + ':' + port)
-        } else {
-            this.ws = new WebSocket('ws://' + ip + ':' + port)
-        }
+		if (secure) {
+			this.ws = new WebSocket('wss://' + ip + ':' + PORT)
+		} else {
+			this.ws = new WebSocket('ws://' + ip + ':' + PORT)
+		}
 
-        return this.ws
-    }
+		return this.ws
+	}
 
-    parse(type, packet) {
+	parse(type, packet) {
 
-    }
+	}
 }
