@@ -9,6 +9,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 
 		this.orbits = []
 		this.planets = []
+		this.sendingShips = []
 
 		// TODO implement game pausing when a player leaves
 		this.paused = true
@@ -39,11 +40,8 @@ class System extends(isServer ? Object : PIXI.Container) {
 					updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
 				}
 
-				// Move into System class
-				for (var i in this.planets) {
-					for (var k in this.planets[i].sendingShips) {
-						this.planets[i].sendingShips[k].update(delta)
-					}
+				for (var i in this.sendingShips) {
+					this.sendingShips[i].update(delta)
 				}
 			}
 		}

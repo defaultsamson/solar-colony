@@ -122,6 +122,7 @@ const DASH_LENGTH = 25
 // const ALL_ELEMS = []
 
 const INPUT_DIV = 'input'
+const TOP_DIV = 'top_display'
 
 const Elem = {
 	Button: {
@@ -151,15 +152,19 @@ const Elem = {
 	Text: {
 		ID_DISPLAY1: 't_id_display1', // Displays on team selection
 		ID_DISPLAY2: 't_id_display2',
-		PING: 't_ping',
 		PLAYER_COUNT: 't_players_display',
+		PING: 't_ping',
+		PIXELS: 't_pixels',
+		SHIPS: 't_ships',
 
 		USERNAME: 't_user',
 		ID: 't_id',
 		PLAYERS: 't_players',
 
 		CONNECTION_MESSAGE: 't_connecting',
-		MESSAGE: 't_message'
+		MESSAGE: 't_message',
+
+		COUNTDOWN: 't_countdown'
 	},
 
 	List: {

@@ -302,8 +302,31 @@
 	#t_ping {
 		top: 6px;
 		left: 6px;
+	}
+
+	#t_pixels {
+		top: 20px;
+		left: 6px;
+	}
+
+	#t_ships {
+		top: 50px;
+		left: 6px;
+	}
+
+	#top_display {
+		/**background: #066;**/
+		position: absolute;
+		width: 200px;
+		height: 200px;
+		padding: 0;
 		text-align: left;
+		left: 0%;
+		top: 0%;
 		transform-origin: top left;
+		visibility: hidden;
+		/** lets div be click-through-able */
+		pointer-events: none;
 	}
 
 	#t_players_display {
@@ -315,6 +338,12 @@
 	#b_quit {
 		top: 81%;
 		left: 63%;
+	}
+
+	#t_countdown {
+		top: 20%;
+		text-align: center;
+		width: 100%;
 	}
 
 </style>
@@ -343,9 +372,15 @@
 
 	<script src='game/client/Client.js'></script>
 
-	<p id='t_ping' class='txt tny'>Ping: 200</p>
+	<div id='top_display'>
+		<p id='t_ping' class='txt tny'>Ping: 200</p>
+		<p id='t_pixels' class='txt med'>Pixels: 0</p>
+		<p id='t_ships' class='txt med'>Ships: 0</p>
+	</div>
 
 	<div id="input">
+		<p id='t_countdown' class='txt big'>Starting Game in NULL</p>
+
 		<p id='t_connecting' class='txt sml'>Connecting to Server...</p>
 
 		<p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join</p>

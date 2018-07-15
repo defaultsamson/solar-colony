@@ -89,6 +89,7 @@ function onLoad(loader, res) {
 
 	hideMenu()
 	setVisible(INPUT_DIV)
+	setVisible(TOP_DIV)
 
 	resources = res
 
@@ -120,12 +121,6 @@ function onLoad(loader, res) {
 	}
 
 	hud = game.stage.addChild(new Hud())
-
-	pixelText = hud.addChild(new TextButton('Pixels: 0', style, 0, 0, 20, 20))
-	shipsText = hud.addChild(new TextButton('Ships: 0', style, 0, 0, 0, 0, pixelText, 0, 1))
-
-	countDownText = hud.addChild(new TextButton('Starting Game in 3', largeStyle, 0.5, 0, 0, 30))
-	countDownText.anchor.set(0.5, 0)
 
 	buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
 	buy10ShipText.anchor.set(1, 0.5)
@@ -471,13 +466,13 @@ function gameLoop() {
 
 		if (myTeam.shipCount != lastShips) {
 			lastShips = myTeam.shipCount
-			shipsText.text = 'Ships: ' + myTeam.shipCount
+			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
 		}
 
 		// TODO this can be done in parse() when the server sends new pixels
 		if (myTeam.pixels != lastPixels) {
 			lastPixels = myTeam.pixels
-			pixelText.text = 'Pixels: ' + myTeam.pixels
+			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
 		}
 
 		var focussed = focusPlanet && focusPlanet.isMyPlanet()
@@ -613,16 +608,16 @@ function parse(type, pack) {
 		viewport.addChild(system)
 		hideMenu()
 		setVisible(Elem.Text.PING)
-		pixelText.visible = true
-		shipsText.visible = true
+		setVisible(Elem.Text.PIXELS)
+		setVisible(Elem.Text.SHIPS)
 
 		// A little hack to get planets to go to their correct positions when the game starts
 		system.play() // This lets us update the planets
 		system.update(0) // this updates them from their default pos
 		system.pause() // This reverts the game state to being paused
 
-		countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
-		countDownText.visible = true
+		setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
+		setVisible(Elem.Text.COUNTDOWN)
 
 		viewport.pausePlugin('drag')
 		viewport.pausePlugin('pinch')
@@ -633,13 +628,13 @@ function parse(type, pack) {
 		case Pack.START_GAME:
 		inTeamSelection = false
 		countDown -= COUNTDOWN_INTERVAL
-		countDownText.text = "Starting Game in " + Math.ceil(countDown / 1000)
+		setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 
 		if (countDown <= 0) {
 			system.play()
 			system.update(ping / 1000) // fast forward based on our ping
 
-			countDownText.visible = false
+			setHidden(Elem.Text.COUNTDOWN)
 
 			viewport.resumePlugin('drag')
 			viewport.resumePlugin('pinch')
@@ -659,12 +654,12 @@ function parse(type, pack) {
 
 		case Pack.UPDATE_TEAMS:
 		// Clear the GUI
-		document.getElementById(Elem.List.TEAM_RED).innerHTML = "";
-		document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = "";
-		document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = "";
-		document.getElementById(Elem.List.TEAM_GREEN).innerHTML = "";
-		document.getElementById(Elem.List.TEAM_BLUE).innerHTML = "";
-		document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = "";
+		document.getElementById(Elem.List.TEAM_RED).innerHTML = '';
+		document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = '';
+		document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = '';
+		document.getElementById(Elem.List.TEAM_GREEN).innerHTML = '';
+		document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
+		document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
 
 		for (var i in teams) {
 			teams[i].players = []

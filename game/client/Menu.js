@@ -420,15 +420,15 @@ function doGuiResize() {
 	scale = Math.max(scale, 0.5)
 
 	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
-	document.getElementById(Elem.Text.PING).style.transform = 'scale(' + scale + ')'
+	document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
 }
 
 function hoverButton(elem) {
-	elem.style.background = "rgba(200, 200, 200, 0.5)"
+	elem.style.background = 'rgba(200, 200, 200, 0.5)'
 }
 
 function unhoverButton(elem) {
-	elem.style.background = "rgba(0, 0, 0, 0)"
+	elem.style.background = 'rgba(0, 0, 0, 0)'
 }
 
 function menuInit() {
