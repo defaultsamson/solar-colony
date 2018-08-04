@@ -3,330 +3,458 @@
 var connectionAttempts = -1
 var connected = false
 
-function isSelected(button) {
-    return button.box.visible
-}
-
 function connect() {
 
-    connectionText.visible = true
+	setVisible(Elem.Text.CONNECTION_MESSAGE)
 
-    var ws = socket.connect()
+	var ws = socket.connect()
 
-    ws.onerror = function (evt) {
-        console.log('The WebSocket experienced an error')
-        console.log(evt.err)
-    }
+	ws.onerror = function (evt) {
+		console.log('The WebSocket experienced an error')
+		console.log(evt)
+	}
 
-    ws.onclose = function (evt) {
-        console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
+	ws.onclose = function (evt) {
+		console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
 
-        if (connected) {
-            gotoTitle()
-        }
+		if (connected) {
+			gotoTitle()
+		}
 
-        connectionAttempts++
-        connected = false
+		connectionAttempts++
+		connected = false
 
-        formSent = false
-        updateStartButton()
+		formSent = false
+		updateStartButton()
 
-        connectionText.visible = true
-        couldntReachText.visible = true
-        couldntReachText.text = 'Couldn\'t establish connection, retrying... [' + connectionAttempts + ']'
+		connect()
+	}
 
-        connect()
-    }
+	ws.onopen = function (evt) {
+		console.log('The WebSocket was opened succesfully!')
 
-    ws.onopen = function (evt) {
-        console.log('The WebSocket was opened succesfully!')
+		connectionAttempts = -1
+		connected = true
+		setHidden(Elem.Text.CONNECTION_MESSAGE)
+		formSent = false
+		updateStartButton()
+	}
 
-        connectionAttempts = -1
-        connected = true
-        connectionText.visible = false
-        couldntReachText.visible = false
-        formSent = false
-        updateStartButton()
-    }
-
-    ws.onmessage = function (evt) {
-        try {
-            // console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
-            var pack = JSON.parse(evt.data)
-            parse(pack.type, pack)
-        } catch (err) {
-            console.log(err)
-        }
-    }
+	ws.onmessage = function (evt) {
+		try {
+			// console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
+			var pack = JSON.parse(evt.data)
+			parse(pack.type, pack)
+		} catch (err) {
+			console.log(err)
+		}
+	}
 }
 
 function gotoTitle() {
-    var connecting = connectionText.visible
-    var connectingError = couldntReachText.visible
 
-    allowMouseClick = true
+	allowMouseClick = true
+	inTeamSelection = false
 
-    if (system) {
-        viewport.removeChild(system)
-        system = null
-    }
+	if (system) {
+		viewport.removeChild(system)
+		system = null
+	}
 
-    hud.hideAll()
-    connectionText.visible = connecting
-    couldntReachText.visible = connectingError
+	hud.hideAll()
 
-    joinGameText.visible = true
-    joinGameText.box.visible = false
-    createGameText.visible = true
-    createGameText.box.visible = false
+	formSent = false
+	shownStart = false
 
-    joinRandomGameText.visible = true
-    joinRandomGameText.box.visible = false
-    joinRandomGameText.setEnabled(false)
-    joinFriendsGameText.visible = true
-    joinFriendsGameText.box.visible = false
-    joinFriendsGameText.setEnabled(false)
+	hideMenu()
+	setVisible(Elem.Text.CONNECTION_MESSAGE, !connected)
 
-    usernameEntry.visible = true
+	updateGuiClick()
+}
 
-    document.getElementById('nameInput').style.visibility = 'visible'
-    document.getElementById('idInput').style.visibility = 'hidden'
-    document.getElementById('gameID').style.visibility = 'hidden'
+var shownStart = false
+var serverFail = false
+var formSent = false
 
-    goText.visible = true
-    updateStartButton()
+var joinGame = false
+var createGame = false
 
-    formSent = false
+var randomGame = false
+var withFriends = false
+
+var username = ''
+var gameID = ''
+var players = 4
+
+function updateGuiClick() {
+	// Decides whether to stop showing the gui or continue
+	var showRest = true
+
+	setVisible(Elem.Button.JOIN)
+	setVisible(Elem.Button.CREATE)
+
+	enableButton(Elem.Button.RANDOM)
+	if (joinGame) {
+		selectButton(Elem.Button.JOIN)
+		deselectButton(Elem.Button.CREATE)
+	} else if (createGame) {
+		deselectButton(Elem.Button.JOIN)
+		selectButton(Elem.Button.CREATE)
+
+		randomGame = false
+		withFriends = true
+		disableButton(Elem.Button.RANDOM)
+
+	} else {
+		deselectButton(Elem.Button.CREATE)
+		deselectButton(Elem.Button.JOIN)
+		showRest = false
+	}
+
+	// Show the rest of the menu?
+	if (showRest) {
+		setVisible(Elem.Button.RANDOM)
+		setVisible(Elem.Button.WITH_FRIENDS)
+	} else {
+		setHidden(Elem.Button.RANDOM)
+		setHidden(Elem.Button.WITH_FRIENDS)
+	}
+
+	if (randomGame) {
+		selectButton(Elem.Button.RANDOM)
+		deselectButton(Elem.Button.WITH_FRIENDS)
+	} else if (withFriends) {
+		deselectButton(Elem.Button.RANDOM)
+		selectButton(Elem.Button.WITH_FRIENDS)
+	} else {
+		deselectButton(Elem.Button.RANDOM)
+		deselectButton(Elem.Button.WITH_FRIENDS)
+		showRest = false
+	}
+
+	// Show the rest of the menu?
+	if (showRest) {
+		setVisible(Elem.Text.USERNAME)
+		setVisible(Elem.Input.USERNAME)
+
+		setVisible(Elem.Text.ID, joinGame && withFriends)
+		setVisible(Elem.Input.ID, joinGame && withFriends)
+
+		setVisible(Elem.Text.PLAYERS, randomGame)
+		setVisible(Elem.Button.PLAYERS_2, randomGame)
+		setVisible(Elem.Button.PLAYERS_3, randomGame)
+		setVisible(Elem.Button.PLAYERS_4, randomGame)
+		setVisible(Elem.Button.PLAYERS_8, randomGame)
+		setVisible(Elem.Button.PLAYERS_16, randomGame)
+		setVisible(Elem.Button.ANY_PLAYERS, randomGame)
+
+		if (randomGame) {
+			deselectButton(Elem.Button.PLAYERS_2)
+			deselectButton(Elem.Button.PLAYERS_3)
+			deselectButton(Elem.Button.PLAYERS_4)
+			deselectButton(Elem.Button.PLAYERS_8)
+			deselectButton(Elem.Button.PLAYERS_16)
+			deselectButton(Elem.Button.ANY_PLAYERS)
+
+			switch (players) {
+				default: selectButton(Elem.Button.ANY_PLAYERS)
+				break
+				case 2:
+				selectButton(Elem.Button.PLAYERS_2)
+				break
+				case 3:
+				selectButton(Elem.Button.PLAYERS_3)
+				break
+				case 4:
+				selectButton(Elem.Button.PLAYERS_4)
+				break
+				case 8:
+				selectButton(Elem.Button.PLAYERS_8)
+				break
+				case 16:
+				selectButton(Elem.Button.PLAYERS_16)
+				break
+			}
+		}
+
+		setVisible(Elem.Button.START)
+		updateStartButton()
+
+	} else {
+		setHidden(Elem.Text.USERNAME)
+		setHidden(Elem.Input.USERNAME)
+		setHidden(Elem.Text.ID)
+		setHidden(Elem.Input.ID)
+
+		setHidden(Elem.Button.PLAYERS_2)
+		setHidden(Elem.Button.PLAYERS_3)
+		setHidden(Elem.Button.PLAYERS_4)
+		setHidden(Elem.Button.PLAYERS_8)
+		setHidden(Elem.Button.PLAYERS_16)
+		setHidden(Elem.Button.ANY_PLAYERS)
+
+		setHidden(Elem.Button.START)
+	}
+}
+
+function joinButton() {
+	joinGame = true
+	createGame = false
+	updateGuiClick()
+}
+
+function createButton() {
+	joinGame = false
+	createGame = true
+	updateGuiClick()
+}
+
+function randomButton() {
+	if (joinGame) {
+		randomGame = true
+		withFriends = false
+		updateGuiClick()
+	}
+}
+
+function friendsButton() {
+	if (joinGame || createGame) {
+		randomGame = false
+		withFriends = true
+		updateGuiClick()
+	}
+}
+
+function playerCount(p) {
+	players = p
+	updateGuiClick()
+}
+
+function joinTeam(i) {
+	var pack = {
+		type: Pack.JOIN_TEAM,
+		team: i
+	}
+	socket.ws.send(JSON.stringify(pack))
+}
+
+function startButton() {
+	if (inTeamSelection) {
+		var pack = {
+			type: Pack.START_BUTTON
+		}
+		socket.ws.send(JSON.stringify(pack))
+		//disableButton(Elem.Button.START)
+	} else {
+		if (updateStartButton())
+			sendForm()
+	}
+}
+
+function quitButton() {
+	gotoTitle()
+	var pack = {
+		type: Pack.QUIT
+	}
+	socket.ws.send(JSON.stringify(pack))
 }
 
 var nameGotGood = false
 var idGotGood = false
 
 function updateStartButton() {
-    document.getElementById('nameCheck').style.visibility = 'hidden'
-    document.getElementById('nameCross').style.visibility = 'hidden'
-    document.getElementById('idCheck').style.visibility = 'hidden'
-    document.getElementById('idCross').style.visibility = 'hidden'
 
-    if (formSent) {
-        goText.setEnabled(false)
-        return false
-    } else {
-        let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)
-        if (nameCheck) {
-            document.getElementById('nameCheck').style.visibility = 'visible'
-            nameGotGood = true
-        } else if (nameGotGood) {
-            document.getElementById('nameCross').style.visibility = 'visible'
-        }
+	if (formSent) {
+		disableButton(Elem.Button.START)
+		return false
+	} else if (randomGame || withFriends) {
+		setHidden(Elem.Image.USERNAME_CHECK)
+		setHidden(Elem.Image.USERNAME_CROSS)
+		setHidden(Elem.Image.ID_CHECK)
+		setHidden(Elem.Image.ID_CROSS)
 
-        let idRequired = isSelected(joinGameText) && isSelected(joinFriendsGameText)
+		let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))
+		if (nameCheck) {
+			setVisible(Elem.Image.USERNAME_CHECK)
+			nameGotGood = true
+		} else if (nameGotGood) {
+			setVisible(Elem.Image.USERNAME_CROSS)
+		}
 
-        let idCheck = /^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)
-        if (idRequired) {
-            if (idCheck) {
-                document.getElementById('idCheck').style.visibility = 'visible'
-                idGotGood = true
-            } else if (idGotGood) {
-                document.getElementById('idCross').style.visibility = 'visible'
-            }
-        }
+		let idRequired = joinGame && withFriends
+		let idCheck
+		if (idRequired) {
+			idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))
+			if (idCheck) {
+				setVisible(Elem.Image.ID_CHECK)
+				idGotGood = true
+			} else if (idGotGood) {
+				setVisible(Elem.Image.ID_CROSS)
+			}
+		}
 
-        var playerCountRequired = isSelected(joinGameText) && isSelected(joinRandomGameText)
-        var playerCountCheck = false
-        if (playerCountRequired) {
-            let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
-            for (var i in playerCounts) {
-                if (isSelected(playerCounts[i])) {
-                    playerCountCheck = true
-                    break
-                }
-            }
-        }
+		// TODO remove this? double check where it's used
+		if (!serverFail) {
+			setHidden(Elem.Text.MESSAGE)
+		}
 
-        if (!serverFail) {
-            sendingFormText.visible = false
-        }
+		// If the Join/Create game and Random/Friend buttons have been selected
 
-        // If the Join/Create game and Random/Friend buttons have been selected
-        if (isSelected(joinGameText) || isSelected(createGameText) && (isSelected(joinRandomGameText) || isSelected(joinFriendsGameText))) {
-            if (nameCheck) {
-                if (!idRequired || idCheck) {
-                    if (!playerCountRequired || playerCountCheck) {
-                        if (connected) {
-                            goText.setEnabled()
-                            return true
-                        }
-                    } else {
-                        failSendForm('Please choose a player count')
-                    }
-                } else if (idGotGood) {
-                    failSendForm('Game ID must be 6 characters, letters and numbers only')
-                }
-            } else if (nameGotGood) {
-                failSendForm('Username must be 3-20 characters, letters and numbers only')
-            }
-        }
-        goText.setEnabled(false)
-        return false
-    }
+		if (nameCheck) {
+			if (!idRequired || idCheck) {
+				if (connected) {
+					enableButton(Elem.Button.START)
+					return true
+				}
+			} else if (idGotGood) {
+				failSendForm('Game ID must be 6 characters, letters and numbers only')
+			}
+		} else if (nameGotGood) {
+			failSendForm('Username must be 3-20 characters, letters and numbers only')
+		}
+		disableButton(Elem.Button.START)
+		return false
+	}
 }
-
 
 document.onkeypress = function keyDownTextField(e) {
-    var keyCode = e.keyCode
-    if (goText.visible) {
-        var txt = String.fromCharCode(e.which)
+	var keyCode = e.keyCode
+	if (isButtonEnabled(Elem.Button.START)) {
+		var txt = String.fromCharCode(e.which)
 
-        if (keyCode == Key.ENTER) {
-            if (!/^([A-Za-z0-9]{3,20})$/.test(document.getElementById('nameInput').value)) {} else if (isSelected(joinGameText) && isSelected(joinFriendsGameText) && !/^([A-Za-z0-9]{6})$/.test(document.getElementById('idInput').value)) {} else if (updateStartButton()) {
-                sendForm()
-                e.preventDefault()
-                return false
-            } else {
-                e.preventDefault()
-                return false
-            }
-        } else if (!/^([A-Za-z0-9])$/.test(txt)) {
-            if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
+		if (keyCode == Key.ENTER) {
+			if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))) {
 
-            } else {
-                // console.log(txt + ' : ' + e.which)
-                e.preventDefault()
-                return false
-            }
-        }
-    } else if (keyCode == Key.ENTER) {
-        e.preventDefault()
-        return false
-    }
+			} else if (updateStartButton()) {
+				sendForm()
+				e.preventDefault()
+				return false
+			} else {
+				e.preventDefault()
+				return false
+			}
+		} else if (!/^([A-Za-z0-9])$/.test(txt)) {
+			if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
+
+			} else {
+				// console.log(txt + ' : ' + e.which)
+				e.preventDefault()
+				return false
+			}
+		}
+	} else if (keyCode == Key.ENTER) {
+		e.preventDefault()
+		return false
+	}
 }
 
-var serverFail = false
-var formSent = false
-
 function failSendForm(message) {
-    sendingFormText.text = message
-    sendingFormText.visible = true
-    if (formSent) {
-        serverFail = true
-        formSent = false
-    } else {
-        serverFail = false
-    }
+	setText(Elem.Text.MESSAGE, message)
+	setVisible(Elem.Text.MESSAGE)
+	if (formSent) {
+		serverFail = true
+		formSent = false
+	} else {
+		serverFail = false
+	}
 }
 
 function sendForm() {
-    sendingFormText.text = 'Please wait while you are connected...'
-    sendingFormText.visible = true
+	setText(Elem.Text.MESSAGE, 'Joining game...')
+	setVisible(Elem.Text.MESSAGE)
 
-    let isHost = isSelected(createGameText)
-    let doID = isSelected(joinFriendsGameText) && !isHost
+	let sendID = joinGame && withFriends
 
-    var players
-    if (isSelected(playerCount2)) {
-        players = 2
-    } else if (isSelected(playerCount3)) {
-        players = 3
-    } else if (isSelected(playerCount4)) {
-        players = 4
-    } else if (isSelected(playerCount5)) {
-        players = 5
-    } else if (isSelected(playerCount8)) {
-        players = 8
-    } else if (isSelected(playerCount10)) {
-        players = 10
-    } else {
-        players = -1 // denotes "any"
-    }
+	var formPacket = {
+		type: Pack.FORM_SEND,
+		host: createGame,
+		user: getInput(Elem.Input.USERNAME),
+		id: sendID ? getInput(Elem.Input.ID) : '',
+		players: players
+	}
 
-    var formPacket = {
-        type: Pack.FORM_SEND,
-        host: isHost,
-        user: document.getElementById('nameInput').value,
-        id: doID ? document.getElementById('idInput').value : '',
-        players: players
-    }
+	socket.ws.send(JSON.stringify(formPacket))
 
-    socket.ws.send(JSON.stringify(formPacket))
-
-    formSent = true
+	formSent = true
 }
 
-function menuSpaghetti(point) {
-    let playerCounts = [playerCount2, playerCount3, playerCount4, playerCount5, playerCount8, playerCount10, playerCountAny]
+function hideMenu() {
+	for (i in Elem.Button) {
+		setHidden(Elem.Button[i])
+	}
+	for (i in Elem.Text) {
+		setHidden(Elem.Text[i])
+	}
+	for (i in Elem.List) {
+		setHidden(Elem.List[i])
+	}
+	for (i in Elem.Input) {
+		setHidden(Elem.Input[i])
+	}
+	for (i in Elem.Image) {
+		setHidden(Elem.Image[i])
+	}
+}
 
-    function resetPlayerCounts() {
-        for (var i in playerCounts) {
-            playerCounts[i].box.visible = false
-        }
-    }
+// Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
+// https://codepen.io/chriscoyier/pen/VvRoWy
+function doGuiResize() {
+	const guiX = 500
+	const guiY = 500
+	const scaleX = window.innerWidth / guiX
+	const scaleY = window.innerHeight / guiY
 
-    function showJoinGame() {
-        var withFriends = isSelected(joinFriendsGameText)
-        var withRandom = isSelected(joinRandomGameText)
+	var scale
+	// viewport is too tall so limit by width
+	if (scaleX < scaleY) {
+		scale = scaleX
 
-        gotoTitle()
+	} else { // limit by height
+		scale = scaleY
+	}
 
-        joinGameText.box.visible = true
-        createGameText.box.visible = false
-        joinFriendsGameText.setEnabled(true)
-        joinFriendsGameText.box.visible = withFriends
-        joinRandomGameText.setEnabled(true)
-        joinRandomGameText.box.visible = withRandom
+	// Scale the desktop version to be smaller
+	if (!mobile) {
+		scale *= 0.75
+	}
+	scale = Math.max(scale, 0.5)
 
-        idEntry.visible = withFriends
-        playerCount.visible = withRandom
-        for (var i in playerCounts) {
-            playerCounts[i].visible = withRandom
-        }
-        document.getElementById('idInput').style.visibility = withFriends ? 'visible' : 'hidden'
+	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
+	document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
+}
 
-    }
+function hoverButton(elem) {
+	elem.style.background = 'rgba(200, 200, 200, 0.5)'
+}
 
-    if (joinGameText.clicked(point)) {
-        showJoinGame()
+function unhoverButton(elem) {
+	elem.style.background = 'rgba(0, 0, 0, 0)'
+}
 
-    } else if (createGameText.clicked(point)) {
-        gotoTitle()
-        joinGameText.box.visible = false
-        createGameText.box.visible = true
-        joinFriendsGameText.setEnabled(true)
-        joinFriendsGameText.box.visible = true
-    } else if (joinRandomGameText.clicked(point)) {
-        joinFriendsGameText.box.visible = false
-        joinRandomGameText.box.visible = true
-        showJoinGame()
-    } else if (joinFriendsGameText.clicked(point)) {
-        joinFriendsGameText.box.visible = true
-        joinRandomGameText.box.visible = false
-        showJoinGame()
-    } else if (playerCount2.clicked(point)) {
-        resetPlayerCounts()
-        playerCount2.box.visible = true
-    } else if (playerCount3.clicked(point)) {
-        resetPlayerCounts()
-        playerCount3.box.visible = true
-    } else if (playerCount4.clicked(point)) {
-        resetPlayerCounts()
-        playerCount4.box.visible = true
-    } else if (playerCount5.clicked(point)) {
-        resetPlayerCounts()
-        playerCount5.box.visible = true
-    } else if (playerCount8.clicked(point)) {
-        resetPlayerCounts()
-        playerCount8.box.visible = true
-    } else if (playerCount10.clicked(point)) {
-        resetPlayerCounts()
-        playerCount10.box.visible = true
-    } else if (playerCountAny.clicked(point)) {
-        resetPlayerCounts()
-        playerCountAny.box.visible = true
-    }
-
-    updateStartButton()
-
-    if (goText.clicked(point)) {
-        sendForm()
-    }
+function menuInit() {
+	// Adds the hover behaviours to all buttons
+	for (i in Elem.Button) {
+		var elem = document.getElementById(Elem.Button[i])
+		//if (elem.classList.contains('btn')) {
+			
+			if (mobile) {
+				// Small hack, shows hover colour then unhovers when the user clicks
+				elem.addEventListener('mousedown', function(e)
+				{
+					hoverButton(e.target)
+					setTimeout(function() {
+						unhoverButton(e.target)
+					}, 100)
+				}, false);
+			} else {
+				// Usual hover behaviour for mouse
+				elem.addEventListener('mouseover', function(e) {
+					hoverButton(e.target)
+				}, false);
+				elem.addEventListener('mouseleave', function(e) {
+					unhoverButton(e.target)
+				}, false);
+			}
+		//}
+	}
 }

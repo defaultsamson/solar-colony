@@ -1,9 +1,9 @@
-# space-territory
-Another space game (very different from the first)
+# Solar Colony
+A multiplayer team-based space colonisation game. https://samsonclose.me/space/
 
 ## To Build ./game/client/lib/libraries.js
 
-This process builds `./libraries.js` to `./game/client/lib/libraries.js` using the tool Browserify
+This process builds `./libraries.js` to `./game/client/libraries.js` using the tool Browserify
 
 ### 1. Setup Browserify
 ```
