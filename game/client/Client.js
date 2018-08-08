@@ -51,21 +51,21 @@ const pinchOptions = {
 }
 
 viewport
-.drag()
-.wheel()
-.pinch(pinchOptions)
-.clampZoom(clampOptions)
-.decelerate()
+	.drag()
+	.wheel()
+	.pinch(pinchOptions)
+	.clampZoom(clampOptions)
+	.decelerate()
 
 window.onload = function() {
 	PIXI.loader
-	.add('sunTexture', 'game/assets/sun.png')
-	.add('planet1', 'game/assets/planet1.png')
-	.add('planet2', 'game/assets/planet2.png')
-	.add('ship', 'game/assets/ship.png')
-	.add('spawn', 'game/assets/spawn.png')
-	.add('infantry', 'game/assets/infantry.png')
-	.load(onLoad)
+		.add('sunTexture', 'game/assets/sun.png')
+		.add('planet1', 'game/assets/planet1.png')
+		.add('planet2', 'game/assets/planet2.png')
+		.add('ship', 'game/assets/ship.png')
+		.add('spawn', 'game/assets/spawn.png')
+		.add('infantry', 'game/assets/infantry.png')
+		.load(onLoad)
 }
 
 //  _____       _ _   
@@ -248,7 +248,7 @@ function updateKeyboard() {
 // Quick hack while dragging error persists:
 // Click event fires after drag
 var dragging = false
-viewport.on('drag-start', function (e) {
+viewport.on('drag-start', function(e) {
 	stopSnap()
 	stopFollow()
 	dragging = true
@@ -384,7 +384,7 @@ function onMouseClick(e) {
 }
 
 // Upon ending of the snap, if it was just snapping to a planet, begin to follow it
-viewport.on('snap-end', function () {
+viewport.on('snap-end', function() {
 	if (snappingToPlanet) {
 		viewport.follow(snappingToPlanet)
 		focusPlanet = snappingToPlanet
@@ -501,226 +501,226 @@ function parse(type, pack) {
 
 	switch (type) {
 		case Pack.PING_PROBE:
-		let pPack = {
-			type: Pack.PING_PROBE,
-		}
-		socket.ws.send(JSON.stringify(pPack))
-		break
-		
+			let pPack = {
+				type: Pack.PING_PROBE,
+			}
+			socket.ws.send(JSON.stringify(pPack))
+			break
+
 		case Pack.PING_SET:
-		ping = pack.ping
-		setText(Elem.Text.PING, 'Ping: ' + ping + 'ms')
-		break
+			ping = pack.ping
+			setText(Elem.Text.PING, 'Ping: ' + ping + 'ms')
+			break
 
 		case Pack.UPDATE_PIXELS: // update pixel count
-		myTeam.pixels = pack.pl
-		break
+			myTeam.pixels = pack.pl
+			break
 
 		case Pack.BUY_SHIPS: // buy ships
-		system.getPlanetByID(pack.pl).createShips(pack.n)
-		break
+			system.getPlanetByID(pack.pl).createShips(pack.n)
+			break
 
 		case Pack.FORM_FAIL:
-		failSendForm(pack.reason)
-		break
+			failSendForm(pack.reason)
+			break
 
 		case Pack.JOIN_GAME:
-		hideMenu()
+			hideMenu()
 
-		countDown = COUNTDOWN_TIME
-		inTeamSelection = true
+			countDown = COUNTDOWN_TIME
+			inTeamSelection = true
 
-		gameID = pack.gameID
-		player = pack.player
+			gameID = pack.gameID
+			player = pack.player
 
-		teams = []
-		myTeam = null
+			teams = []
+			myTeam = null
 
-		setVisible(Elem.Button.START)
-		setVisible(Elem.Button.QUIT)
+			setVisible(Elem.Button.START)
+			setVisible(Elem.Button.QUIT)
 
-		setVisible(Elem.Text.ID_DISPLAY1)
-		setVisible(Elem.Text.ID_DISPLAY2)
-		setText(Elem.Text.ID_DISPLAY2, gameID)
+			setVisible(Elem.Text.ID_DISPLAY1)
+			setVisible(Elem.Text.ID_DISPLAY2)
+			setText(Elem.Text.ID_DISPLAY2, gameID)
 
-		setVisible(Elem.Button.TEAM_RED)
-		setVisible(Elem.Button.TEAM_ORANGE)
-		setVisible(Elem.Button.TEAM_YELLOW)
-		setVisible(Elem.Button.TEAM_GREEN)
-		setVisible(Elem.Button.TEAM_BLUE)
-		setVisible(Elem.Button.TEAM_PURPLE)
+			setVisible(Elem.Button.TEAM_RED)
+			setVisible(Elem.Button.TEAM_ORANGE)
+			setVisible(Elem.Button.TEAM_YELLOW)
+			setVisible(Elem.Button.TEAM_GREEN)
+			setVisible(Elem.Button.TEAM_BLUE)
+			setVisible(Elem.Button.TEAM_PURPLE)
 
-		setVisible(Elem.List.TEAM_RED)
-		setVisible(Elem.List.TEAM_ORANGE)
-		setVisible(Elem.List.TEAM_YELLOW)
-		setVisible(Elem.List.TEAM_GREEN)
-		setVisible(Elem.List.TEAM_BLUE)
-		setVisible(Elem.List.TEAM_PURPLE)
+			setVisible(Elem.List.TEAM_RED)
+			setVisible(Elem.List.TEAM_ORANGE)
+			setVisible(Elem.List.TEAM_YELLOW)
+			setVisible(Elem.List.TEAM_GREEN)
+			setVisible(Elem.List.TEAM_BLUE)
+			setVisible(Elem.List.TEAM_PURPLE)
 
-		setVisible(Elem.Text.PING)
-		break
+			setVisible(Elem.Text.PING)
+			break
 
 		case Pack.CREATE_SYSTEM:
-		system = new System()
-		break
+			system = new System()
+			break
 
 		case Pack.CREATE_ORBIT:
-		var orbit = new Orbit(pack.x, pack.y, pack.radius)
-		orbit.id = pack.id
-		system.addOrbit(orbit)
-		break
+			var orbit = new Orbit(pack.x, pack.y, pack.radius)
+			orbit.id = pack.id
+			system.addOrbit(orbit)
+			break
 
 		case Pack.CREATE_PLANET:
-		var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
-		planet.id = pack.id
-		system.addPlanet(planet)
-		break
+			var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
+			planet.id = pack.id
+			system.addPlanet(planet)
+			break
 
 		case Pack.SET_PLANET_ORBIT:
-		var planet = system.getPlanetByID(pack.planet)
-		var orbit = system.getOrbit(pack.orbit)
-		planet.setOrbit(orbit)
-		break
+			var planet = system.getPlanetByID(pack.planet)
+			var orbit = system.getOrbit(pack.orbit)
+			planet.setOrbit(orbit)
+			break
 
 		case Pack.CREATE_SPAWN:
-		var planet = system.getPlanetByID(pack.planet)
+			var planet = system.getPlanetByID(pack.planet)
 
-		if (pack.force) {
-			planet.createSpawn(true)
-		} else {
-			// 1. subtract the counter that has happened while this packet sent
-			// 2. update the spawn counter by creating a spawn
-			// 3. push the spawn counter forward by the new rate
-			planet.spawnCounter -= planet.spawnRate * ping
-			planet.createSpawn(false)
-			planet.spawnCounter += planet.spawnRate * ping
-		}
+			if (pack.force) {
+				planet.createSpawn(true)
+			} else {
+				// 1. subtract the counter that has happened while this packet sent
+				// 2. update the spawn counter by creating a spawn
+				// 3. push the spawn counter forward by the new rate
+				planet.spawnCounter -= planet.spawnRate * ping
+				planet.createSpawn(false)
+				planet.spawnCounter += planet.spawnRate * ping
+			}
 
-		break
+			break
 
 		case Pack.SET_PLANET_TEAM:
-		var planet = system.getPlanetByID(pack.planet)
-		var team = getTeam(pack.team)
-		planet.setTeam(team)
-		break
+			var planet = system.getPlanetByID(pack.planet)
+			var team = getTeam(pack.team)
+			planet.setTeam(team)
+			break
 
 		case Pack.SHOW_SYSTEM:
-		viewport.addChild(system)
-		hideMenu()
-		setVisible(Elem.Text.PING)
-		setVisible(Elem.Text.PIXELS)
-		setVisible(Elem.Text.SHIPS)
+			viewport.addChild(system)
+			hideMenu()
+			setVisible(Elem.Text.PING)
+			setVisible(Elem.Text.PIXELS)
+			setVisible(Elem.Text.SHIPS)
 
-		// A little hack to get planets to go to their correct positions when the game starts
-		system.play() // This lets us update the planets
-		system.update(0) // this updates them from their default pos
-		system.pause() // This reverts the game state to being paused
+			// A little hack to get planets to go to their correct positions when the game starts
+			system.play() // This lets us update the planets
+			system.update(0) // this updates them from their default pos
+			system.pause() // This reverts the game state to being paused
 
-		setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
-		setVisible(Elem.Text.COUNTDOWN)
+			setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
+			setVisible(Elem.Text.COUNTDOWN)
 
-		viewport.pausePlugin('drag')
-		viewport.pausePlugin('pinch')
-		viewport.pausePlugin('wheel')
-		allowMouseClick = false
-		break
+			viewport.pausePlugin('drag')
+			viewport.pausePlugin('pinch')
+			viewport.pausePlugin('wheel')
+			allowMouseClick = false
+			break
 
 		case Pack.START_GAME:
-		inTeamSelection = false
-		countDown -= COUNTDOWN_INTERVAL
-		setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
+			inTeamSelection = false
+			countDown -= COUNTDOWN_INTERVAL
+			setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 
-		if (countDown <= 0) {
-			system.play()
-			system.update(ping / 1000) // fast forward based on our ping
+			if (countDown <= 0) {
+				system.play()
+				system.update(ping / 1000) // fast forward based on our ping
 
-			setHidden(Elem.Text.COUNTDOWN)
+				setHidden(Elem.Text.COUNTDOWN)
 
-			viewport.resumePlugin('drag')
-			viewport.resumePlugin('pinch')
-			viewport.resumePlugin('wheel')
-			allowMouseClick = true
-		}
-		break
+				viewport.resumePlugin('drag')
+				viewport.resumePlugin('pinch')
+				viewport.resumePlugin('wheel')
+				allowMouseClick = true
+			}
+			break
 
 		case Pack.CREATE_TEAMS:
-		teams = []
-		for (var i in pack.teams) {
-			var id = pack.teams[i].id
-			var colour = pack.teams[i].colour
-			teams.push(new Team(colour, id))
-		}
-		break
+			teams = []
+			for (var i in pack.teams) {
+				var id = pack.teams[i].id
+				var colour = pack.teams[i].colour
+				teams.push(new Team(colour, id))
+			}
+			break
 
 		case Pack.UPDATE_TEAMS:
-		// Clear the GUI
-		document.getElementById(Elem.List.TEAM_RED).innerHTML = '';
-		document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = '';
-		document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = '';
-		document.getElementById(Elem.List.TEAM_GREEN).innerHTML = '';
-		document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
-		document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
+			// Clear the GUI
+			document.getElementById(Elem.List.TEAM_RED).innerHTML = '';
+			document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = '';
+			document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = '';
+			document.getElementById(Elem.List.TEAM_GREEN).innerHTML = '';
+			document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
+			document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
 
-		for (var i in teams) {
-			teams[i].players = []
-		}
-
-		for (var i in pack.teams) {
-			// Team Object and teamID
-			var team = pack.teams[i]
-			var teamID = team.id
-			for (var j in team.players) {
-				// player name
-				var name = team.players[j]
-
-				// Adds new player object to the team object
-				var teamObj = getTeam(teamID)
-				teamObj.addPlayer(new Player(name))
-
-				var list
-				// Chooses a list to add the player to based on ID
-				switch (teamID) {
-					case 0:
-					list = document.getElementById(Elem.List.TEAM_RED)
-					break
-					case 1:
-					list = document.getElementById(Elem.List.TEAM_ORANGE)
-					break
-					case 2:
-					list = document.getElementById(Elem.List.TEAM_YELLOW)
-					break
-					case 3:
-					list = document.getElementById(Elem.List.TEAM_GREEN)
-					break
-					case 4:
-					list = document.getElementById(Elem.List.TEAM_BLUE)
-					break
-					case 5:
-					list = document.getElementById(Elem.List.TEAM_PURPLE)
-					break
-				}
-
-				// Creates the HTML list entry for the GUI
-				var entry = document.createElement('li');
-				entry.appendChild(document.createTextNode(name));
-				list.appendChild(entry);
+			for (var i in teams) {
+				teams[i].players = []
 			}
-		}
 
-		break
+			for (var i in pack.teams) {
+				// Team Object and teamID
+				var team = pack.teams[i]
+				var teamID = team.id
+				for (var j in team.players) {
+					// player name
+					var name = team.players[j]
+
+					// Adds new player object to the team object
+					var teamObj = getTeam(teamID)
+					teamObj.addPlayer(new Player(name))
+
+					var list
+					// Chooses a list to add the player to based on ID
+					switch (teamID) {
+						case 0:
+							list = document.getElementById(Elem.List.TEAM_RED)
+							break
+						case 1:
+							list = document.getElementById(Elem.List.TEAM_ORANGE)
+							break
+						case 2:
+							list = document.getElementById(Elem.List.TEAM_YELLOW)
+							break
+						case 3:
+							list = document.getElementById(Elem.List.TEAM_GREEN)
+							break
+						case 4:
+							list = document.getElementById(Elem.List.TEAM_BLUE)
+							break
+						case 5:
+							list = document.getElementById(Elem.List.TEAM_PURPLE)
+							break
+					}
+
+					// Creates the HTML list entry for the GUI
+					var entry = document.createElement('li');
+					entry.appendChild(document.createTextNode(name));
+					list.appendChild(entry);
+				}
+			}
+
+			break
 
 		case Pack.UPDATE_MESSAGE:
-		enableButton(Elem.Button.START, pack.startEnabled)
+			enableButton(Elem.Button.START, pack.startEnabled)
 
-		setVisible(Elem.Text.MESSAGE)
-		setText(Elem.Text.MESSAGE, pack.message)
+			setVisible(Elem.Text.MESSAGE)
+			setText(Elem.Text.MESSAGE, pack.message)
 
-		setVisible(Elem.Text.PLAYER_COUNT)
-		setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
-		
-		myTeam = getTeam(pack.team)
-		
-		break
+			setVisible(Elem.Text.PLAYER_COUNT)
+			setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
+
+			myTeam = getTeam(pack.team)
+
+			break
 	}
 
 	//console.log('type: ' + type)

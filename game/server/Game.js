@@ -40,54 +40,54 @@ class Game extends Object {
 	parse(sender, type, pack) {
 		switch (type) {
 			case Pack.BUY_SHIPS:
-			this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
-			break
+				this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+				break
 			case Pack.CREATE_SPAWN: // create spawn
-			this.system.getPlanetByID(pack.pl).createSpawn()
-			break
+				this.system.getPlanetByID(pack.pl).createSpawn()
+				break
 			case Pack.JOIN_TEAM:
-			// Reset the start status
-			for (var i in this.players) {
-				this.players[i].start = false
-			}
-			// Remove the players from their previous team
-			if (sender.team != null) {
-				sender.team.removePlayer(sender)
-			}
-			// TODO more efficient way of switching teams than resending the list each time? e.g. deltas
-			this.getTeam(pack.team).addPlayer(sender)
-			this.updateTeams()
-
-			var packet = {
-				type: Pack.SET_CLIENT_TEAM,
-				team: sender.team.id
-			}
-			sender.send(JSON.stringify(packet))
-			break
-			case Pack.START_BUTTON:
-			// If the sender didn't start and the sender has a team
-			if (!sender.start && sender.team) {
-				sender.start = true
-				var chosen = 0
+				// Reset the start status
 				for (var i in this.players) {
-					if (this.players[i].start) {
-						chosen++
+					this.players[i].start = false
+				}
+				// Remove the players from their previous team
+				if (sender.team != null) {
+					sender.team.removePlayer(sender)
+				}
+				// TODO more efficient way of switching teams than resending the list each time? e.g. deltas
+				this.getTeam(pack.team).addPlayer(sender)
+				this.updateTeams()
+
+				var packet = {
+					type: Pack.SET_CLIENT_TEAM,
+					team: sender.team.id
+				}
+				sender.send(JSON.stringify(packet))
+				break
+			case Pack.START_BUTTON:
+				// If the sender didn't start and the sender has a team
+				if (!sender.start && sender.team) {
+					sender.start = true
+					var chosen = 0
+					for (var i in this.players) {
+						if (this.players[i].start) {
+							chosen++
+						}
+					}
+
+					// Start the game if there's more than two players and all players have chosen a team
+					if (chosen >= MIN_PLAYERS && chosen == this.players.length) {
+						this.start()
+					} else {
+						// Else tell the other players to choose
+						this.updateSelectionMessages()
 					}
 				}
-
-				// Start the game if there's more than two players and all players have chosen a team
-				if (chosen >= MIN_PLAYERS && chosen == this.players.length) {
-					this.start()
-				} else {
-					// Else tell the other players to choose
-					this.updateSelectionMessages()
-				}
-			}
-			break
+				break
 			case Pack.QUIT:
-			this.removePlayer(sender)
-			sender.approved = false
-			break
+				this.removePlayer(sender)
+				sender.approved = false
+				break
 		}
 	}
 
@@ -111,7 +111,7 @@ class Game extends Object {
 
 	createTeams(sock) {
 		var socks = exists(sock) ? [sock] : this.players
-		
+
 		var pack = {
 			type: Pack.CREATE_TEAMS
 		}
@@ -329,7 +329,7 @@ class Game extends Object {
 		let ga = this
 
 		for (var i = 0; i < COUNTDOWN_PACKET_SENDS; i++) {
-			setTimeout(function () {
+			setTimeout(function() {
 				ga.sendPlayers({
 					type: Pack.START_GAME
 				})
@@ -337,7 +337,7 @@ class Game extends Object {
 		}
 
 		// start the game on server-side
-		setTimeout(function () {
+		setTimeout(function() {
 			ga.system.play()
 		}, COUNTDOWN_TIME)
 	}

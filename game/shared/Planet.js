@@ -309,7 +309,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	createSpawn(force) {
 		if (!isServer) {
 			if (this.team && !force) this.team.pixels -= 1000
-				var spawn = new PIXI.Sprite(resources.spawn.texture)
+			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
 			// The position on this planet's surface to place the spawn (the angle)
 			// (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
@@ -351,7 +351,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 				this.system.game.sendPlayers(pack)
 				this.spawns++
 
-				this.updateInfantry()
+					this.updateInfantry()
 			}
 		}
 	}

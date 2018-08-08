@@ -247,7 +247,7 @@ function disableButton(elemID) {
 	deselectButton(elemID)
 	elem.style.color = Colour.GREY_TEXT
 	elem.style.cursor = 'default'
-	elem.onmouseover = function () {
+	elem.onmouseover = function() {
 		this.style.backgroundColor = 'transparent'
 	}
 	elem.setAttribute('enable_click', false)
@@ -258,10 +258,10 @@ function enableButton(elemID, visible) {
 		var elem = document.getElementById(elemID)
 		elem.style.color = '#FFF'
 		elem.style.cursor = 'pointer'
-		elem.onmouseover = function () {
+		elem.onmouseover = function() {
 			this.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'
 		}
-		elem.onmouseout = function () {
+		elem.onmouseout = function() {
 			this.style.backgroundColor = 'transparent'
 		}
 		elem.setAttribute('enable_click', true)

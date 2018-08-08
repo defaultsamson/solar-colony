@@ -9,12 +9,12 @@ function connect() {
 
 	var ws = socket.connect()
 
-	ws.onerror = function (evt) {
+	ws.onerror = function(evt) {
 		console.log('The WebSocket experienced an error')
 		console.log(evt)
 	}
 
-	ws.onclose = function (evt) {
+	ws.onclose = function(evt) {
 		console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
 
 		if (connected) {
@@ -30,7 +30,7 @@ function connect() {
 		connect()
 	}
 
-	ws.onopen = function (evt) {
+	ws.onopen = function(evt) {
 		console.log('The WebSocket was opened succesfully!')
 
 		connectionAttempts = -1
@@ -40,7 +40,7 @@ function connect() {
 		updateStartButton()
 	}
 
-	ws.onmessage = function (evt) {
+	ws.onmessage = function(evt) {
 		try {
 			// console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
 			var pack = JSON.parse(evt.data)
@@ -160,20 +160,20 @@ function updateGuiClick() {
 				default: selectButton(Elem.Button.ANY_PLAYERS)
 				break
 				case 2:
-				selectButton(Elem.Button.PLAYERS_2)
-				break
+						selectButton(Elem.Button.PLAYERS_2)
+					break
 				case 3:
-				selectButton(Elem.Button.PLAYERS_3)
-				break
+						selectButton(Elem.Button.PLAYERS_3)
+					break
 				case 4:
-				selectButton(Elem.Button.PLAYERS_4)
-				break
+						selectButton(Elem.Button.PLAYERS_4)
+					break
 				case 8:
-				selectButton(Elem.Button.PLAYERS_8)
-				break
+						selectButton(Elem.Button.PLAYERS_8)
+					break
 				case 16:
-				selectButton(Elem.Button.PLAYERS_16)
-				break
+						selectButton(Elem.Button.PLAYERS_16)
+					break
 			}
 		}
 
@@ -436,25 +436,24 @@ function menuInit() {
 	for (i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
 		//if (elem.classList.contains('btn')) {
-			
-			if (mobile) {
-				// Small hack, shows hover colour then unhovers when the user clicks
-				elem.addEventListener('mousedown', function(e)
-				{
-					hoverButton(e.target)
-					setTimeout(function() {
-						unhoverButton(e.target)
-					}, 100)
-				}, false);
-			} else {
-				// Usual hover behaviour for mouse
-				elem.addEventListener('mouseover', function(e) {
-					hoverButton(e.target)
-				}, false);
-				elem.addEventListener('mouseleave', function(e) {
+
+		if (mobile) {
+			// Small hack, shows hover colour then unhovers when the user clicks
+			elem.addEventListener('mousedown', function(e) {
+				hoverButton(e.target)
+				setTimeout(function() {
 					unhoverButton(e.target)
-				}, false);
-			}
+				}, 100)
+			}, false);
+		} else {
+			// Usual hover behaviour for mouse
+			elem.addEventListener('mouseover', function(e) {
+				hoverButton(e.target)
+			}, false);
+			elem.addEventListener('mouseleave', function(e) {
+				unhoverButton(e.target)
+			}, false);
+		}
 		//}
 	}
 }

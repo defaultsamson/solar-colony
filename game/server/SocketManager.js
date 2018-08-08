@@ -163,7 +163,7 @@ class SocketManager extends Object {
 			if (this.connections[i] === con) return true
 		}
 	return false*/
-}
+	}
 }
 
 module.exports = SocketManager

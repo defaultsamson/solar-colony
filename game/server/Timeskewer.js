@@ -1,5 +1,5 @@
 function average(data) {
-	var sum = data.reduce(function (sum, value) {
+	var sum = data.reduce(function(sum, value) {
 		return sum + value
 	}, 0)
 
@@ -15,7 +15,7 @@ function median(args) {
 }
 
 function std(values, avg) {
-	return Math.sqrt(median(values.map(function (value) {
+	return Math.sqrt(median(values.map(function(value) {
 		var diff = value - avg
 		return diff * diff
 	})))

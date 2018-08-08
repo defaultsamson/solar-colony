@@ -16,7 +16,7 @@ class GameManager extends Object {
 
 		let so = this
 
-		this.gameLoopID = gameloop.setGameLoop(function (delta) {
+		this.gameLoopID = gameloop.setGameLoop(function(delta) {
 			for (var i in so.games) {
 				try {
 					so.games[i].update(delta)
