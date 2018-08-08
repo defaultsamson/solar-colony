@@ -5,7 +5,7 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
-const LOCAL_DEBUG = false
+const LOCAL_DEBUG = true
 const PORT = 3141
 
 const Pack = {
