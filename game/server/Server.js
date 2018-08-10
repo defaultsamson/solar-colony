@@ -5,4 +5,4 @@ let GameManager = require('./GameManager.js')
 
 let server = new GameManager()
 
-console.log('Server Started')
+console.log('Server Started: ' + (LOCAL_DEBUG ? "Local" : "Online"))

@@ -5833,6 +5833,7 @@ module.exports = function (_Plugin) {
             if ((count === 1 || count > 1 && !this.parent.plugins['pinch']) && this.parent.parent) {
                 var parent = this.parent.parent.toLocal(e.data.global);
                 this.last = { x: e.data.global.x, y: e.data.global.y, parent: parent };
+                this.current = e.data.pointerId;
             } else {
                 this.last = null;
             }
@@ -5843,7 +5844,7 @@ module.exports = function (_Plugin) {
             if (this.paused) {
                 return;
             }
-            if (this.last) {
+            if (this.last && this.current === e.data.pointerId) {
                 var x = e.data.global.x;
                 var y = e.data.global.y;
                 var count = this.parent.countDownPointers();
@@ -5880,6 +5881,7 @@ module.exports = function (_Plugin) {
                 if (pointer.last) {
                     var parent = this.parent.parent.toLocal(pointer.last);
                     this.last = { x: pointer.last.x, y: pointer.last.y, parent: parent };
+                    this.current = pointer.last.data.pointerId;
                 }
                 this.moved = false;
             } else if (this.last) {
@@ -6289,9 +6291,9 @@ module.exports = function (_Plugin) {
                 var second = pointers[1];
                 var last = first.last && second.last ? Math.sqrt(Math.pow(second.last.x - first.last.x, 2) + Math.pow(second.last.y - first.last.y, 2)) : null;
                 if (first.pointerId === e.data.pointerId) {
-                    first.last = { x: x, y: y };
+                    first.last = { x: x, y: y, data: e.data };
                 } else if (second.pointerId === e.data.pointerId) {
-                    second.last = { x: x, y: y };
+                    second.last = { x: x, y: y, data: e.data };
                 }
                 if (last) {
                     var oldPoint = void 0;
@@ -6762,6 +6764,8 @@ module.exports = {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -6843,7 +6847,8 @@ var Viewport = function (_PIXI$Container) {
         _this.forceHitArea = options.forceHitArea;
         _this.threshold = utils.defaults(options.threshold, 5);
         _this.interaction = options.interaction || null;
-        _this.listeners(options.divWheel || document.body);
+        _this.div = options.divWheel || document.body;
+        _this.listeners(_this.div);
 
         /**
          * active touch point ids on the viewport
@@ -6853,19 +6858,43 @@ var Viewport = function (_PIXI$Container) {
         _this.touches = [];
 
         _this.ticker = options.ticker || PIXI.ticker.shared;
-        _this.ticker.add(function () {
+        _this.tickerFunction = function () {
             return _this.update();
-        });
+        };
+        _this.ticker.add(_this.tickerFunction);
         return _this;
     }
 
     /**
-     * update animations
-     * @private
+     * removes all event listeners from viewport
+     * (useful for cleanup of wheel and ticker events when removing viewport)
      */
 
 
     _createClass(Viewport, [{
+        key: 'removeListeners',
+        value: function removeListeners() {
+            this.ticker.remove(this.tickerFunction);
+            this.div.removeEventListener('wheel', this.wheelFunction);
+        }
+
+        /**
+         * overrides PIXI.Container's destroy to also remove the 'wheel' and PIXI.Ticker listeners
+         */
+
+    }, {
+        key: 'destroy',
+        value: function destroy() {
+            _get(Viewport.prototype.__proto__ || Object.getPrototypeOf(Viewport.prototype), 'destroy', this).call(this);
+            this.removeListeners();
+        }
+
+        /**
+         * update animations
+         * @private
+         */
+
+    }, {
         key: 'update',
         value: function update() {
             if (!this.pause) {
@@ -6980,9 +7009,10 @@ var Viewport = function (_PIXI$Container) {
             this.on('pointerupoutside', this.up);
             this.on('pointercancel', this.up);
             this.on('pointerout', this.up);
-            div.addEventListener('wheel', function (e) {
+            this.wheelFunction = function (e) {
                 return _this2.handleWheel(e);
-            });
+            };
+            div.addEventListener('wheel', this.wheelFunction);
             this.leftDown = false;
         }
 
@@ -6997,11 +7027,11 @@ var Viewport = function (_PIXI$Container) {
             if (this.pause) {
                 return;
             }
-            if (e.data.originalEvent instanceof MouseEvent && e.data.originalEvent.button == 0) {
-                this.leftDown = true;
-            }
-
-            if (e.data.pointerType !== 'mouse') {
+            if (e.data.pointerType === 'mouse') {
+                if (e.data.originalEvent.button == 0) {
+                    this.leftDown = true;
+                }
+            } else {
                 this.touches.push(e.data.pointerId);
             }
 
@@ -7527,6 +7557,23 @@ var Viewport = function (_PIXI$Container) {
                 if (this.touches.indexOf(pointer.pointerId) !== -1) {
                     results.push(pointer);
                 }
+            }
+            return results;
+        }
+
+        /**
+         * array of pointers that are down on the viewport
+         * @private
+         * @return {PIXI.InteractionTrackingData[]}
+         */
+
+    }, {
+        key: 'getPointers',
+        value: function getPointers() {
+            var results = [];
+            var pointers = this.trackedPointers;
+            for (var key in pointers) {
+                results.push(pointers[key]);
             }
             return results;
         }

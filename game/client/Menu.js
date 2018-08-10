@@ -381,6 +381,7 @@ function sendForm() {
 function hideMenu() {
 	for (i in Elem.Button) {
 		setHidden(Elem.Button[i])
+		console.log("hiding: " + Elem.Button[i])
 	}
 	for (i in Elem.Text) {
 		setHidden(Elem.Text[i])

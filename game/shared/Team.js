@@ -23,8 +23,13 @@ class Team extends Object {
 		}
 	}
 
+	setPixels(pix) {
+		this.pixels = pix
+		this.updateClientPixels()
+	}
+
 	// Server-side function to update the pixel count for the clients
-	updateClientPIxels() {
+	updateClientPixels() {
 		// Send the updated pixel count to clients
 		if (isServer) {
 			var pack = {

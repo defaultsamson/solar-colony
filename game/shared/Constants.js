@@ -66,6 +66,9 @@ const Colour = {
 	PURPLE: 0xBB88DD
 }
 
+// (Shared) The max number of spawns permitted
+const MAX_SPAWNS = 10
+
 //   _____                          
 //  / ____|                         
 // | (___   ___ _ ____   _____ _ __ 
@@ -88,6 +91,8 @@ if (isServer) {
 	global.MIN_PLAYERS = MIN_PLAYERS
 
 	global.Colour = Colour
+
+	global.MAX_SPAWNS = MAX_SPAWNS
 }
 
 //   _____ _ _            _   
@@ -106,6 +111,9 @@ const ANIMATION_TIME = 300
 const PLANET_HEIGHT = 250
 // The height of the viewport after zooming back out to the sun
 const SUN_HEIGHT = 800
+
+// (Client) The max number of ships to display in storage per planet
+const MAX_DISPLAY_SHIPS = 100
 
 // Viewport constants
 const MAX_HEIGHT = 1000
