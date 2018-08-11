@@ -122,13 +122,6 @@ function onLoad(loader, res) {
 
 	hud = game.stage.addChild(new Hud())
 
-	buy10ShipText = hud.addChild(new TextButton('10 Ships (90 pixels)', style, 0.5, 0.5, -100, 0))
-	buy10ShipText.anchor.set(1, 0.5)
-	buy1ShipText = hud.addChild(new TextButton('1 Ship (10 pixels)', style, 0, 0, 0, 2, buy10ShipText, 0, 1))
-	buy1ShipText.anchor.set(1, 0.5)
-	buy100ShipText = hud.addChild(new TextButton('100 Ships (800 pixels)', style, 0, 0, 0, -2, buy10ShipText, 0, -1))
-	buy100ShipText.anchor.set(1, 0.5)
-
 	buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
 	buySpawnText.anchor.set(0.5, 1)
 
@@ -192,7 +185,7 @@ function centerView() {
 
 function updateKeyboard() {
 	if (PIXI.keyboardManager.isPressed(Key.P)) {
-		myTeam.pixels += 5000000000000000000000
+		myTeam.pixels += 500000000000
 		hud.updateText()
 	}
 	if (PIXI.keyboardManager.isPressed(Key.O)) {
@@ -301,28 +294,8 @@ function onMouseClick(e) {
 
 			stopSnap()
 
-			if (buy1ShipText.clicked(point)) {
-				focusPlanet.createShipsClick(1, 10)
-				return
-			}
-
-			if (buy10ShipText.clicked(point)) {
-				focusPlanet.createShipsClick(10, 90)
-				return
-			}
-
-			if (buy100ShipText.clicked(point)) {
-				focusPlanet.createShipsClick(100, 800)
-				return
-			}
-
 			if (sendShipText.clicked(point)) {
 				goToSendShipsScreen(focusPlanet, 100)
-				return
-			}
-
-			if (buySpawnText.clicked(point)) {
-				focusPlanet.createSpawnClick()
 				return
 			}
 
@@ -464,6 +437,8 @@ function gameLoop() {
 	if (system) {
 		system.update(eTime)
 
+		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
+
 		if (myTeam.shipCount != lastShips) {
 			lastShips = myTeam.shipCount
 			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
@@ -473,21 +448,29 @@ function gameLoop() {
 		if (myTeam.pixels != lastPixels) {
 			lastPixels = myTeam.pixels
 			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
-		}
 
-		var focussed = focusPlanet && focusPlanet.isMyPlanet()
+			if (focussed) {
+				enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
+				enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
+				enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
+
+				if (focusPlanet.spawnCount() >= MAX_SPAWNS) {
+					setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
+					disableButton(Elem.Button.BUY_SPAWN)
+				} else {
+					setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
+					enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
+				}
+			}
+		}
 
 		if (focussed != lastFocus) {
 			lastFocus = focussed
 
-			buy1ShipText.visible = focussed
-			buy10ShipText.visible = focussed
-			buy100ShipText.visible = focussed
-			sendShipText.visible = focussed
-			buySpawnText.visible = focussed
-		}
-		if (focussed) {
-			hud.updateText()
+			setVisible(Elem.Button.BUY_SPAWN, focussed)
+			setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
+			setVisible(Elem.Button.BUY_SHIPS_100, focussed)
+			setVisible(Elem.Button.BUY_SHIPS_10, focussed)
 		}
 	}
 }

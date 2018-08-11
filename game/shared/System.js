@@ -49,7 +49,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 
 	getPlanet(x, y) {
 		for (var i in this.planets) {
-			let clickRadius = this.planets[i].radius + PLANET_CLICK_RADIUS
+			let clickRadius = this.planets[i].radius + PLANET_SELECT_RADIUS
 			if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickRadius * clickRadius) {
 				return this.planets[i]
 			}

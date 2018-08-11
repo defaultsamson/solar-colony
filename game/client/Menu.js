@@ -263,7 +263,6 @@ var nameGotGood = false
 var idGotGood = false
 
 function updateStartButton() {
-
 	if (formSent) {
 		disableButton(Elem.Button.START)
 		return false
@@ -273,7 +272,7 @@ function updateStartButton() {
 		setHidden(Elem.Image.ID_CHECK)
 		setHidden(Elem.Image.ID_CROSS)
 
-		let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))
+		let nameCheck = USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))
 		if (nameCheck) {
 			setVisible(Elem.Image.USERNAME_CHECK)
 			nameGotGood = true
@@ -284,7 +283,7 @@ function updateStartButton() {
 		let idRequired = joinGame && withFriends
 		let idCheck
 		if (idRequired) {
-			idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))
+			idCheck = ID_REGEX.test(getInput(Elem.Input.ID))
 			if (idCheck) {
 				setVisible(Elem.Image.ID_CHECK)
 				idGotGood = true
@@ -323,7 +322,7 @@ document.onkeypress = function keyDownTextField(e) {
 		var txt = String.fromCharCode(e.which)
 
 		if (keyCode == Key.ENTER) {
-			if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))) {
+			if (!USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !ID_REGEX.test(getInput(Elem.Input.ID))) {
 
 			} else if (updateStartButton()) {
 				sendForm()
@@ -333,7 +332,7 @@ document.onkeypress = function keyDownTextField(e) {
 				e.preventDefault()
 				return false
 			}
-		} else if (!/^([A-Za-z0-9])$/.test(txt)) {
+		} else if (!ACCEPTABLE_REGEX.test(txt)) {
 			if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
 
 			} else {
@@ -379,29 +378,16 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (i in Elem.Button) {
-		setHidden(Elem.Button[i])
-		console.log("hiding: " + Elem.Button[i])
-	}
-	for (i in Elem.Text) {
-		setHidden(Elem.Text[i])
-	}
-	for (i in Elem.List) {
-		setHidden(Elem.List[i])
-	}
-	for (i in Elem.Input) {
-		setHidden(Elem.Input[i])
-	}
-	for (i in Elem.Image) {
-		setHidden(Elem.Image[i])
-	}
+	for (i in Elem)
+		for (j in Elem[i])
+			setHidden(Elem[i][j]);
 }
 
 // Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
 // https://codepen.io/chriscoyier/pen/VvRoWy
 function doGuiResize() {
-	const guiX = 500
-	const guiY = 500
+	const guiX = INPUT_WIDTH
+	const guiY = INPUT_HEIGHT
 	const scaleX = window.innerWidth / guiX
 	const scaleY = window.innerHeight / guiY
 
@@ -416,9 +402,9 @@ function doGuiResize() {
 
 	// Scale the desktop version to be smaller
 	if (!mobile) {
-		scale *= 0.75
+		scale *= DESKTOP_SCALE
 	}
-	scale = Math.max(scale, 0.5)
+	// scale = Math.max(scale, 0.5)
 
 	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
 	document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
@@ -457,4 +443,14 @@ function menuInit() {
 		}
 		//}
 	}
+}
+
+function buySpawn() {
+	if (focusPlanet)
+		focusPlanet.createSpawnClick()
+}
+
+function buyShips(num, price) {
+	if (focusPlanet)
+		focusPlanet.createShipsClick(num, price)
 }

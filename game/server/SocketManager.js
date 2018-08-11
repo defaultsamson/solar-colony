@@ -87,7 +87,7 @@ class SocketManager extends Object {
 			id = id ? id.toUpperCase() : ''
 
 			// Test if the name is proper
-			if (/^([A-Za-z0-9]{3,20})$/.test(name)) {
+			if (USERNAME_REGEX.test(name)) {
 				// Test if no ID was given
 				if (id == '') {
 					this.connections.push(sock)
@@ -102,7 +102,7 @@ class SocketManager extends Object {
 					}
 
 					// If ID was given make sure it's proper
-				} else if (/^([A-Z0-9]{6})$/.test(id)) {
+				} else if (ID_REGEX.test(id)) {
 					let game = this.server.findGame(id)
 
 					if (game) {

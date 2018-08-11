@@ -2,11 +2,6 @@ var SocketManager = require('./SocketManager.js')
 let gameloop = require('node-gameloop')
 var Game = require('./Game.js')
 
-const idLength = 6
-const idChars = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
-
-const maxPlayerCount = 8 * 6
-
 class GameManager extends Object {
 	constructor() {
 		super()
@@ -27,7 +22,7 @@ class GameManager extends Object {
 					console.log(err)
 				}
 			}
-		}, 1000 / 30);
+		}, 1000 / TICKS_PER_SECOND);
 
 		this.socket = new SocketManager(this)
 		this.socket.connect()
@@ -50,20 +45,20 @@ class GameManager extends Object {
 	}
 
 	findGame(gameID) {
-		for (var i in this.games) {
+		for (var i in this.games)
 			if (this.games[i].gameID == gameID)
 				return this.games[i]
-		}
+
 		return null
 	}
 
 	createGame(maxPlayers) {
 		if (exists(maxPlayers)) {
-			maxPlayers = Math.min(maxPlayers, maxPlayerCount)
+			maxPlayers = Math.min(maxPlayers, MAX_PLAYERS)
 			if (maxPlayers < 2)
-				maxPlayers = maxPlayerCount
+				maxPlayers = MAX_PLAYERS
 		} else {
-			maxPlayers = maxPlayerCount
+			maxPlayers = MAX_PLAYERS
 		}
 
 		// Create a game with an ID
@@ -105,7 +100,6 @@ class GameManager extends Object {
 			let playerCountSatisfied = playerCount < 2 || game.maxPlayers == playerCount
 
 			// If the player count is good and the player can be added to the game
-
 			if (playerCountSatisfied && game.canAddPlayer()) {
 				game.addPlayer(sock, name)
 				return
@@ -121,22 +115,15 @@ class GameManager extends Object {
 
 	// Generates an ID that no other game currently has
 	generateSafeID() {
-		var id
 		while (true) {
-			id = this.generateID()
-			if (this.findGame(id) == null) {
-				return id
+			// Generates ID
+			var id = ''
+			for (var i = 0; i < ID_LENGTH; i++) {
+				id += ID_CHARACTERS.charAt(Math.floor(Math.random() * ID_CHARACTERS.length))
 			}
+			// Makes sure it is safe
+			if (this.findGame(id) == null) return id
 		}
-	}
-
-	// Generates a random game ID
-	generateID() {
-		var id = ''
-		for (var i = 0; i < idLength; i++) {
-			id += idChars.charAt(Math.floor(Math.random() * idChars.length))
-		}
-		return id
 	}
 }
 

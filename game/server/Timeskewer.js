@@ -34,10 +34,6 @@ function std(values, avg) {
 	6. The results of the packet receipts are accumulated and sorted in lowest-latency to highest-latency order. The median latency is determined by picking the mid-point sample from this ordered list.
 	7. All samples above approximately 1 standard-deviation from the median are discarded and the remaining samples are averaged using an arithmetic mean.*/
 
-const skewThreshold = 5 // quantity of pings until performing skew algorithm
-const pingDelay = 500 // minimum time inbetween pings
-const connectionTimeout = 20000
-
 class Timeskewer extends Object {
 	constructor(sock) {
 		super()
@@ -54,12 +50,12 @@ class Timeskewer extends Object {
 		this.timeWaited += delta * 1000
 
 		// if it's past the minimum time to ping
-		if (this.timeWaited >= pingDelay) {
+		if (this.timeWaited >= PING_INTERVAL) {
 			// and it hasn't already sent the ping packet
 			if (!this.sent) {
 				this.sendTimePack()
 				// Else if it's sent the ping packet and still waiting...
-			} else if (this.timeWaited >= connectionTimeout) {
+			} else if (this.timeWaited >= SOCKET_TIMEOUT) {
 				// They timed out, close the connection
 				this.sock.close()
 			}
@@ -97,7 +93,7 @@ class Timeskewer extends Object {
 		}
 
 		// If the pings should now be skewed
-		if (this.pings.length >= skewThreshold) {
+		if (this.pings.length >= SKEW_THRESHOLD) {
 			this.initialPings = false
 			let median = average(this.pings)
 			let sd = std(this.pings, median)

@@ -1,3 +1,7 @@
+function exists(a) {
+	return a !== undefined && a !== null;
+}
+
 //   _____ _                        _ 
 //  / ____| |                      | |
 // | (___ | |__   __ _ _ __ ___  __| |
@@ -5,11 +9,21 @@
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
+try {
+	if (exists(global)) {
+		global.isServer = true
+	}
+} catch (err) {
+	window.isServer = false
+}
+
 const LOCAL_DEBUG = true
 const PORT = 3141
 
+const USERNAME_REGEX = /^([A-Za-z0-9]{3,20})$/
+const ID_REGEX = /^([A-Za-z0-9]{6})$/
+
 const Pack = {
-	CREATE_SPAWN: 0,
 	BUY_SHIPS: 1,
 	PING_PROBE: 2, // Tells the client to respond with this packet
 	PING_SET: 3, // Tells the client what their ping is
@@ -33,7 +47,8 @@ const Pack = {
 	FORM_SEND: 21,
 	SHOW_SYSTEM: 22,
 	UPDATE_TEAMS: 23,
-	UPDATE_MESSAGE: 24
+	UPDATE_MESSAGE: 24,
+	CREATE_SPAWN: 25
 }
 
 // Note: make sure that GAME_COUNTDOWN_TIME is divisible by PACKET_INTERVAL
@@ -66,8 +81,12 @@ const Colour = {
 	PURPLE: 0xBB88DD
 }
 
-// (Shared) The max number of spawns permitted
-const MAX_SPAWNS = 10
+const MAX_SPAWNS = 10 // The max number of spawns permitted per planet
+
+// The extra pixels to add to the radius of a planet to determine whether it was clicked
+const PLANET_SELECT_RADIUS = 40
+const SUN_COLLISION_RADIUS = 30
+const TICKS_PER_COLLISION_UPDATE = 10 // Ticks per collision update When drawing lines between planets
 
 //   _____                          
 //  / ____|                         
@@ -76,11 +95,14 @@ const MAX_SPAWNS = 10
 //  ____) |  __/ |   \ V /  __/ |   
 // |_____/ \___|_|    \_/ \___|_|   
 
-const MIN_PLAYERS = 2 // minimum players required to start a game
-
 if (isServer) {
+	global.exists = exists
+	
 	global.LOCAL_DEBUG = LOCAL_DEBUG
 	global.PORT = PORT
+
+	global.USERNAME_REGEX = USERNAME_REGEX
+	global.ID_REGEX = ID_REGEX
 
 	global.Pack = Pack
 
@@ -88,11 +110,25 @@ if (isServer) {
 	global.COUNTDOWN_INTERVAL = COUNTDOWN_INTERVAL
 	global.COUNTDOWN_PACKET_SENDS = COUNTDOWN_PACKET_SENDS
 
-	global.MIN_PLAYERS = MIN_PLAYERS
-
 	global.Colour = Colour
 
 	global.MAX_SPAWNS = MAX_SPAWNS
+
+	global.PLANET_SELECT_RADIUS = PLANET_SELECT_RADIUS
+	global.SUN_COLLISION_RADIUS = SUN_COLLISION_RADIUS
+	global.TICKS_PER_COLLISION_UPDATE = TICKS_PER_COLLISION_UPDATE
+
+	global.MIN_PLAYERS = 2 // minimum players required to start a game
+	global.MAX_PLAYERS = 8 * 6 // 8 players per team
+
+	global.ID_LENGTH = 6
+	global.ID_CHARACTERS = 'ABCDEFGHJKMNOPQRSTUVWXYZ23456789'
+
+	global.TICKS_PER_SECOND = 30
+
+	global.SKEW_THRESHOLD = 5 // quantity of pings until performing skew algorithm
+	global.PING_INTERVAL = 500 // minimum time inbetween pings
+	global.SOCKET_TIMEOUT = 10000
 }
 
 //   _____ _ _            _   
@@ -101,9 +137,6 @@ if (isServer) {
 // | |    | | |/ _ \ '_ \| __|
 // | |____| | |  __/ | | | |_ 
 //  \_____|_|_|\___|_| |_|\__|
-
-// The extra pixels to add to the radius of a planet to determine whether it was clicked
-const PLANET_CLICK_RADIUS = 40
 
 // The animation time (in milliseconds) for zooming, panning, etc.
 const ANIMATION_TIME = 300
@@ -126,12 +159,15 @@ const DASH_THICKNESS = 1.4
 // The length of the dashes being drawn
 const DASH_LENGTH = 25
 
-// The HTML id's of the elements
-// const ALL_ELEMS = []
+const INPUT_WIDTH = 500
+const INPUT_HEIGHT = 500
+const DESKTOP_SCALE = 0.75
+
+const ACCEPTABLE_REGEX = /^([A-Za-z0-9])$/
 
 const INPUT_DIV = 'input'
 const TOP_DIV = 'top_display'
-
+// The HTML id's of the elements
 const Elem = {
 	Button: {
 		JOIN: 'b_join',
@@ -154,7 +190,12 @@ const Elem = {
 		TEAM_YELLOW: 'b_team_yellow',
 		TEAM_GREEN: 'b_team_green',
 		TEAM_BLUE: 'b_team_blue',
-		TEAM_PURPLE: 'b_team_purple'
+		TEAM_PURPLE: 'b_team_purple',
+
+		BUY_SPAWN: 'b_buy_spawn',
+		BUY_SHIPS_1000: 'b_buy_1000ships',
+		BUY_SHIPS_100: 'b_buy_100ships',
+		BUY_SHIPS_10: 'b_buy_10ships'
 	},
 
 	Text: {
