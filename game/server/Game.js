@@ -321,6 +321,11 @@ class Game extends Object {
 			this.players[i].send(JSON.stringify(pack))
 		}
 
+
+		// Start all teams off with 100 pixels
+		for (i in this.teams)
+			this.teams[i].setPixels(STARTING_PIXELS);
+
 		this.sendPlayers({
 			type: Pack.SHOW_SYSTEM
 		})

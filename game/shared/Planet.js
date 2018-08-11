@@ -210,19 +210,17 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 			// Validate to make sure the client isn't lying about the packet
 			if (this.team.pixels >= cost && n > 0) {
 				var good = false
-				if (n <= 1 && cost >= 10) {
+				if (n <= 10 && cost >= 10) {
 					good = true
-				} else if (n <= 10 && cost >= 90) {
+				} else if (n <= 100 && cost >= 90) {
 					good = true
-				} else if (n <= 100 && cost >= 800) {
+				} else if (n <= 1000 && cost >= 800) {
 					good = true
 				}
-
 				if (good) {
 					this.shipCount += n
 					this.team.pixels -= cost
 					this.team.updateClientPixels()
-
 					this.system.game.sendPlayers({
 						type: Pack.BUY_SHIPS,
 						pl: this.id,
@@ -306,7 +304,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		var good = false
 		var nextSpawn = true; // TODO
 		if (!isServer) {
-			if (this.team && !force) this.team.pixels -= 1000
+			if (this.team && !force) this.team.pixels -= 200
 			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
 			// The position on this planet's surface to place the spawn (the angle)
@@ -335,9 +333,9 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		} else {
 			if (force) {
 				good = true
-			} else if (this.team.pixels >= 1000 && this.spawnCount() < MAX_SPAWNS) {
+			} else if (this.team.pixels >= 200 && this.spawnCount() < MAX_SPAWNS) {
 				good = true
-				this.team.pixels -= 1000
+				this.team.pixels -= 200
 			}
 
 			if (good) {

@@ -122,9 +122,6 @@ function onLoad(loader, res) {
 
 	hud = game.stage.addChild(new Hud())
 
-	buySpawnText = hud.addChild(new TextButton('1 Spawn (1000 pixels)', style, 0.5, 0.5, 0, -100))
-	buySpawnText.anchor.set(0.5, 1)
-
 	sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
 	sendShipText.anchor.set(0, 0.5)
 
@@ -442,6 +439,7 @@ function gameLoop() {
 		if (myTeam.shipCount != lastShips) {
 			lastShips = myTeam.shipCount
 			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
+			updatePlanetGui(false, true)
 		}
 
 		// TODO this can be done in parse() when the server sends new pixels
@@ -450,17 +448,7 @@ function gameLoop() {
 			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
 
 			if (focussed) {
-				enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
-				enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
-				enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
-
-				if (focusPlanet.spawnCount() >= MAX_SPAWNS) {
-					setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
-					disableButton(Elem.Button.BUY_SPAWN)
-				} else {
-					setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
-					enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
-				}
+				updatePlanetGui(true, false)
 			}
 		}
 
@@ -471,7 +459,28 @@ function gameLoop() {
 			setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
 			setVisible(Elem.Button.BUY_SHIPS_100, focussed)
 			setVisible(Elem.Button.BUY_SHIPS_10, focussed)
+			updatePlanetGui(true, true)
 		}
+	}
+}
+
+function updatePlanetGui(pixelUpdate, shipsUpdate) {
+	if (pixelUpdate) {
+		enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
+		enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
+		enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
+
+		if (focusPlanet.spawnCount() >= MAX_SPAWNS) {
+			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
+			disableButton(Elem.Button.BUY_SPAWN)
+		} else {
+			setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
+			enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
+		}
+	}
+
+	if (shipsUpdate) {
+		// TODO send ships buttons
 	}
 }
 

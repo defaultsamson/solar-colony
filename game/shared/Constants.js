@@ -129,6 +129,8 @@ if (isServer) {
 	global.SKEW_THRESHOLD = 5 // quantity of pings until performing skew algorithm
 	global.PING_INTERVAL = 500 // minimum time inbetween pings
 	global.SOCKET_TIMEOUT = 10000
+
+	global.STARTING_PIXELS = 100
 }
 
 //   _____ _ _            _   
