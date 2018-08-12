@@ -422,26 +422,41 @@ function menuInit() {
 	// Adds the hover behaviours to all buttons
 	for (i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
-		//if (elem.classList.contains('btn')) {
+		elem.setAttribute('touch', false)
 
-		if (mobile) {
-			// Small hack, shows hover colour then unhovers when the user clicks
-			elem.addEventListener('mousedown', function(e) {
+		// Usual hover behaviour for mouse.
+		// the 'touch' attribute is a little bit hacky, it's used to detect
+		// finger taps vs. mouse clicks. The difference is the button should
+		// stop hovering at the end of a finger tap, but should continue 
+		// to hover at the end of a mouse click
+		elem.addEventListener('mouseover', function(e) {
+			if (e.target.getAttribute('touch') == 'false') {
 				hoverButton(e.target)
+			}
+		}, false)
+		elem.addEventListener('mouseleave', function(e) {
+			unhoverButton(e.target)
+			//e.target.setAttribute('touch', false)
+		}, false)
+		elem.addEventListener('touchstart', function(e) {
+			hoverButton(e.target)
+		}, false)
+		elem.addEventListener('touchend', function(e) {
+			unhoverButton(e.target)
+			e.target.setAttribute('touch', true)
+			setTimeout(function() {
+				e.target.setAttribute('touch', false)
+			}, 10)
+		}, false)
+		elem.addEventListener('mousedown', function(e) {
+			hoverButton(e.target)
+			// if it was a touch tap, unhover it after 100ms
+			if (e.target.getAttribute('touch') == 'true') {
 				setTimeout(function() {
 					unhoverButton(e.target)
 				}, 100)
-			}, false);
-		} else {
-			// Usual hover behaviour for mouse
-			elem.addEventListener('mouseover', function(e) {
-				hoverButton(e.target)
-			}, false);
-			elem.addEventListener('mouseleave', function(e) {
-				unhoverButton(e.target)
-			}, false);
-		}
-		//}
+			}
+		}, false)
 	}
 }
 
