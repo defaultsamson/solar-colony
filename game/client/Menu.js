@@ -446,13 +446,11 @@ function menuInit() {
 }
 
 function buySpawn() {
-	console.log("SHIT: " + focusPlanet)
 	if (exists(focusPlanet))
 		focusPlanet.createSpawnClick()
 }
 
 function buyShips(num, price) {
-	console.log("bonk: " + focusPlanet)
 	if (exists(focusPlanet))
 		focusPlanet.createShipsClick(num, price)
 }

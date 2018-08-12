@@ -195,8 +195,8 @@ class Game extends Object {
 					if (total == started) {
 						// Double checks to make sure that more than one team is populated populated
 						var populatedTeams = 0
-						for (var i in teams) {
-							if (teams[i].players.length > 0) {
+						for (var i in this.teams) {
+							if (this.teams[i].players.length > 0) {
 								populatedTeams++
 							}
 						}

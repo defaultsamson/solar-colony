@@ -203,24 +203,6 @@ function updateKeyboard() {
 		viewport.move(screenPoint.x, screenPoint.y, {
 			id: 0
 		})*/
-	} else if (PIXI.keyboardManager.isReleased(Key.W)) {
-		if (viewport.plugins['drag'] && viewport.plugins['drag'].moved) {
-
-		} else {
-			onMouseClick({
-				data: {
-					global: {
-						x: screenPoint.x,
-						y: screenPoint.y
-					}
-				}
-			})
-		}
-
-		/* TODO
-		viewport.up(screenPoint.x, screenPoint.y, {
-			id: 0
-		})*/
 	}
 
 	if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
@@ -235,48 +217,18 @@ function updateKeyboard() {
 	PIXI.keyboardManager.update()
 }
 
-// Quick hack while dragging error persists:
-// Click event fires after drag
-var dragging = false
 viewport.on('drag-start', function(e) {
 	stopSnap()
 	stopFollow()
-	dragging = true
 })
 viewport.on('pinch-start', stopSnap)
 viewport.on('wheel', stopSnap)
-viewport.on('click', handleClick)
-var tapHack = 0
-viewport.on('pinch-end', function() {
-	tapHack = 2
-	console.log("pinch-end")
-})
-/*
-viewport.on('tap', function (e) {
-	if (tapHack == 0) {
-		handleClick(e)
-	} else {
-		tapHack -= 1
-	}
-})*/
-
-function handleClick(e) {
-	if (!dragging) {
-		onMouseClick(e)
-	} else {
-		dragging = false
-	}
-}
+viewport.on('clicked', onMouseClick)
 
 var allowMouseClick = true
 
 function onMouseClick(e) {
 	if (allowMouseClick) {
-		let screen = e.data.global
-		let world = viewport.toWorld(screen)
-
-		var point = new PIXI.Point(screen.x, screen.y)
-
 		if (system) {
 			if (isChoosingShipSend()) {
 				// updateSelectedPlanet(e.world.x, e.world.y)
@@ -291,12 +243,13 @@ function onMouseClick(e) {
 
 			stopSnap()
 
+			/*
 			if (sendShipText.clicked(point)) {
 				goToSendShipsScreen(focusPlanet, 100)
 				return
-			}
+			}*/
 
-			var planet = system.getPlanet(world.x, world.y)
+			var planet = system.getPlanet(e.world.x, e.world.y)
 			if (planet) {
 				// If the viewport is already following the planet that was clicked on, then don't do anything
 				var follow = viewport.plugins['follow']
@@ -439,7 +392,7 @@ function gameLoop() {
 		if (myTeam.shipCount != lastShips) {
 			lastShips = myTeam.shipCount
 			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
-			updatePlanetGui(false, true)
+			updatePlanetGui(focussed, false, true)
 		}
 
 		// TODO this can be done in parse() when the server sends new pixels
@@ -447,9 +400,7 @@ function gameLoop() {
 			lastPixels = myTeam.pixels
 			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
 
-			if (focussed) {
-				updatePlanetGui(true, false)
-			}
+			updatePlanetGui(focussed, true, false)
 		}
 
 		if (focussed != lastFocus) {
@@ -459,18 +410,19 @@ function gameLoop() {
 			setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
 			setVisible(Elem.Button.BUY_SHIPS_100, focussed)
 			setVisible(Elem.Button.BUY_SHIPS_10, focussed)
-			updatePlanetGui(true, true)
+			updatePlanetGui(focussed, true, true)
 		}
 	}
 }
 
-function updatePlanetGui(pixelUpdate, shipsUpdate) {
+function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
+
 	if (pixelUpdate) {
 		enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
 		enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
 		enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
 
-		if (focusPlanet.spawnCount() >= MAX_SPAWNS) {
+		if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
 			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
 			disableButton(Elem.Button.BUY_SPAWN)
 		} else {
