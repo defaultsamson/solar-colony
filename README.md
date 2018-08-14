@@ -9,7 +9,7 @@ When you first clone the repository, you will need to run `./update_dependencies
 
 The `push.sh` script is mostly designed for my personal use to deploy on my website, however, you can install the [Browser Sync](https://browsersync.io/) Node.JS package and easily host a live website using `./push.sh live`. Just be sure that in `./game/shared/Constants.js` you have set `LOCAL_DEBUG = true`, otherwise the game will try to use server SSL keys.
 
-To "compile" the JS into a minified version execute `./compile.sh 1` then execute `./compile.sh 2`. You may ignore the warnings, just look at the errors at the bottom, and fix them manually in `test.js`. Once there are no more errors, then run `./compile.sh 3` to finish compiling. You will also need to go into `index.html` and replace all the scripts with a single one pointing to `./compiled.js`. 
+To "compile" the JS into a minified version, execute `./compile.sh` and follow the instructions. If you're having trouble and want to start fresh, run `./compile.sh clean` to remove the temp files and start fresh. You will also need to go into `index.html` and replace all the scripts with a single script pointing to `./compiled.js`. 
 
 ## Server Setup
 
@@ -29,4 +29,4 @@ Change the file paths of the secure websocket's `key` and `cert` to point to you
 ```
 node Server.js
 ```
-For running with systemd check out the systemd section of [this](https://www.digitalocean.com/community/tutorials/how-to-deploy-node-js-applications-using-systemd-and-nginx).
+For running with systemd check out the systemd section of [this](https://www.digitalocean.com/community/tutorials/how-to-deploy-node-js-applications-using-systemd-and-nginx) for help.

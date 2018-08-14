@@ -1,20 +1,44 @@
 #!/bin/bash
 
-if [ $1 -eq 1 ]; then
-	if [ -f temp1.js ]; then
-		rm temp1.js
+TEMP="temp.js"
+COMPILED="compiled.js"
+COMPILER="closure-compiler-v20180805.jar"
+
+# Whenever a new file is added to the game, it must also be added here
+ORDER="./libraries.js ./game/shared/Constants.js ./game/shared/Util.js ./game/shared/Orbit.js ./game/shared/Planet.js ./game/shared/Ship.js ./game/shared/System.js ./game/shared/Team.js ./game/client/Hud.js ./game/client/Line.js ./game/client/Menu.js ./game/client/Player.js ./game/client/SocketManager.js ./game/client/Client.js"
+
+if [ $# -ge 1 ]; then
+	if [[ $1 = "clean" ]]; then
+		echo "Creating clean"
+		rm -f $TEMP $COMPILED
+	elif [[ $1 = "help" ]]; then
+		echo "Usage: ./compile.sh [clean]"
+		exit 0
 	fi
+fi
 
-	ORDER="./libraries.js ./game/shared/Constants.js ./game/shared/Util.js ./game/shared/Orbit.js ./game/shared/Planet.js ./game/shared/Ship.js ./game/shared/System.js ./game/shared/Team.js ./game/client/Hud.js ./game/client/Line.js ./game/client/Menu.js ./game/client/Player.js ./game/client/SocketManager.js ./game/client/Client.js"
+# Create the temp.js file if neccessary
+if [ ! -f temp.js ]; then
+	echo "No $TEMP file found, creating one..."
 
-	for f in $ORDER; do (cat "${f}"; echo) >> temp1.js; done
+	# Concatenates the files with a new line between each one
+	echo "Concatenating..."
+	for f in $ORDER; do (cat "${f}"; echo) >> $TEMP; done
 
-	browserify temp1.js -o temp.js
+	echo "Browserifying..."
+	browserify $TEMP -o $TEMP
+	echo "Successfully created $TEMP"
+fi
 
-	rm temp1.js
-elif [ $1 -eq 2 ]; then
-	#uglifyjs temp.js temp.js -o compiled.js
-	java -jar closure-compiler-v20180805.jar --js temp.js --js_output_file compiled.js
-elif [ $1 -eq 3 ]; then
-	rm temp.js
+#uglifyjs temp.js temp.js -o compiled.js
+echo "Compiling..."
+java -jar $COMPILER --js $TEMP --js_output_file $COMPILED --compilation_level SIMPLE --warning_level QUIET
+RE=$?
+if [ $RE -eq 0 ]; then
+	rm $TEMP
+	echo "Successfully compiled to $COMPILED"
+else
+	echo ""
+	echo "Please manually fix the above $RE error(s) in $TEMP and run $0"
+	exit $RE
 fi
