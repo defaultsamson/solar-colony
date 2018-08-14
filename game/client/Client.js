@@ -17,7 +17,7 @@ var game = new PIXI.Application(w, h, {
 	transparent: false
 })
 
-// Sets up the element
+// Sets up the 
 window.onorientationchange = resize
 window.onresize = resize
 game.view.style.position = 'absolute'
@@ -542,8 +542,6 @@ function parse(type, pack) {
 			break
 
 		case Pack.SHOW_SYSTEM:
-			console.log("settubg ib viewport: " + viewport)
-			console.log("settubg ib system  : " + system)
 			viewport.addChild(system)
 			hideMenu()
 			setVisible(Elem.Text.PING)

@@ -314,8 +314,8 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (var i in Elem)
-		for (var j in Elem[i])
+	for (i in Elem)
+		for (j in Elem[i])
 			setHidden(Elem[i][j]);
 }
 
@@ -347,6 +347,7 @@ function doGuiResize() {
 }
 
 function menuInit() {
+
 	function hoverButton(elem) {
 		elem.style.background = 'rgba(200, 200, 200, 0.5)'
 	}
@@ -356,7 +357,7 @@ function menuInit() {
 	}
 
 	// Adds the hover behaviours to all buttons
-	for (var i in Elem.Button) {
+	for (i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
 		elem.setAttribute('touch', false)
 

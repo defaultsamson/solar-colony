@@ -8,7 +8,6 @@
 		margin: 0;
 		padding: 0;
 		background-color: #2A2C31;
-		visibility: hidden;
 	}
 
 	.txt {
@@ -84,6 +83,7 @@
 		top: 50%;
 		transform: translate(-50%, -50%);
 		transform-origin: center center;
+		visibility: hidden;
 		/** lets div be click-through-able */
 		pointer-events: none;
 	}
@@ -326,13 +326,14 @@
 	#top_display {
 		/**background: #066;**/
 		position: absolute;
-		width: 400px;
+		width: 200px;
 		height: 200px;
 		padding: 0;
 		text-align: left;
 		left: 0%;
 		top: 0%;
 		transform-origin: top left;
+		visibility: hidden;
 		/** lets div be click-through-able */
 		pointer-events: none;
 	}
@@ -381,19 +382,17 @@
 </head>
 
 <body>
-	<!-- Client libraries -->
+	<!-- Shared (Order matters, they may be used in other files) -->
 	<script src='game/client/libraries.js'></script>
-	<!-- Shared (Always load Util first, as it may be used in other files) -->
 	<script src='game/client/PreClient.js'></script>
 	<script src='game/shared/Constants.js'></script>
 	<script src='game/shared/Util.js'></script>
-	<!-- Rest -->
 	<script src='game/shared/Orbit.js'></script>
 	<script src='game/shared/Planet.js'></script>
 	<script src='game/shared/Ship.js'></script>
 	<script src='game/shared/System.js'></script>
 	<script src='game/shared/Team.js'></script>
-	<!-- Load Client -->
+	<!-- Client -->
 	<script src='game/client/Line.js'></script>
 	<script src='game/client/Menu.js'></script>
 	<script src='game/client/Player.js'></script>

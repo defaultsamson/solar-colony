@@ -115,10 +115,10 @@ function updateSelectedPlanet(mouse) {
 
 				// If it doesn't collide with the sun, test if it collides with a planet
 				if (!collides) {
-					for (var j in system.planets) {
-						if (system.planets[j] != sendShipsFrom && system.planets[j] != planet) {
+					for (n in system.planets) {
+						if (system.planets[n] != sendShipsFrom && system.planets[n] != planet) {
 							// current planet of interest
-							let current = system.planets[j]
+							let current = system.planets[n]
 							let cPos = current.calcPosition(targetTime)
 							// If the target is within the bounds of the two planets
 							if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
