@@ -195,68 +195,6 @@ function updateGuiClick() {
 	}
 }
 
-function joinButton() {
-	joinGame = true
-	createGame = false
-	updateGuiClick()
-}
-
-function createButton() {
-	joinGame = false
-	createGame = true
-	updateGuiClick()
-}
-
-function randomButton() {
-	if (joinGame) {
-		randomGame = true
-		withFriends = false
-		updateGuiClick()
-	}
-}
-
-function friendsButton() {
-	if (joinGame || createGame) {
-		randomGame = false
-		withFriends = true
-		updateGuiClick()
-	}
-}
-
-function playerCount(p) {
-	players = p
-	updateGuiClick()
-}
-
-function joinTeam(i) {
-	var pack = {
-		type: Pack.JOIN_TEAM,
-		team: i
-	}
-	socket.ws.send(JSON.stringify(pack))
-}
-
-function startButton() {
-	if (inTeamSelection) {
-		var pack = {
-			type: Pack.START_BUTTON
-		}
-		socket.ws.send(JSON.stringify(pack))
-		//disableButton(Elem.Button.START)
-	} else {
-		if (updateStartButton())
-			sendForm()
-	}
-}
-
-function quitButton() {
-	gotoTitle()
-	var pack = {
-		type: Pack.QUIT
-	}
-	socket.ws.send(JSON.stringify(pack))
-}
-
 var nameGotGood = false
 var idGotGood = false
 
@@ -376,8 +314,8 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (i in Elem)
-		for (j in Elem[i])
+	for (var i in Elem)
+		for (var j in Elem[i])
 			setHidden(Elem[i][j]);
 }
 
@@ -408,17 +346,17 @@ function doGuiResize() {
 	document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
 }
 
-function hoverButton(elem) {
-	elem.style.background = 'rgba(200, 200, 200, 0.5)'
-}
-
-function unhoverButton(elem) {
-	elem.style.background = 'rgba(0, 0, 0, 0)'
-}
-
 function menuInit() {
+	function hoverButton(elem) {
+		elem.style.background = 'rgba(200, 200, 200, 0.5)'
+	}
+
+	function unhoverButton(elem) {
+		elem.style.background = 'rgba(0, 0, 0, 0)'
+	}
+
 	// Adds the hover behaviours to all buttons
-	for (i in Elem.Button) {
+	for (var i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
 		elem.setAttribute('touch', false)
 
@@ -456,14 +394,97 @@ function menuInit() {
 			}
 		}, false)
 	}
-}
 
-function buySpawn() {
-	if (exists(focusPlanet))
-		focusPlanet.createSpawnClick()
-}
+	document.getElementById(Elem.Button.JOIN).onmousedown = function() {
+		joinGame = true
+		createGame = false
+		updateGuiClick()
+	}
 
-function buyShips(num, price) {
-	if (exists(focusPlanet))
-		focusPlanet.createShipsClick(num, price)
+	document.getElementById(Elem.Button.CREATE).onmousedown = function() {
+		joinGame = false
+		createGame = true
+		updateGuiClick()
+	}
+
+	document.getElementById(Elem.Button.RANDOM).onmousedown = function() {
+		if (joinGame) {
+			randomGame = true
+			withFriends = false
+			updateGuiClick()
+		}
+	}
+
+	document.getElementById(Elem.Button.WITH_FRIENDS).onmousedown = function() {
+		if (joinGame || createGame) {
+			randomGame = false
+			withFriends = true
+			updateGuiClick()
+		}
+	}
+
+	function playerCount(p) {
+		players = p
+		updateGuiClick()
+	}
+
+	document.getElementById(Elem.Button.PLAYERS_2).onmousedown = () => playerCount(2)
+	document.getElementById(Elem.Button.PLAYERS_3).onmousedown = () => playerCount(3)
+	document.getElementById(Elem.Button.PLAYERS_4).onmousedown = () => playerCount(4)
+	document.getElementById(Elem.Button.PLAYERS_8).onmousedown = () => playerCount(8)
+	document.getElementById(Elem.Button.PLAYERS_16).onmousedown = () => playerCount(16)
+	document.getElementById(Elem.Button.ANY_PLAYERS).onmousedown = () => playerCount(-1)
+
+	function joinTeam(i) {
+		var pack = {
+			type: Pack.JOIN_TEAM,
+			team: i
+		}
+		socket.ws.send(JSON.stringify(pack))
+	}
+
+	document.getElementById(Elem.Button.TEAM_RED).onmousedown = () => joinTeam(0)
+	document.getElementById(Elem.Button.TEAM_ORANGE).onmousedown = () => joinTeam(1)
+	document.getElementById(Elem.Button.TEAM_YELLOW).onmousedown = () => joinTeam(2)
+	document.getElementById(Elem.Button.TEAM_GREEN).onmousedown = () => joinTeam(3)
+	document.getElementById(Elem.Button.TEAM_BLUE).onmousedown = () => joinTeam(4)
+	document.getElementById(Elem.Button.TEAM_PURPLE).onmousedown = () => joinTeam(5)
+
+	document.getElementById(Elem.Button.START).onmousedown = function() {
+		if (inTeamSelection) {
+			var pack = {
+				type: Pack.START_BUTTON
+			}
+			socket.ws.send(JSON.stringify(pack))
+			//disableButton(Elem.Button.START)
+		} else {
+			if (updateStartButton())
+				sendForm()
+		}
+	}
+
+	document.getElementById(Elem.Button.QUIT).onmousedown = function() {
+		gotoTitle()
+		var pack = {
+			type: Pack.QUIT
+		}
+		socket.ws.send(JSON.stringify(pack))
+	}
+
+	document.getElementById(Elem.Button.BUY_SPAWN).onmousedown = function() {
+		if (exists(focusPlanet))
+			focusPlanet.createSpawnClick()
+	}
+
+	function buyShips(num, price) {
+		if (exists(focusPlanet))
+			focusPlanet.createShipsClick(num, price)
+	}
+
+	document.getElementById(Elem.Button.BUY_SHIPS_1000).onmousedown = () => buyShips(1000, 800)
+	document.getElementById(Elem.Button.BUY_SHIPS_100).onmousedown = () => buyShips(100, 90)
+	document.getElementById(Elem.Button.BUY_SHIPS_10).onmousedown = () => buyShips(10, 10)
+
+	document.getElementById(Elem.Input.USERNAME).onkeyup = updateStartButton
+	document.getElementById(Elem.Input.ID).onkeyup = updateStartButton
 }

@@ -1,3 +1,5 @@
+global.isServer = true
+
 require('../shared/Constants.js')
 require('../shared/Util.js')
 

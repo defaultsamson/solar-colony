@@ -345,9 +345,9 @@ function resize() {
 }
 
 function getTeam(id) {
-	for (var i in this.teams) {
-		if (this.teams[i].id == id) {
-			return this.teams[i]
+	for (var i in teams) {
+		if (teams[i].id == id) {
+			return teams[i]
 		}
 	}
 	return null
@@ -542,6 +542,8 @@ function parse(type, pack) {
 			break
 
 		case Pack.SHOW_SYSTEM:
+			console.log("settubg ib viewport: " + viewport)
+			console.log("settubg ib system  : " + system)
 			viewport.addChild(system)
 			hideMenu()
 			setVisible(Elem.Text.PING)
@@ -606,12 +608,12 @@ function parse(type, pack) {
 				// Team Object and teamID
 				var team = pack.teams[i]
 				var teamID = team.id
+				var teamObj = getTeam(teamID)
 				for (var j in team.players) {
 					// player name
 					var name = team.players[j]
 
 					// Adds new player object to the team object
-					var teamObj = getTeam(teamID)
 					teamObj.addPlayer(new Player(name))
 
 					var list

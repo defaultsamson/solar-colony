@@ -323,7 +323,7 @@ class Game extends Object {
 
 
 		// Start all teams off with 100 pixels
-		for (i in this.teams)
+		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
 
 		this.sendPlayers({

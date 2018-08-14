@@ -9,13 +9,14 @@ function exists(a) {
 //  ____) | | | | (_| | | |  __/ (_| |
 // |_____/|_| |_|\__,_|_|  \___|\__,_|
 
+/* NOTE: Doesn't work with Browserify because it creates global and window
 try {
 	if (exists(global)) {
 		global.isServer = true
 	}
 } catch (err) {
 	window.isServer = false
-}
+}*/
 
 const LOCAL_DEBUG = true
 const PORT = 3141
@@ -97,7 +98,7 @@ const TICKS_PER_COLLISION_UPDATE = 10 // Ticks per collision update When drawing
 
 if (isServer) {
 	global.exists = exists
-	
+
 	global.LOCAL_DEBUG = LOCAL_DEBUG
 	global.PORT = PORT
 
