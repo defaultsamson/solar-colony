@@ -5,11 +5,11 @@ Requires [Node.JS](https://nodejs.org/en/) and [npm](https://www.npmjs.com/)
 
 ## Contributing
 
-When you first clone the repository, you will need to run this script to install the required node dependencies. This will also update the `libraries.js` via Browserify.
-```
-./update_dependencies.sh
-```
+When you first clone the repository, you will need to run `./update_dependencies.sh` to install the required node dependencies. This will also update the `libraries.js` via Browserify.
+
 The `push.sh` script is mostly designed for my personal use to deploy on my website, however, you can install the [Browser Sync](https://browsersync.io/) Node.JS package and easily host a live website using `./push.sh live`. Just be sure that in `./game/shared/Constants.js` you have set `LOCAL_DEBUG = true`, otherwise the game will try to use server SSL keys.
+
+To "compile" the JS into a minified version execute `./compile.sh 1` then execute `./compile.sh 2`. You may ignore the warnings, just look at the errors at the bottom, and fix them manually in `test.js`. Once there are no more errors, then run `./compile.sh 3` to finish compiling. You will also need to go into `index.html` and replace all the scripts with a single one pointing to `./compiled.js`. 
 
 ## Server Setup
 

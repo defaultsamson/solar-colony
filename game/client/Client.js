@@ -58,40 +58,10 @@ viewport
 	.decelerate()
 
 window.onload = function() {
-	PIXI.loader
-		.add('sunTexture', 'game/assets/sun.png')
-		.add('planet1', 'game/assets/planet1.png')
-		.add('planet2', 'game/assets/planet2.png')
-		.add('ship', 'game/assets/ship.png')
-		.add('spawn', 'game/assets/spawn.png')
-		.add('infantry', 'game/assets/infantry.png')
-		.load(onLoad)
-}
-
-//  _____       _ _   
-// |_   _|     (_) |  
-//   | |  _ __  _| |_ 
-//   | | | '_ \| | __|
-//  _| |_| | | | | |_ 
-// |_____|_| |_|_|\__|
-
-var myTeam
-var system
-var teams
-var hud
-
-var socket
-var ping = 200
-
-var resources
-
-function onLoad(loader, res) {
-
 	hideMenu()
 	setVisible(INPUT_DIV)
 	setVisible(TOP_DIV)
 
-	resources = res
 
 	lastElapsed = Date.now()
 	game.ticker.add(gameLoop)
@@ -122,8 +92,8 @@ function onLoad(loader, res) {
 
 	hud = game.stage.addChild(new Hud())
 
-	sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
-	sendShipText.anchor.set(0, 0.5)
+	//sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
+	//sendShipText.anchor.set(0, 0.5)
 
 	menuInit()
 	resize()
@@ -132,7 +102,40 @@ function onLoad(loader, res) {
 
 	gotoTitle()
 	connect()
+
+	PIXI.loader
+		.add('sunTexture', 'game/assets/sun.png')
+		.add('planet1', 'game/assets/planet1.png')
+		.add('planet2', 'game/assets/planet2.png')
+		.add('ship', 'game/assets/ship.png')
+		.add('spawn', 'game/assets/spawn.png')
+		.add('infantry', 'game/assets/infantry.png')
+		.load(onLoad)
+
+	function onLoad(loader, res) {
+		resources = res
+	}
 }
+
+//  _____       _ _   
+// |_   _|     (_) |  
+//   | |  _ __  _| |_ 
+//   | | | '_ \| | __|
+//  _| |_| | | | | |_ 
+// |_____|_| |_|_|\__|
+
+var myTeam
+var system
+var teams
+var hud
+
+var socket
+var ping = 200
+var lastElapsed
+
+var resources
+
+document.body.onresize = resize
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -436,7 +439,7 @@ function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 	}
 }
 
-var gameID = null
+var gameIDDisplay = null
 var player = 0
 var inTeamSelection = false
 var countDown
@@ -474,7 +477,7 @@ function parse(type, pack) {
 			countDown = COUNTDOWN_TIME
 			inTeamSelection = true
 
-			gameID = pack.gameID
+			gameIDDisplay = pack.gameID
 			player = pack.player
 
 			teams = []
@@ -485,7 +488,7 @@ function parse(type, pack) {
 
 			setVisible(Elem.Text.ID_DISPLAY1)
 			setVisible(Elem.Text.ID_DISPLAY2)
-			setText(Elem.Text.ID_DISPLAY2, gameID)
+			setText(Elem.Text.ID_DISPLAY2, gameIDDisplay)
 
 			setVisible(Elem.Button.TEAM_RED)
 			setVisible(Elem.Button.TEAM_ORANGE)

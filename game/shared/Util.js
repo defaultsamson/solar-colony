@@ -115,7 +115,7 @@ function updateSelectedPlanet(mouse) {
 
 				// If it doesn't collide with the sun, test if it collides with a planet
 				if (!collides) {
-					for (n in system.planets) {
+					for (var n in system.planets) {
 						if (system.planets[n] != sendShipsFrom && system.planets[n] != planet) {
 							// current planet of interest
 							let current = system.planets[n]

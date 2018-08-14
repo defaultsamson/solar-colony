@@ -16,6 +16,5 @@ elif [ $1 = "live" ]; then
 	node ./game/server/Server.js & browser-sync start --server
 elif [ $1 = "help" ]; then
 	echo "Usage: $0 <web|live|help>"
-	exit 1
 fi
 

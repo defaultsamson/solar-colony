@@ -8,6 +8,7 @@
 		margin: 0;
 		padding: 0;
 		background-color: #2A2C31;
+		visibility: hidden;
 	}
 
 	.txt {
@@ -83,7 +84,6 @@
 		top: 50%;
 		transform: translate(-50%, -50%);
 		transform-origin: center center;
-		visibility: hidden;
 		/** lets div be click-through-able */
 		pointer-events: none;
 	}
@@ -333,7 +333,6 @@
 		left: 0%;
 		top: 0%;
 		transform-origin: top left;
-		visibility: hidden;
 		/** lets div be click-through-able */
 		pointer-events: none;
 	}
@@ -377,22 +376,21 @@
 		top: 45%;
 		text-align: right;
 	}
-
 	</style>
+</head>
+
+<body onresize='resize()'>
 	<!-- Client libraries -->
 	<script src='game/client/libraries.js'></script>
 	<!-- Shared (Always load Util first, as it may be used in other files) -->
 	<script src='game/shared/Constants.js'></script>
 	<script src='game/shared/Util.js'></script>
-	<!-- Client -->
+	<!-- Rest -->
 	<script src='game/shared/Orbit.js'></script>
 	<script src='game/shared/Planet.js'></script>
 	<script src='game/shared/Ship.js'></script>
 	<script src='game/shared/System.js'></script>
 	<script src='game/shared/Team.js'></script>
-</head>
-
-<body onresize='resize()'>
 	<!-- Load Client -->
 	<script src='game/client/Hud.js'></script>
 	<script src='game/client/Line.js'></script>
@@ -405,7 +403,7 @@
 		<p id='t_pixels' class='txt med'>Pixels: 0</p>
 		<p id='t_ships' class='txt med'>Ships: 0</p>
 	</div>
-	<div id="input">
+	<div id="input"></div>
 		<p id='t_countdown' class='txt big'>Starting Game in NULL</p>
 		<p id='t_connecting' class='txt sml'>Connecting to Server...</p>
 		<p id='b_join' class='btn txt med' onmousedown='joinButton()'>Join</p>

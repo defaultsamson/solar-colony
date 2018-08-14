@@ -6,7 +6,7 @@ class Hud extends PIXI.Container {
 	}
 
 	updateText() {
-		sendShipText.tint = myTeam.shipCount < 100 ? Colour.GREY_TEXT : Colour.WHITE
+		//sendShipText.tint = myTeam.shipCount < 100 ? Colour.GREY_TEXT : Colour.WHITE
 
 		hud.resize()
 	}
