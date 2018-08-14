@@ -17,8 +17,9 @@ var game = new PIXI.Application(w, h, {
 	transparent: false
 })
 
-window.onorientationchange = resize
 // Sets up the element
+window.onorientationchange = resize
+window.onresize = resize
 game.view.style.position = 'absolute'
 game.view.style.display = 'block'
 document.body.appendChild(game.view)
@@ -58,10 +59,39 @@ viewport
 	.decelerate()
 
 window.onload = function() {
+	PIXI.loader
+		.add('sunTexture', 'game/assets/sun.png')
+		.add('planet1', 'game/assets/planet1.png')
+		.add('planet2', 'game/assets/planet2.png')
+		.add('ship', 'game/assets/ship.png')
+		.add('spawn', 'game/assets/spawn.png')
+		.add('infantry', 'game/assets/infantry.png')
+		.load(onLoad)
+}
+
+//  _____       _ _   
+// |_   _|     (_) |  
+//   | |  _ __  _| |_ 
+//   | | | '_ \| | __|
+//  _| |_| | | | | |_ 
+// |_____|_| |_|_|\__|
+
+var myTeam
+var system
+var teams
+
+var socket
+var ping = 200
+
+var resources
+
+function onLoad(loader, res) {
+
 	hideMenu()
 	setVisible(INPUT_DIV)
 	setVisible(TOP_DIV)
 
+	resources = res
 
 	lastElapsed = Date.now()
 	game.ticker.add(gameLoop)
@@ -90,11 +120,6 @@ window.onload = function() {
 		disabledFill: Colour.GREY_TEXT
 	}
 
-	hud = game.stage.addChild(new Hud())
-
-	//sendShipText = hud.addChild(new TextButton('Send Ships (100 ships)', style, 0.5, 0.5, 100, 0))
-	//sendShipText.anchor.set(0, 0.5)
-
 	menuInit()
 	resize()
 
@@ -102,40 +127,7 @@ window.onload = function() {
 
 	gotoTitle()
 	connect()
-
-	PIXI.loader
-		.add('sunTexture', 'game/assets/sun.png')
-		.add('planet1', 'game/assets/planet1.png')
-		.add('planet2', 'game/assets/planet2.png')
-		.add('ship', 'game/assets/ship.png')
-		.add('spawn', 'game/assets/spawn.png')
-		.add('infantry', 'game/assets/infantry.png')
-		.load(onLoad)
-
-	function onLoad(loader, res) {
-		resources = res
-	}
 }
-
-//  _____       _ _   
-// |_   _|     (_) |  
-//   | |  _ __  _| |_ 
-//   | | | '_ \| | __|
-//  _| |_| | | | | |_ 
-// |_____|_| |_|_|\__|
-
-var myTeam
-var system
-var teams
-var hud
-
-var socket
-var ping = 200
-var lastElapsed
-
-var resources
-
-document.body.onresize = resize
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -186,7 +178,6 @@ function centerView() {
 function updateKeyboard() {
 	if (PIXI.keyboardManager.isPressed(Key.P)) {
 		myTeam.pixels += 500000000000
-		hud.updateText()
 	}
 	if (PIXI.keyboardManager.isPressed(Key.O)) {
 
@@ -350,7 +341,6 @@ function resize() {
 	}
 
 	stopSnap()
-	hud.resize(width, height)
 	doGuiResize()
 }
 

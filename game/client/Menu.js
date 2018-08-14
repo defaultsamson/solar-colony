@@ -61,8 +61,6 @@ function gotoTitle() {
 		system = null
 	}
 
-	hud.hideAll()
-
 	formSent = false
 	shownStart = false
 
@@ -378,8 +376,8 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (var i in Elem)
-		for (var j in Elem[i])
+	for (i in Elem)
+		for (j in Elem[i])
 			setHidden(Elem[i][j]);
 }
 
@@ -420,7 +418,7 @@ function unhoverButton(elem) {
 
 function menuInit() {
 	// Adds the hover behaviours to all buttons
-	for (var i in Elem.Button) {
+	for (i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
 		elem.setAttribute('touch', false)
 
@@ -449,14 +447,12 @@ function menuInit() {
 			}, 10)
 		}, false)
 		elem.addEventListener('mousedown', function(e) {
-			if (e.target.getAttribute('enable_click') == 'true') {
-				hoverButton(e.target)
-				// if it was a touch tap, unhover it after 100ms
-				if (e.target.getAttribute('touch') == 'true') {
-					setTimeout(function() {
-						unhoverButton(e.target)
-					}, 100)
-				}
+			hoverButton(e.target)
+			// if it was a touch tap, unhover it after 100ms
+			if (e.target.getAttribute('touch') == 'true') {
+				setTimeout(function() {
+					unhoverButton(e.target)
+				}, 100)
 			}
 		}, false)
 	}
