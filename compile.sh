@@ -18,8 +18,8 @@ if [ $# -ge 1 ]; then
 fi
 
 # Create the temp.js file if neccessary
-if [ ! -f temp.js ]; then
-	echo "No $TEMP file found, creating one..."
+if [ ! -f $TEMP ]; then
+	echo "Creating new $TEMP..."
 
 	# Concatenates the files with a new line between each one
 	echo "Concatenating..."
@@ -35,7 +35,6 @@ echo "Compiling..."
 java -jar $COMPILER --js $TEMP --js_output_file $COMPILED --compilation_level SIMPLE --warning_level QUIET
 RE=$?
 if [ $RE -eq 0 ]; then
-	rm $TEMP
 	echo "Successfully compiled to $COMPILED"
 else
 	echo ""

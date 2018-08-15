@@ -314,8 +314,8 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (i in Elem)
-		for (j in Elem[i])
+	for (var i in Elem)
+		for (var j in Elem[i])
 			setHidden(Elem[i][j]);
 }
 
@@ -337,7 +337,7 @@ function doGuiResize() {
 	}
 
 	// Scale the desktop version to be smaller
-	if (!mobile) {
+	if (!IS_MOBILE) {
 		scale *= DESKTOP_SCALE
 	}
 	// scale = Math.max(scale, 0.5)
@@ -357,7 +357,7 @@ function menuInit() {
 	}
 
 	// Adds the hover behaviours to all buttons
-	for (i in Elem.Button) {
+	for (var i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
 		elem.setAttribute('touch', false)
 
@@ -376,7 +376,9 @@ function menuInit() {
 			//e.target.setAttribute('touch', false)
 		}, false)
 		elem.addEventListener('touchstart', function(e) {
-			hoverButton(e.target)
+			if (e.target.getAttribute('enable_click') == 'true') {
+				hoverButton(e.target)
+			}
 		}, false)
 		elem.addEventListener('touchend', function(e) {
 			unhoverButton(e.target)
@@ -386,12 +388,14 @@ function menuInit() {
 			}, 10)
 		}, false)
 		elem.addEventListener('mousedown', function(e) {
-			hoverButton(e.target)
-			// if it was a touch tap, unhover it after 100ms
-			if (e.target.getAttribute('touch') == 'true') {
-				setTimeout(function() {
-					unhoverButton(e.target)
-				}, 100)
+			if (e.target.getAttribute('enable_click') == 'true') {
+				hoverButton(e.target)
+				// if it was a touch tap, unhover it after 100ms
+				if (e.target.getAttribute('touch') == 'true') {
+					setTimeout(function() {
+						unhoverButton(e.target)
+					}, 100)
+				}
 			}
 		}, false)
 	}
@@ -488,4 +492,7 @@ function menuInit() {
 
 	document.getElementById(Elem.Input.USERNAME).onkeyup = updateStartButton
 	document.getElementById(Elem.Input.ID).onkeyup = updateStartButton
+
+	setVisible(INPUT_DIV)
+	setVisible(TOP_DIV)
 }

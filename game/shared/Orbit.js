@@ -1,4 +1,4 @@
-class Orbit extends(isServer ? Object : PIXI.Graphics) {
+class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 	constructor(x, y, radius) {
 		super()
 
@@ -6,7 +6,7 @@ class Orbit extends(isServer ? Object : PIXI.Graphics) {
 		this.y = y
 		this.radius = radius
 
-		if (!isServer) {
+		if (!IS_SERVER) {
 			var numOfDashes = Math.max(Math.floor(Math.PI * radius / DASH_LENGTH), MIN_DASHES)
 			var dashRadians = DASH_LENGTH / radius
 			var spacingRadians = (2 * Math.PI / numOfDashes) - dashRadians
@@ -33,6 +33,6 @@ class Orbit extends(isServer ? Object : PIXI.Graphics) {
 	}
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	module.exports = Orbit
 }

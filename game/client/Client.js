@@ -79,6 +79,7 @@ window.onload = function() {
 var myTeam
 var system
 var teams
+var lastElapsed
 
 var socket
 var ping = 200
@@ -87,39 +88,16 @@ var resources
 
 function onLoad(loader, res) {
 
-	hideMenu()
-	setVisible(INPUT_DIV)
-	setVisible(TOP_DIV)
-
 	resources = res
 
 	lastElapsed = Date.now()
+
 	game.ticker.add(gameLoop)
 
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
 
-	var style = {
-		fontFamily: 'Verdana',
-		fontSize: 28,
-		fill: Colour.WHITE,
-		disabledFill: Colour.GREY_TEXT
-	}
-
-	var smallStyle = {
-		fontFamily: 'Verdana',
-		fontSize: 18,
-		fill: Colour.WHITE,
-		disabledFill: Colour.GREY_TEXT
-	}
-
-	var largeStyle = {
-		fontFamily: 'Verdana',
-		fontSize: 48,
-		fill: Colour.WHITE,
-		disabledFill: Colour.GREY_TEXT
-	}
-
+	hideMenu()
 	menuInit()
 	resize()
 

@@ -1,1 +1,1 @@
-window.isServer = false
+window.IS_SERVER = false

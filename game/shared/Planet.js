@@ -1,12 +1,12 @@
 const shipSpeed = 15 // units per second
 
-class Planet extends(isServer ? Object : PIXI.Sprite) {
+class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 	constructor(texture, scale, rotationConstant, startAngle, opm) {
 		super(texture)
 
-		this.radius = isServer ? 0.5 * texture : 0.5 * this.width
+		this.radius = IS_SERVER ? 0.5 * texture : 0.5 * this.width
 
-		if (isServer) {
+		if (IS_SERVER) {
 			this.scale = scale
 			this.infantry = {}
 		} else {
@@ -43,7 +43,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		// orbits per minute
 		this.opm = opm
 
-		if (!isServer) {
+		if (!IS_SERVER) {
 			// Ghosting ring
 			var ghost = new PIXI.Graphics()
 			ghost.lineStyle(DASH_THICKNESS * 2, Colour.DARK8)
@@ -59,7 +59,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		this.rotationConstant = rotationConstant
 		this.age = startAngle / this.speed
 
-		if (isServer) {
+		if (IS_SERVER) {
 			addPosition(this)
 			// Server-side counter
 			this.spawns = 0
@@ -79,7 +79,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		this.age += delta
 		var pos = this.calcPosition()
 		this.position.set(pos.x, pos.y)
-		if (!isServer) {
+		if (!IS_SERVER) {
 			// Rotate the planet (purely for visual effects)
 			this.rotation = this.age * this.rotationConstant
 			if (this.orbit) {
@@ -90,7 +90,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 			this.infantry.update(delta)
 		}
 
-		if (isServer || this.isMyPlanet()) {
+		if (IS_SERVER || this.isMyPlanet()) {
 			this.spawnCounter += this.spawnRate * delta
 
 			// Adds the accumulated number of pixels to a user
@@ -173,7 +173,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	setTeam(team) {
 		this.team = team
 
-		if (isServer) {
+		if (IS_SERVER) {
 			// Creates the planet on the client-side
 			var pack = {
 				type: Pack.SET_PLANET_TEAM,
@@ -206,7 +206,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	}
 
 	createShips(n, cost) {
-		if (isServer) {
+		if (IS_SERVER) {
 			// Validate to make sure the client isn't lying about the packet
 			if (this.team.pixels >= cost && n > 0) {
 				var good = false
@@ -261,7 +261,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	}
 
 	removeShips(n) {
-		if (!isServer) {
+		if (!IS_SERVER) {
 			var visualsToRemove = Math.min(n, Math.max(0, MAX_DISPLAY_SHIPS - this.shipCount + n))
 
 			if (visualsToRemove > 0) {
@@ -288,7 +288,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	}
 
 	spawnCount() {
-		return isServer ? this.spawns : this.spawns.length
+		return IS_SERVER ? this.spawns : this.spawns.length
 	}
 
 	// A client-side function for ease of use
@@ -303,7 +303,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	createSpawn(force) {
 		var good = false
 		var nextSpawn = true; // TODO
-		if (!isServer) {
+		if (!IS_SERVER) {
 			if (this.team && !force) this.team.pixels -= 200
 			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
@@ -355,7 +355,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 
 			this.spawnRate = spawnsSqr
 
-			if (!isServer) {
+			if (!IS_SERVER) {
 				this.infantry.maxParticles = spawnsSqr
 				this.infantry.frequency = 1 / spawnsSqr
 
@@ -370,7 +370,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 		let removeTo = this.spawnCount() - n
 
 		if (removeTo >= 0) {
-			if (isServer) {
+			if (IS_SERVER) {
 				this.spawnCount = removeTo
 			} else {
 				for (var i = this.spawns.length - 1; i >= removeTo && i >= 0; i--) {
@@ -389,7 +389,7 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	setOrbit(orbit) {
 		this.orbit = orbit
 
-		if (isServer) {
+		if (IS_SERVER) {
 			// Sets the planet's orbit on the client-side
 			var pack = {
 				type: Pack.SET_PLANET_ORBIT,
@@ -401,6 +401,6 @@ class Planet extends(isServer ? Object : PIXI.Sprite) {
 	}
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	module.exports = Planet
 }

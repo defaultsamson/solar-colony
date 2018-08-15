@@ -1,8 +1,8 @@
-class System extends(isServer ? Object : PIXI.Container) {
+class System extends(IS_SERVER ? Object : PIXI.Container) {
 	constructor() {
 		super()
 
-		if (!isServer) {
+		if (!IS_SERVER) {
 			this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, Particle.Sun)
 			this.sun.emit = true
 		}
@@ -30,7 +30,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 			}
 		}
 
-		if (!isServer) {
+		if (!IS_SERVER) {
 			// Update the sun particle emitter regardless of this.update
 			this.sun.update(delta)
 
@@ -62,7 +62,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 		this.orbits.push(orbit)
 		orbit.system = this
 
-		if (isServer) {
+		if (IS_SERVER) {
 			orbit.id = this.game.createID()
 			// Creates the orbit on the client-side
 			var pack = {
@@ -92,7 +92,7 @@ class System extends(isServer ? Object : PIXI.Container) {
 		this.planets.push(planet)
 		planet.system = this
 
-		if (isServer) {
+		if (IS_SERVER) {
 			planet.id = this.game.createID()
 			// Creates the planet on the client-side
 			var pack = {
@@ -123,6 +123,6 @@ class System extends(isServer ? Object : PIXI.Container) {
 	}
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	module.exports = System
 }
