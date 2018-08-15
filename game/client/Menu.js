@@ -376,7 +376,7 @@ function menuInit() {
 			//e.target.setAttribute('touch', false)
 		}, false)
 		elem.addEventListener('touchstart', function(e) {
-			if (e.target.getAttribute('enable_click') == 'true') {
+			if (e.target.getAttribute('enable_click') != 'false') {
 				hoverButton(e.target)
 			}
 		}, false)
@@ -388,7 +388,7 @@ function menuInit() {
 			}, 10)
 		}, false)
 		elem.addEventListener('mousedown', function(e) {
-			if (e.target.getAttribute('enable_click') == 'true') {
+			if (e.target.getAttribute('enable_click') != 'false') {
 				hoverButton(e.target)
 				// if it was a touch tap, unhover it after 100ms
 				if (e.target.getAttribute('touch') == 'true') {
