@@ -299,8 +299,8 @@ class Game extends Object {
 				var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
 
 				planet.setOrbit(orbit2)
-				planet.createSpawn(true)
 				planet.setTeam(this.teams[i])
+				planet.createSpawn(true)
 			}
 		}
 

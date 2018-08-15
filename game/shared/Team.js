@@ -23,6 +23,10 @@ class Team extends Object {
 		}
 	}
 
+	addPixels(pix) {
+		this.pixels += pix
+	}
+
 	setPixels(pix) {
 		this.pixels = pix
 		this.updateClientPixels()

@@ -155,7 +155,7 @@ function centerView() {
 
 function updateKeyboard() {
 	if (PIXI.keyboardManager.isPressed(Key.P)) {
-		myTeam.pixels += 500000000000
+		//myTeam.pixels += 500000000000
 	}
 	if (PIXI.keyboardManager.isPressed(Key.O)) {
 
@@ -356,6 +356,7 @@ function gameLoop() {
 	let eTime = (elapsed * 0.001) // time elapsed in seconds
 
 	if (system) {
+
 		system.update(eTime)
 
 		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
@@ -428,7 +429,7 @@ function parse(type, pack) {
 			break
 
 		case Pack.UPDATE_PIXELS: // update pixel count
-			myTeam.pixels = pack.pl
+			myTeam.setPixels(pack.pl)
 			break
 
 		case Pack.BUY_SHIPS: // buy ships
@@ -506,9 +507,9 @@ function parse(type, pack) {
 				// 1. subtract the counter that has happened while this packet sent
 				// 2. update the spawn counter by creating a spawn
 				// 3. push the spawn counter forward by the new rate
-				planet.spawnCounter -= planet.spawnRate * ping
+				planet.spawnCounter -= planet.spawnRate * ping * 0.001
 				planet.createSpawn(false)
-				planet.spawnCounter += planet.spawnRate * ping
+				planet.spawnCounter += planet.spawnRate * ping * 0.001
 			}
 
 			break

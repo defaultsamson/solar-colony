@@ -97,7 +97,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			let toAdd = Math.floor(this.spawnCounter)
 			if (toAdd > 0) {
 				this.spawnCounter -= toAdd
-				this.team.pixels += toAdd
+				this.team.addPixels(toAdd)
 			}
 		}
 	}
@@ -219,7 +219,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				}
 				if (good) {
 					this.shipCount += n
-					this.team.pixels -= cost
+					this.team.addPixels(-cost)
 					this.team.updateClientPixels()
 					this.system.game.sendPlayers({
 						type: Pack.BUY_SHIPS,
@@ -257,6 +257,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			// Must keep these after the above for loop ^ otherwise the incorrect number of whips will display due to the if statement
 			this.shipCount += n
 			this.team.shipCount += n
+			this.team.addPixels(-cost)
 		}
 	}
 
@@ -304,7 +305,10 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		var good = false
 		var nextSpawn = true; // TODO
 		if (!IS_SERVER) {
-			if (this.team && !force) this.team.pixels -= 200
+			console.log("Team: " + this.team)
+			console.log("force: " + force)
+			console.log("do: " + (this.team && !force))
+			if (this.team && !force) this.team.addPixels(-200)
 			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
 			// The position on this planet's surface to place the spawn (the angle)
@@ -335,14 +339,14 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				good = true
 			} else if (this.team.pixels >= 200 && this.spawnCount() < MAX_SPAWNS) {
 				good = true
-				this.team.pixels -= 200
+				this.team.addPixels(-200)
 			}
 
 			if (good) {
 				var pack = {
 					type: Pack.CREATE_SPAWN,
 					planet: this.id,
-					force: this.force
+					force: force
 				}
 				this.system.game.sendPlayers(pack)
 				this.spawns++
