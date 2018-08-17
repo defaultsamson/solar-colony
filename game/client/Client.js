@@ -13,6 +13,9 @@ const w = 600
 
 var game
 var viewport
+var socket
+var resources
+var menu
 
 window.onload = function() {
 	PIXI.loader
@@ -97,13 +100,11 @@ window.onload = function() {
 		stopSnap()
 	})
 
-	hideMenu()
-	menuInit()
+	menu = new Menu()
+	menu.gotoTitle()
 	resize()
 
 	socket = new SocketManager()
-
-	gotoTitle()
 	connect()
 }
 
@@ -119,10 +120,7 @@ var system
 var teams
 var lastElapsed
 
-var socket
 var ping = 200
-
-var resources
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -319,7 +317,7 @@ function resize() {
 	}
 
 	stopSnap()
-	doGuiResize()
+	menu.resize()
 }
 
 function getTeam(id) {
@@ -437,11 +435,11 @@ function parse(type, pack) {
 			break
 
 		case Pack.FORM_FAIL:
-			failSendForm(pack.reason)
+			menu.failSendForm(pack.reason)
 			break
 
 		case Pack.JOIN_GAME:
-			hideMenu()
+			menu.hide()
 
 			countDown = COUNTDOWN_TIME
 			inTeamSelection = true
@@ -522,7 +520,7 @@ function parse(type, pack) {
 
 		case Pack.SHOW_SYSTEM:
 			viewport.addChild(system)
-			hideMenu()
+			menu.hide()
 			setVisible(Elem.Text.PING)
 			setVisible(Elem.Text.PIXELS)
 			setVisible(Elem.Text.SHIPS)

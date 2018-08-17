@@ -52,21 +52,19 @@ class GameManager extends Object {
 		return null
 	}
 
-	createGame(maxPlayers) {
-		if (exists(maxPlayers)) {
-			maxPlayers = Math.min(maxPlayers, MAX_PLAYERS)
-			if (maxPlayers < 2)
-				maxPlayers = MAX_PLAYERS
+	createGame(playerCount) {
+		if (exists(playerCount)) {
+			playerCount = Math.min(Math.max(playerCount, MIN_PLAYERS), MAX_PLAYERS)
 		} else {
-			maxPlayers = MAX_PLAYERS
+			playerCount = MAX_PLAYERS
 		}
 
 		// Create a game with an ID
 		var id = this.generateSafeID()
 
-		var game = new ServerGame(id, maxPlayers, this)
+		var game = new ServerGame(id, playerCount, this)
 		this.games.push(game)
-		console.log('Creating Game: ' + id + ' [' + maxPlayers + ']')
+		console.log('Creating Game: ' + id + ' [' + playerCount + ']')
 
 		return game
 	}
