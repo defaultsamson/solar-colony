@@ -200,7 +200,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			n: n, // n 
 			c: cost // cost
 		}
-		socket.ws.send(JSON.stringify(pack))
+		socket.send(pack)
 	}
 
 	createShips(n, cost) {
@@ -296,7 +296,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			type: Pack.CREATE_SPAWN,
 			pl: this.id, // planet
 		}
-		socket.ws.send(JSON.stringify(pack))
+		socket.send(pack)
 	}
 
 	createSpawn(force) {
