@@ -3,19 +3,15 @@ const Planet = require('../shared/Planet.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
+const Game = require('../shared/Game.js')
 
-class Game extends Object {
-	constructor(server, gameID, maxPlayers) {
-		super()
+class ServerGame extends Game {
+	constructor(gameID, maxPlayers, server) {
+		super(gameID, maxPlayers)
 
 		this.ids = 0
-
 		this.server = server
-		this.gameID = gameID
-		this.maxPlayers = maxPlayers
-
 		this.players = []
-		this.teams = []
 
 		this.redTeam = this.addTeam(new Team(Colour.RED, 0))
 		this.orangeTeam = this.addTeam(new Team(Colour.ORANGE, 1))
@@ -23,14 +19,10 @@ class Game extends Object {
 		this.greenTeam = this.addTeam(new Team(Colour.GREEN, 3))
 		this.blueTeam = this.addTeam(new Team(Colour.BLUE, 4))
 		this.purpleTeam = this.addTeam(new Team(Colour.PURPLE, 5))
-
-		this.system = null
 	}
 
 	update(delta) {
-		if (this.system) {
-			this.system.update(delta)
-		}
+		super.update(delta)
 
 		for (var i in this.players) {
 			this.players[i].pinger.update(delta)
@@ -95,20 +87,6 @@ class Game extends Object {
 		return this.players.length < this.maxPlayers
 	}
 
-	addTeam(team) {
-		this.teams.push(team)
-		return team
-	}
-
-	getTeam(id) {
-		for (var i in this.teams) {
-			if (this.teams[i].id == id) {
-				return this.teams[i]
-			}
-		}
-		return null
-	}
-
 	createTeams(sock) {
 		var socks = exists(sock) ? [sock] : this.players
 
@@ -169,11 +147,9 @@ class Game extends Object {
 
 		const total = this.players.length
 		var started = 0
-		for (var i in this.players) {
-			if (this.players[i].start) {
+		for (var i in this.players)
+			if (this.players[i].start)
 				started++
-			}
-		}
 
 		var pack = {
 			type: Pack.UPDATE_MESSAGE,
@@ -282,26 +258,17 @@ class Game extends Object {
 
 		const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
 
-		{
-			// Rebuilds the teams 
-			var tempTeams = []
-			for (var i in this.teams) {
-				if (this.teams[i].players.length > 0) {
-					tempTeams.push(this.teams[i])
-				}
-			}
-			this.teams = tempTeams
+		this.teams = rebuildTeams(this.teams)
 
-			// builds the player planets
-			const planetCount = this.teams.length
-			const rotation = 2 * Math.PI / planetCount
-			for (var i = 0; i < planetCount; i++) {
-				var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
+		// builds the player planets
+		const planetCount = this.teams.length
+		const rotation = 2 * Math.PI / planetCount
+		for (var i = 0; i < planetCount; i++) {
+			var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
 
-				planet.setOrbit(orbit2)
-				planet.setTeam(this.teams[i])
-				planet.createSpawn(true)
-			}
+			planet.setOrbit(orbit2)
+			planet.setTeam(this.teams[i])
+			planet.createSpawn(true)
 		}
 
 		const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
@@ -368,4 +335,4 @@ class Game extends Object {
 	}
 }
 
-module.exports = Game
+module.exports = ServerGame

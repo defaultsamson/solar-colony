@@ -5,7 +5,7 @@ COMPILED="compiled.js"
 COMPILER="closure-compiler-v20180805.jar"
 
 # Whenever a new file is added to the game, it must also be added here
-ORDER="./libraries.js ./game/client/PreClient.js ./game/shared/Constants.js ./game/shared/Util.js ./game/shared/Orbit.js ./game/shared/Planet.js ./game/shared/Ship.js ./game/shared/System.js ./game/shared/Team.js ./game/client/Line.js ./game/client/Menu.js ./game/client/Player.js ./game/client/SocketManager.js ./game/client/Client.js"
+ORDER="./libraries.js ./game/client/PreClient.js ./game/shared/Constants.js ./game/shared/Util.js ./game/shared/Orbit.js ./game/shared/Planet.js ./game/shared/Ship.js ./game/shared/System.js ./game/shared/Team.js ./game/shared/Game.js ./game/client/Line.js ./game/client/Menu.js ./game/client/Player.js ./game/client/SocketManager.js ./game/client/Client.js"
 
 if [ $# -ge 1 ]; then
 	if [[ $1 = "clean" ]]; then

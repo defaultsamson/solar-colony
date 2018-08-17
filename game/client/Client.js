@@ -11,52 +11,8 @@
 const h = 600
 const w = 600
 
-// Creates the PIXI application
-var game = new PIXI.Application(w, h, {
-	antialias: true,
-	transparent: false
-})
-
-// Sets up the 
-window.onorientationchange = resize
-window.onresize = resize
-game.view.style.position = 'absolute'
-game.view.style.display = 'block'
-document.body.appendChild(game.view)
-game.renderer.autoResize = true
-game.renderer.backgroundColor = Colour.BACKGROUND
-document.addEventListener('contextmenu', event => event.preventDefault())
-
-// Viewport options. Not very important because it can vary (see resize() )
-// These are mostly just used for initialization so that no errors occur
-const viewportOptions = {
-	screenWidth: w,
-	screenHeight: h,
-	worldWidth: w,
-	worldHeight: h,
-	ticker: game.ticker
-}
-
-var viewport = new Viewport(viewportOptions)
-game.stage.addChild(viewport)
-
-const clampOptions = {
-	minWidth: 1,
-	minHeight: MIN_HEIGHT,
-	maxWidth: 1000 * w,
-	maxHeight: MAX_HEIGHT
-}
-
-const pinchOptions = {
-	percent: 4.5
-}
-
-viewport
-	.drag()
-	.wheel()
-	.pinch(pinchOptions)
-	.clampZoom(clampOptions)
-	.decelerate()
+var game
+var viewport
 
 window.onload = function() {
 	PIXI.loader
@@ -66,7 +22,89 @@ window.onload = function() {
 		.add('ship', 'game/assets/ship.png')
 		.add('spawn', 'game/assets/spawn.png')
 		.add('infantry', 'game/assets/infantry.png')
-		.load(onLoad)
+		.load((loader, res) => { resources = res })
+
+	// Creates the PIXI application
+	game = new PIXI.Application(w, h, {
+		antialias: true,
+		transparent: false
+	})
+
+	// Sets up the 
+	window.onorientationchange = resize
+	window.onresize = resize
+	game.view.style.position = 'absolute'
+	game.view.style.display = 'block'
+	// put the game behind the other html elements
+	document.body.insertBefore(game.view, document.getElementById(TOP_DIV))
+	game.renderer.autoResize = true
+	game.renderer.backgroundColor = Colour.BACKGROUND
+	document.addEventListener('contextmenu', event => event.preventDefault())
+
+	// Viewport options. Not very important because it can vary (see resize() )
+	// These are mostly just used for initialization so that no errors occur
+	const viewportOptions = {
+		screenWidth: w,
+		screenHeight: h,
+		worldWidth: w,
+		worldHeight: h,
+		ticker: game.ticker
+	}
+
+	viewport = new Viewport(viewportOptions)
+	game.stage.addChild(viewport)
+
+	const clampOptions = {
+		minWidth: 1,
+		minHeight: MIN_HEIGHT,
+		maxWidth: 1000 * w,
+		maxHeight: MAX_HEIGHT
+	}
+
+	const pinchOptions = {
+		percent: 4.5
+	}
+
+	viewport
+		.drag()
+		.wheel()
+		.pinch(pinchOptions)
+		.clampZoom(clampOptions)
+		.decelerate()
+
+	lastElapsed = Date.now()
+
+	game.ticker.add(gameLoop)
+
+	viewport.fitHeight(SUN_HEIGHT)
+	viewport.moveCenter(0, 0)
+
+	viewport.on('drag-start', function(e) {
+		stopSnap()
+		stopFollow()
+	})
+	viewport.on('pinch-start', stopSnap)
+	viewport.on('wheel', stopSnap)
+	viewport.on('clicked', onMouseClick)
+
+
+	// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
+	viewport.on('snap-end', function() {
+		if (snappingToPlanet) {
+			viewport.follow(snappingToPlanet)
+			focusPlanet = snappingToPlanet
+		}
+		stopSnap()
+	})
+
+	hideMenu()
+	menuInit()
+	resize()
+
+	socket = new SocketManager()
+
+	gotoTitle()
+	connect()
 }
 
 //  _____       _ _   
@@ -85,27 +123,6 @@ var socket
 var ping = 200
 
 var resources
-
-function onLoad(loader, res) {
-
-	resources = res
-
-	lastElapsed = Date.now()
-
-	game.ticker.add(gameLoop)
-
-	viewport.fitHeight(SUN_HEIGHT)
-	viewport.moveCenter(0, 0)
-
-	hideMenu()
-	menuInit()
-	resize()
-
-	socket = new SocketManager()
-
-	gotoTitle()
-	connect()
-}
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -189,14 +206,6 @@ function updateKeyboard() {
 	PIXI.keyboardManager.update()
 }
 
-viewport.on('drag-start', function(e) {
-	stopSnap()
-	stopFollow()
-})
-viewport.on('pinch-start', stopSnap)
-viewport.on('wheel', stopSnap)
-viewport.on('clicked', onMouseClick)
-
 var allowMouseClick = true
 
 function onMouseClick(e) {
@@ -277,15 +286,6 @@ function onMouseClick(e) {
 		}
 	}
 }
-
-// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
-viewport.on('snap-end', function() {
-	if (snappingToPlanet) {
-		viewport.follow(snappingToPlanet)
-		focusPlanet = snappingToPlanet
-	}
-	stopSnap()
-})
 
 //  _    _ _   _ _ 
 // | |  | | | (_) |

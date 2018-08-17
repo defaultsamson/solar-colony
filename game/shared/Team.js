@@ -3,7 +3,6 @@ class Team extends Object {
 		super()
 
 		this.players = []
-		this.planets = []
 		this.colour = colour
 		this.id = id
 		this.pixels = 0

@@ -1,0 +1,3 @@
+class ClientGame extends Game {
+	
+}

@@ -1,8 +1,8 @@
 const shipSpeed = 15 // units per second
 
 class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
-	constructor(texture, scale, rotationConstant, startAngle, opm) {
-		super(texture)
+	constructor(scale, rotationConstant, startAngle, opm) {
+		if (!IS_SERVER) super(resources.planet1.texture)
 
 		this.radius = IS_SERVER ? 0.5 * texture : 0.5 * this.width
 
@@ -82,10 +82,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		if (!IS_SERVER) {
 			// Rotate the planet (purely for visual effects)
 			this.rotation = this.age * this.rotationConstant
-			if (this.orbit) {
-				// Rotate the orbits (purely for visual effects)
-				this.orbit.rotation = -this.age * this.speed / 8
-			}
 			// Updates infantry
 			this.infantry.update(delta)
 		}
@@ -192,6 +188,8 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				this.spawns[i].tint = colour
 			}
 		}
+
+		return this
 	}
 
 	// A client-side function for ease of use
@@ -388,7 +386,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 			this.updateInfantry()
 		}
-	}*/
+	}
 
 	setOrbit(orbit) {
 		this.orbit = orbit
@@ -402,6 +400,33 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			}
 			this.system.game.sendPlayers(pack)
 		}
+
+		return this
+	}*/
+
+	toJSON() {
+		var json = {
+			id: this.id,
+			scale: this.scale,
+			rotationConstant: this.rotationConstant,
+			startAngle: this.startAngle,
+			opm: this.opm,
+			//non-constructor members
+			shipCount: this.shipCount,
+			team: this.team ? this.team.id : -1
+		}
+		return json
+	}
+
+	static fromJSON(json) {
+		var planet = new Planet(json.scale, json.rotationConstant, json.startAngle, json.opm)
+		if (json.shipCount) {
+			planet.shipCount = json.shipCount
+		}
+		if (json.team) {
+			planet.team = this.game.getTeam(json.team)
+		}
+		return planet
 	}
 }
 
