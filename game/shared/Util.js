@@ -11,10 +11,6 @@ function distSqr(x1, y1, x2, y2) {
 	return (x * x) + (y * y)
 }
 
-function exists(a) {
-	return a !== undefined && a !== null;
-}
-
 // Tells if the value x is between or equal to y and z within the error margin (error should be positive)
 function isBetween(x, y, z, error) {
 	if (y > z) {
@@ -24,15 +20,7 @@ function isBetween(x, y, z, error) {
 	}
 }
 
-try {
-	if (exists(global)) {
-		global.isServer = true
-	}
-} catch (err) {
-	window.isServer = false
-}
-
-if (isServer) {
+if (IS_SERVER) {
 	global.distSqr = distSqr
 	global.exists = exists
 	global.isBetween = isBetween
@@ -57,7 +45,7 @@ function addPosition(obj) {
 	obj.position.set = setter
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	global.addPosition = addPosition
 }
 
@@ -68,26 +56,17 @@ if (isServer) {
 // | |____| | |  __/ | | | |_ 
 //  \_____|_|_|\___|_| |_|\__|
 
-const sunCollisionRadius = 30
-const selectPlanetRadius = 55
-
-const ticksPerCollideUpdate = 10
-var updateLines = ticksPerCollideUpdate
+var updateLines = TICKS_PER_COLLISION_UPDATE
 
 var sendShipsFrom
 var sendShipsAmount = 0
 
 var selectedPlanet
 
-var mobile
-if (!isServer) {
-	mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent)
-}
-
 function updateSelectedPlanet(mouse) {
 	updateLines++
 
-	if (updateLines > ticksPerCollideUpdate) {
+	if (updateLines > TICKS_PER_COLLISION_UPDATE) {
 		updateLines = 0
 		selectedPlanet = null
 	}
@@ -116,7 +95,7 @@ function updateSelectedPlanet(mouse) {
 				var collides = false
 
 				// Tests collision for the sun (same as above with planets)
-				if (isBetween(0, pX, target.x, sunCollisionRadius) && isBetween(0, pY, target.y, sunCollisionRadius)) {
+				if (isBetween(0, pX, target.x, SUN_COLLISION_RADIUS) && isBetween(0, pY, target.y, SUN_COLLISION_RADIUS)) {
 					// https://math.stackexchange.com/questions/275529/check-if-line-intersects-with-circles-perimeter
 					let a = -mY
 					let b = mX
@@ -124,17 +103,17 @@ function updateSelectedPlanet(mouse) {
 					var distSquared = (c * c) / (a * a + b * b)
 
 					// if the tradjectory intersects with a planet
-					if (distSquared < sunCollisionRadius * sunCollisionRadius) {
+					if (distSquared < SUN_COLLISION_RADIUS * SUN_COLLISION_RADIUS) {
 						collides = true
 					}
 				}
 
 				// If it doesn't collide with the sun, test if it collides with a planet
 				if (!collides) {
-					for (n in system.planets) {
-						if (system.planets[n] != sendShipsFrom && system.planets[n] != planet) {
+					for (var j in system.planets) {
+						if (system.planets[j] != sendShipsFrom && system.planets[j] != planet) {
 							// current planet of interest
-							let current = system.planets[n]
+							let current = system.planets[j]
 							let cPos = current.calcPosition(targetTime)
 							// If the target is within the bounds of the two planets
 							if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
@@ -167,7 +146,7 @@ function updateSelectedPlanet(mouse) {
 					let targetDist = distSqr(mouse.x, mouse.y, target.x, target.y)
 					let planetDist = distSqr(mouse.x, mouse.y, planet.position.x, planet.position.y)
 
-					let radSqr = distSqr(0, 0, 0, selectPlanetRadius + planet.radius)
+					let radSqr = distSqr(0, 0, 0, planet.radius + PLANET_SELECT_RADIUS)
 
 					if (targetDist < radSqr || planetDist < radSqr) {
 						if (!selectedPlanet) {
@@ -204,7 +183,7 @@ function updateSelectedPlanet(mouse) {
 
 function goToSendShipsScreen(fromPlanet, amount) {
 	if (fromPlanet.shipCount >= amount) {
-		updateLines = ticksPerCollideUpdate
+		updateLines = TICKS_PER_COLLISION_UPDATE
 		sendShipsFrom = fromPlanet
 		sendShipsAmount = amount
 		viewport.pausePlugin('drag')
@@ -247,7 +226,7 @@ function disableButton(elemID) {
 	deselectButton(elemID)
 	elem.style.color = Colour.GREY_TEXT
 	elem.style.cursor = 'default'
-	elem.onmouseover = function () {
+	elem.onmouseover = function() {
 		this.style.backgroundColor = 'transparent'
 	}
 	elem.setAttribute('enable_click', false)
@@ -258,10 +237,10 @@ function enableButton(elemID, visible) {
 		var elem = document.getElementById(elemID)
 		elem.style.color = '#FFF'
 		elem.style.cursor = 'pointer'
-		elem.onmouseover = function () {
+		elem.onmouseover = function() {
 			this.style.backgroundColor = 'rgba(200, 200, 200, 0.5)'
 		}
-		elem.onmouseout = function () {
+		elem.onmouseout = function() {
 			this.style.backgroundColor = 'transparent'
 		}
 		elem.setAttribute('enable_click', true)

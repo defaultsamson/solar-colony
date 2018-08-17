@@ -23,10 +23,19 @@ class Team extends Object {
 		}
 	}
 
+	addPixels(pix) {
+		this.pixels += pix
+	}
+
+	setPixels(pix) {
+		this.pixels = pix
+		this.updateClientPixels()
+	}
+
 	// Server-side function to update the pixel count for the clients
-	updateClientPIxels() {
+	updateClientPixels() {
 		// Send the updated pixel count to clients
-		if (isServer) {
+		if (IS_SERVER) {
 			var pack = {
 				type: Pack.UPDATE_PIXELS,
 				pl: this.pixels
@@ -44,6 +53,6 @@ class Team extends Object {
 	}
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	module.exports = Team
 }

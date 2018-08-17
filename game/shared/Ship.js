@@ -1,6 +1,6 @@
-class Ship extends(isServer ? Object : PIXI.Sprite) {
+class Ship extends(IS_SERVER ? Object : PIXI.Sprite) {
 	constructor(fromX, fromY, toX, toY, speed, amount, tint, planet, duration) {
-		if (isServer) {
+		if (IS_SERVER) {
 			super()
 
 			addPosition(this)
@@ -45,13 +45,13 @@ class Ship extends(isServer ? Object : PIXI.Sprite) {
 	}
 
 	arrive() {
-		if (!isServer) {
+		if (!IS_SERVER) {
 			system.removeChild(this)
 		}
 		// TODO remove the ship from the array
 	}
 }
 
-if (isServer) {
+if (IS_SERVER) {
 	module.exports = Ship
 }

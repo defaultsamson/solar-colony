@@ -9,12 +9,12 @@ function connect() {
 
 	var ws = socket.connect()
 
-	ws.onerror = function (evt) {
+	ws.onerror = function(evt) {
 		console.log('The WebSocket experienced an error')
 		console.log(evt)
 	}
 
-	ws.onclose = function (evt) {
+	ws.onclose = function(evt) {
 		console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
 
 		if (connected) {
@@ -30,7 +30,7 @@ function connect() {
 		connect()
 	}
 
-	ws.onopen = function (evt) {
+	ws.onopen = function(evt) {
 		console.log('The WebSocket was opened succesfully!')
 
 		connectionAttempts = -1
@@ -40,7 +40,7 @@ function connect() {
 		updateStartButton()
 	}
 
-	ws.onmessage = function (evt) {
+	ws.onmessage = function(evt) {
 		try {
 			// console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
 			var pack = JSON.parse(evt.data)
@@ -60,8 +60,6 @@ function gotoTitle() {
 		viewport.removeChild(system)
 		system = null
 	}
-
-	hud.hideAll()
 
 	formSent = false
 	shownStart = false
@@ -160,20 +158,20 @@ function updateGuiClick() {
 				default: selectButton(Elem.Button.ANY_PLAYERS)
 				break
 				case 2:
-				selectButton(Elem.Button.PLAYERS_2)
-				break
+						selectButton(Elem.Button.PLAYERS_2)
+					break
 				case 3:
-				selectButton(Elem.Button.PLAYERS_3)
-				break
+						selectButton(Elem.Button.PLAYERS_3)
+					break
 				case 4:
-				selectButton(Elem.Button.PLAYERS_4)
-				break
+						selectButton(Elem.Button.PLAYERS_4)
+					break
 				case 8:
-				selectButton(Elem.Button.PLAYERS_8)
-				break
+						selectButton(Elem.Button.PLAYERS_8)
+					break
 				case 16:
-				selectButton(Elem.Button.PLAYERS_16)
-				break
+						selectButton(Elem.Button.PLAYERS_16)
+					break
 			}
 		}
 
@@ -197,73 +195,10 @@ function updateGuiClick() {
 	}
 }
 
-function joinButton() {
-	joinGame = true
-	createGame = false
-	updateGuiClick()
-}
-
-function createButton() {
-	joinGame = false
-	createGame = true
-	updateGuiClick()
-}
-
-function randomButton() {
-	if (joinGame) {
-		randomGame = true
-		withFriends = false
-		updateGuiClick()
-	}
-}
-
-function friendsButton() {
-	if (joinGame || createGame) {
-		randomGame = false
-		withFriends = true
-		updateGuiClick()
-	}
-}
-
-function playerCount(p) {
-	players = p
-	updateGuiClick()
-}
-
-function joinTeam(i) {
-	var pack = {
-		type: Pack.JOIN_TEAM,
-		team: i
-	}
-	socket.ws.send(JSON.stringify(pack))
-}
-
-function startButton() {
-	if (inTeamSelection) {
-		var pack = {
-			type: Pack.START_BUTTON
-		}
-		socket.ws.send(JSON.stringify(pack))
-		//disableButton(Elem.Button.START)
-	} else {
-		if (updateStartButton())
-			sendForm()
-	}
-}
-
-function quitButton() {
-	gotoTitle()
-	var pack = {
-		type: Pack.QUIT
-	}
-	socket.ws.send(JSON.stringify(pack))
-}
-
 var nameGotGood = false
 var idGotGood = false
 
 function updateStartButton() {
-
 	if (formSent) {
 		disableButton(Elem.Button.START)
 		return false
@@ -273,7 +208,7 @@ function updateStartButton() {
 		setHidden(Elem.Image.ID_CHECK)
 		setHidden(Elem.Image.ID_CROSS)
 
-		let nameCheck = /^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))
+		let nameCheck = USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))
 		if (nameCheck) {
 			setVisible(Elem.Image.USERNAME_CHECK)
 			nameGotGood = true
@@ -284,7 +219,7 @@ function updateStartButton() {
 		let idRequired = joinGame && withFriends
 		let idCheck
 		if (idRequired) {
-			idCheck = /^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))
+			idCheck = ID_REGEX.test(getInput(Elem.Input.ID))
 			if (idCheck) {
 				setVisible(Elem.Image.ID_CHECK)
 				idGotGood = true
@@ -323,7 +258,7 @@ document.onkeypress = function keyDownTextField(e) {
 		var txt = String.fromCharCode(e.which)
 
 		if (keyCode == Key.ENTER) {
-			if (!/^([A-Za-z0-9]{3,20})$/.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !/^([A-Za-z0-9]{6})$/.test(getInput(Elem.Input.ID))) {
+			if (!USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))) {} else if (joinGame && withFriends && !ID_REGEX.test(getInput(Elem.Input.ID))) {
 
 			} else if (updateStartButton()) {
 				sendForm()
@@ -333,7 +268,7 @@ document.onkeypress = function keyDownTextField(e) {
 				e.preventDefault()
 				return false
 			}
-		} else if (!/^([A-Za-z0-9])$/.test(txt)) {
+		} else if (!ACCEPTABLE_REGEX.test(txt)) {
 			if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
 
 			} else {
@@ -379,28 +314,16 @@ function sendForm() {
 }
 
 function hideMenu() {
-	for (i in Elem.Button) {
-		setHidden(Elem.Button[i])
-	}
-	for (i in Elem.Text) {
-		setHidden(Elem.Text[i])
-	}
-	for (i in Elem.List) {
-		setHidden(Elem.List[i])
-	}
-	for (i in Elem.Input) {
-		setHidden(Elem.Input[i])
-	}
-	for (i in Elem.Image) {
-		setHidden(Elem.Image[i])
-	}
+	for (var i in Elem)
+		for (var j in Elem[i])
+			setHidden(Elem[i][j]);
 }
 
 // Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
 // https://codepen.io/chriscoyier/pen/VvRoWy
 function doGuiResize() {
-	const guiX = 500
-	const guiY = 500
+	const guiX = INPUT_WIDTH
+	const guiY = INPUT_HEIGHT
 	const scaleX = window.innerWidth / guiX
 	const scaleY = window.innerHeight / guiY
 
@@ -414,47 +337,162 @@ function doGuiResize() {
 	}
 
 	// Scale the desktop version to be smaller
-	if (!mobile) {
-		scale *= 0.75
+	if (!IS_MOBILE) {
+		scale *= DESKTOP_SCALE
 	}
-	scale = Math.max(scale, 0.5)
+	// scale = Math.max(scale, 0.5)
 
 	document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
 	document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
 }
 
-function hoverButton(elem) {
-	elem.style.background = 'rgba(200, 200, 200, 0.5)'
-}
-
-function unhoverButton(elem) {
-	elem.style.background = 'rgba(0, 0, 0, 0)'
-}
-
 function menuInit() {
+
+	function hoverButton(elem) {
+		elem.style.background = 'rgba(200, 200, 200, 0.5)'
+	}
+
+	function unhoverButton(elem) {
+		elem.style.background = 'rgba(0, 0, 0, 0)'
+	}
+
 	// Adds the hover behaviours to all buttons
-	for (i in Elem.Button) {
+	for (var i in Elem.Button) {
 		var elem = document.getElementById(Elem.Button[i])
-		//if (elem.classList.contains('btn')) {
-			
-			if (mobile) {
-				// Small hack, shows hover colour then unhovers when the user clicks
-				elem.addEventListener('mousedown', function(e)
-				{
-					hoverButton(e.target)
+		elem.setAttribute('touch', false)
+
+		// Usual hover behaviour for mouse.
+		// the 'touch' attribute is a little bit hacky, it's used to detect
+		// finger taps vs. mouse clicks. The difference is the button should
+		// stop hovering at the end of a finger tap, but should continue 
+		// to hover at the end of a mouse click
+		elem.addEventListener('mouseover', function(e) {
+			if (e.target.getAttribute('touch') == 'false') {
+				hoverButton(e.target)
+			}
+		}, false)
+		elem.addEventListener('mouseleave', function(e) {
+			unhoverButton(e.target)
+			//e.target.setAttribute('touch', false)
+		}, false)
+		elem.addEventListener('touchstart', function(e) {
+			if (e.target.getAttribute('enable_click') != 'false') {
+				hoverButton(e.target)
+			}
+		}, false)
+		elem.addEventListener('touchend', function(e) {
+			unhoverButton(e.target)
+			e.target.setAttribute('touch', true)
+			setTimeout(function() {
+				e.target.setAttribute('touch', false)
+			}, 10)
+		}, false)
+		elem.addEventListener('mousedown', function(e) {
+			if (e.target.getAttribute('enable_click') != 'false') {
+				hoverButton(e.target)
+				// if it was a touch tap, unhover it after 100ms
+				if (e.target.getAttribute('touch') == 'true') {
 					setTimeout(function() {
 						unhoverButton(e.target)
 					}, 100)
-				}, false);
-			} else {
-				// Usual hover behaviour for mouse
-				elem.addEventListener('mouseover', function(e) {
-					hoverButton(e.target)
-				}, false);
-				elem.addEventListener('mouseleave', function(e) {
-					unhoverButton(e.target)
-				}, false);
+				}
 			}
-		//}
+		}, false)
 	}
+
+	document.getElementById(Elem.Button.JOIN).onmousedown = function() {
+		joinGame = true
+		createGame = false
+		updateGuiClick()
+	}
+
+	document.getElementById(Elem.Button.CREATE).onmousedown = function() {
+		joinGame = false
+		createGame = true
+		updateGuiClick()
+	}
+
+	document.getElementById(Elem.Button.RANDOM).onmousedown = function() {
+		if (joinGame) {
+			randomGame = true
+			withFriends = false
+			updateGuiClick()
+		}
+	}
+
+	document.getElementById(Elem.Button.WITH_FRIENDS).onmousedown = function() {
+		if (joinGame || createGame) {
+			randomGame = false
+			withFriends = true
+			updateGuiClick()
+		}
+	}
+
+	function playerCount(p) {
+		players = p
+		updateGuiClick()
+	}
+
+	document.getElementById(Elem.Button.PLAYERS_2).onmousedown = () => playerCount(2)
+	document.getElementById(Elem.Button.PLAYERS_3).onmousedown = () => playerCount(3)
+	document.getElementById(Elem.Button.PLAYERS_4).onmousedown = () => playerCount(4)
+	document.getElementById(Elem.Button.PLAYERS_8).onmousedown = () => playerCount(8)
+	document.getElementById(Elem.Button.PLAYERS_16).onmousedown = () => playerCount(16)
+	document.getElementById(Elem.Button.ANY_PLAYERS).onmousedown = () => playerCount(-1)
+
+	function joinTeam(i) {
+		var pack = {
+			type: Pack.JOIN_TEAM,
+			team: i
+		}
+		socket.ws.send(JSON.stringify(pack))
+	}
+
+	document.getElementById(Elem.Button.TEAM_RED).onmousedown = () => joinTeam(0)
+	document.getElementById(Elem.Button.TEAM_ORANGE).onmousedown = () => joinTeam(1)
+	document.getElementById(Elem.Button.TEAM_YELLOW).onmousedown = () => joinTeam(2)
+	document.getElementById(Elem.Button.TEAM_GREEN).onmousedown = () => joinTeam(3)
+	document.getElementById(Elem.Button.TEAM_BLUE).onmousedown = () => joinTeam(4)
+	document.getElementById(Elem.Button.TEAM_PURPLE).onmousedown = () => joinTeam(5)
+
+	document.getElementById(Elem.Button.START).onmousedown = function() {
+		if (inTeamSelection) {
+			var pack = {
+				type: Pack.START_BUTTON
+			}
+			socket.ws.send(JSON.stringify(pack))
+			//disableButton(Elem.Button.START)
+		} else {
+			if (updateStartButton())
+				sendForm()
+		}
+	}
+
+	document.getElementById(Elem.Button.QUIT).onmousedown = function() {
+		gotoTitle()
+		var pack = {
+			type: Pack.QUIT
+		}
+		socket.ws.send(JSON.stringify(pack))
+	}
+
+	document.getElementById(Elem.Button.BUY_SPAWN).onmousedown = function() {
+		if (exists(focusPlanet))
+			focusPlanet.createSpawnClick()
+	}
+
+	function buyShips(num, price) {
+		if (exists(focusPlanet))
+			focusPlanet.createShipsClick(num, price)
+	}
+
+	document.getElementById(Elem.Button.BUY_SHIPS_1000).onmousedown = () => buyShips(1000, 800)
+	document.getElementById(Elem.Button.BUY_SHIPS_100).onmousedown = () => buyShips(100, 90)
+	document.getElementById(Elem.Button.BUY_SHIPS_10).onmousedown = () => buyShips(10, 10)
+
+	document.getElementById(Elem.Input.USERNAME).onkeyup = updateStartButton
+	document.getElementById(Elem.Input.ID).onkeyup = updateStartButton
+
+	setVisible(INPUT_DIV)
+	setVisible(TOP_DIV)
 }

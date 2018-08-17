@@ -1,4 +1,15 @@
-let ip = LOCAL_DEBUG ? 'localhost' : 'samsonclose.me'
+var ip
+if (LOCAL_DEBUG) {
+	try {
+		// Gets the IP from the browser (makes LAN connections for phones, laptops etc easier)
+		ip = location.host.split(':')[0]
+	} catch (err) {
+		ip = 'localhost'
+	}
+} else {
+	ip = 'samsonclose.me'
+}
+
 
 class SocketManager extends Object {
 	constructor() {
