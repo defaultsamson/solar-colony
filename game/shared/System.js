@@ -1,6 +1,10 @@
+if (IS_SERVER) Orbit = require('./Orbit.js')
+
 class System extends(IS_SERVER ? Object : PIXI.Container) {
-	constructor() {
+	constructor(game) {
 		super()
+
+		this.game = game
 
 		if (!IS_SERVER) {
 			this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, Particle.Sun)
@@ -12,38 +16,34 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 	}
 
 	update(delta) {
-		if (!this.paused) {
-			for (var i in this.orbits) {
-				this.orbits[i].update(delta)
-			}
+		for (var i in this.orbits) {
+			this.orbits[i].update(delta)
 		}
 
 		if (!IS_SERVER) {
-			// Update the sun particle emitter regardless of this.update
 			this.sun.update(delta)
 
-			if (!this.paused) {
-				// If drawing the ship travel lines
-				if (isChoosingShipSend()) {
-					updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
-				}
+			// If drawing the ship travel lines
+			if (isChoosingShipSend()) {
+				updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
+			}
 
-				for (var i in this.sendingShips) {
-					this.sendingShips[i].update(delta)
-				}
+			for (var i in this.sendingShips) {
+				this.sendingShips[i].update(delta)
 			}
 		}
 	}
 
 	addOrbit(orbit) {
 		this.orbits.push(orbit)
-		orbit.system = this
 
 		if (IS_SERVER) {
 			orbit.id = this.game.createID()
 		} else {
 			this.addChild(orbit)
 		}
+
+		return orbit
 	}
 
 	getOrbit(id) {
@@ -77,13 +77,15 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 		for (var i in this.orbits) {
 			json.orbits.push(this.orbits[i].toJSON())
 		}
+
+		return json
 	}
 
-	static fromJSON(json) {
-		var system = new System()
+	static fromJSON(game, json) {
+		var system = new System(game)
 
 		for (var i in json.orbits) {
-			this.addOrbit(Orbit.fromJSON(json.orbits[i]))
+			system.addOrbit(Orbit.fromJSON(game, system, json.orbits[i]))
 		}
 
 		return system

@@ -30,6 +30,17 @@ class Game extends Object {
 		this.teams.push(team)
 	}
 
+	// Rebuilds the teams (removes empty teams from the list)
+	rebuildTeams() {
+		var tempTeams = []
+		for (var i in this.teams) {
+			if (this.teams[i].players.length > 0) {
+				tempTeams.push(this.teams[i])
+			}
+		}
+		return tempTeams
+	}
+
 	getTeam(id) {
 		for (var i in this.teams)
 			if (this.teams[i].id == id)

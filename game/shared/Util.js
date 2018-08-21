@@ -20,22 +20,10 @@ function isBetween(x, y, z, error) {
 	}
 }
 
-// Rebuilds the teams (removes empty teams from the list)
-function rebuildTeams(teams) {
-	var tempTeams = []
-	for (var i in teams) {
-		if (teams[i].players.length > 0) {
-			tempTeams.push(teams[i])
-		}
-	}
-	return tempTeams
-}
-
 if (IS_SERVER) {
 	global.distSqr = distSqr
 	global.exists = exists
 	global.isBetween = isBetween
-	global.rebuildTeams = rebuildTeams
 }
 
 //   _____                          

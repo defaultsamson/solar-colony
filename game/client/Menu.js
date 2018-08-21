@@ -174,7 +174,7 @@ class Menu extends Object {
 				if (keyCode == Key.ENTER) {
 					if (!USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))) {} else if (me.joinGame && me.withFriends && !ID_REGEX.test(getInput(Elem.Input.ID))) {
 
-					} else if (updateStartButton()) {
+					} else if (me.updateStartButton()) {
 						me.sendForm()
 						e.preventDefault()
 						return false
@@ -183,13 +183,16 @@ class Menu extends Object {
 						return false
 					}
 				} else if (!ACCEPTABLE_REGEX.test(txt)) {
+					/*
 					if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
 
 					} else {
 						// console.log(txt + ' : ' + e.which)
 						e.preventDefault()
 						return false
-					}
+					}*/
+					e.preventDefault()
+					return false
 				}
 			} else if (keyCode == Key.ENTER) {
 				e.preventDefault()
@@ -207,9 +210,9 @@ class Menu extends Object {
 		allowMouseClick = true
 		inTeamSelection = false
 
-		if (system) {
-			viewport.removeChild(system)
-			system = null
+		if (game && game.system) {
+			viewport.removeChild(game.system)
+			game.system = null
 		}
 
 		this.formSent = false
@@ -375,10 +378,10 @@ class Menu extends Object {
 						return true
 					}
 				} else if (this.idGotGood) {
-					failSendForm('Game ID must be 6 characters, letters and numbers only')
+					this.failSendForm('Game ID must be 6 characters, letters and numbers only')
 				}
 			} else if (this.nameGotGood) {
-				failSendForm('Username must be 3-20 characters, letters and numbers only')
+				this.failSendForm('Username must be 3-20 characters, letters and numbers only')
 			}
 			disableButton(Elem.Button.START)
 			return false
@@ -446,5 +449,34 @@ class Menu extends Object {
 
 		document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
 		document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
+	}
+
+	showTeamSelection() {
+		this.hide()
+
+		inTeamSelection = true
+		
+		setVisible(Elem.Button.START)
+		setVisible(Elem.Button.QUIT)
+
+		setVisible(Elem.Text.ID_DISPLAY1)
+		setVisible(Elem.Text.ID_DISPLAY2)
+		setText(Elem.Text.ID_DISPLAY2, game.gameID)
+
+		setVisible(Elem.Button.TEAM_RED)
+		setVisible(Elem.Button.TEAM_ORANGE)
+		setVisible(Elem.Button.TEAM_YELLOW)
+		setVisible(Elem.Button.TEAM_GREEN)
+		setVisible(Elem.Button.TEAM_BLUE)
+		setVisible(Elem.Button.TEAM_PURPLE)
+
+		setVisible(Elem.List.TEAM_RED)
+		setVisible(Elem.List.TEAM_ORANGE)
+		setVisible(Elem.List.TEAM_YELLOW)
+		setVisible(Elem.List.TEAM_GREEN)
+		setVisible(Elem.List.TEAM_BLUE)
+		setVisible(Elem.List.TEAM_PURPLE)
+
+		setVisible(Elem.Text.PING)
 	}
 }

@@ -90,11 +90,11 @@ class SocketManager extends Object {
 				break
 
 			case Pack.UPDATE_PIXELS: // update pixel count
-				myTeam.setPixels(pack.pl)
+				game.myTeam.setPixels(pack.pl)
 				break
 
 			case Pack.BUY_SHIPS: // buy ships
-				system.getPlanetByID(pack.pl).createShips(pack.n)
+				game.system.getPlanetByID(pack.pl).createShips(pack.n)
 				break
 
 			case Pack.FORM_FAIL:
@@ -102,65 +102,16 @@ class SocketManager extends Object {
 				break
 
 			case Pack.JOIN_GAME:
-				menu.hide()
 
 				countDown = COUNTDOWN_TIME
-				inTeamSelection = true
 
-				gameIDDisplay = pack.gameID
-				player = pack.player
+				game = new ClientGame(pack.gameID, pack.maxPlayers)
 
-				teams = []
-				myTeam = null
-
-				setVisible(Elem.Button.START)
-				setVisible(Elem.Button.QUIT)
-
-				setVisible(Elem.Text.ID_DISPLAY1)
-				setVisible(Elem.Text.ID_DISPLAY2)
-				setText(Elem.Text.ID_DISPLAY2, gameIDDisplay)
-
-				setVisible(Elem.Button.TEAM_RED)
-				setVisible(Elem.Button.TEAM_ORANGE)
-				setVisible(Elem.Button.TEAM_YELLOW)
-				setVisible(Elem.Button.TEAM_GREEN)
-				setVisible(Elem.Button.TEAM_BLUE)
-				setVisible(Elem.Button.TEAM_PURPLE)
-
-				setVisible(Elem.List.TEAM_RED)
-				setVisible(Elem.List.TEAM_ORANGE)
-				setVisible(Elem.List.TEAM_YELLOW)
-				setVisible(Elem.List.TEAM_GREEN)
-				setVisible(Elem.List.TEAM_BLUE)
-				setVisible(Elem.List.TEAM_PURPLE)
-
-				setVisible(Elem.Text.PING)
-				break
-
-			case Pack.CREATE_SYSTEM:
-				system = new System()
-				break
-
-			case Pack.CREATE_ORBIT:
-				var orbit = new Orbit(pack.x, pack.y, pack.radius)
-				orbit.id = pack.id
-				system.addOrbit(orbit)
-				break
-
-			case Pack.CREATE_PLANET:
-				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
-				planet.id = pack.id
-				system.addPlanet(planet)
-				break
-
-			case Pack.SET_PLANET_ORBIT:
-				var planet = system.getPlanetByID(pack.planet)
-				var orbit = system.getOrbit(pack.orbit)
-				planet.setOrbit(orbit)
+				menu.showTeamSelection()
 				break
 
 			case Pack.CREATE_SPAWN:
-				var planet = system.getPlanetByID(pack.planet)
+				var planet = game.system.getPlanetByID(pack.planet)
 
 				if (pack.force) {
 					planet.createSpawn(true)
@@ -176,22 +127,43 @@ class SocketManager extends Object {
 				break
 
 			case Pack.SET_PLANET_TEAM:
-				var planet = system.getPlanetByID(pack.planet)
-				var team = getTeam(pack.team)
+				var planet = game.system.getPlanetByID(pack.planet)
+				var team = game.getTeam(pack.team)
 				planet.setTeam(team)
 				break
 
-			case Pack.SHOW_SYSTEM:
-				viewport.addChild(system)
+			case Pack.CREATE_SYSTEM:
+				game.system = new System(game)
+
+				for (var i in pack.orbits) {
+					var orb = pack.orbits[i]
+					var orbit = new Orbit(game, orb.x, orb.y, orb.radius)
+					orbit.id = orb.id
+					game.system.addOrbit(orbit)
+
+					for (var j in orb.planets) {
+						var pla = orb.planets[j]
+						var planet = new Planet(game, game.system, pla.radius, pla.rotationConstant, pla.startAngle, pla.opm)
+						planet.id = pla.id
+						planet.team = game.getTeam(pla.team)
+						orbit.addPlanet(planet)
+
+					}
+				}
+
+				// var system = systemFromJSON(game, pack.sys)
+				viewport.addChild(game.system)
+				//game.system = system
+				//console.log("parent: " + system.parent)
 				menu.hide()
 				setVisible(Elem.Text.PING)
 				setVisible(Elem.Text.PIXELS)
 				setVisible(Elem.Text.SHIPS)
 
 				// A little hack to get planets to go to their correct positions when the game starts
-				system.play() // This lets us update the planets
-				system.update(0) // this updates them from their default pos
-				system.pause() // This reverts the game state to being paused
+				game.play() // This lets us update the planets
+				game.update(0) // this updates them from their default pos
+				game.pause() // This reverts the game state to being paused
 
 				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 				setVisible(Elem.Text.COUNTDOWN)
@@ -208,8 +180,8 @@ class SocketManager extends Object {
 				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 
 				if (countDown <= 0) {
-					system.play()
-					system.update(ping / 1000) // fast forward based on our ping
+					game.play()
+					game.update(ping / 1000) // fast forward based on our ping
 
 					setHidden(Elem.Text.COUNTDOWN)
 
@@ -221,11 +193,11 @@ class SocketManager extends Object {
 				break
 
 			case Pack.CREATE_TEAMS:
-				teams = []
+				game.teams = []
 				for (var i in pack.teams) {
 					var id = pack.teams[i].id
 					var colour = pack.teams[i].colour
-					teams.push(new Team(colour, id))
+					game.addTeam(new Team(colour, id))
 				}
 				break
 
@@ -238,15 +210,16 @@ class SocketManager extends Object {
 				document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
 				document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
 
-				for (var i in teams) {
-					teams[i].players = []
+				// Clears the players from the teams
+				for (var i in game.teams) {
+					game.teams[i].players = []
 				}
 
 				for (var i in pack.teams) {
 					// Team Object and teamID
 					var team = pack.teams[i]
 					var teamID = team.id
-					var teamObj = getTeam(teamID)
+					var teamObj = game.getTeam(teamID)
 					for (var j in team.players) {
 						// player name
 						var name = team.players[j]
@@ -295,12 +268,12 @@ class SocketManager extends Object {
 				setVisible(Elem.Text.PLAYER_COUNT)
 				setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
 
-				myTeam = getTeam(pack.team)
+				game.myTeam = game.getTeam(pack.team)
 
 				break
 		}
 
-		//console.log('type: ' + type)
+		//console.log('type: ' + type)myTeam
 		//console.log('pack: ' + JSON.stringify(pack))
 	}
 }

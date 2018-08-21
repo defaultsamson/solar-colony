@@ -12,6 +12,7 @@ const h = 600
 const w = 600
 
 var game
+var pixigame
 var viewport
 var socket
 var resources
@@ -28,7 +29,7 @@ window.onload = function() {
 		.load((loader, res) => { resources = res })
 
 	// Creates the PIXI application
-	game = new PIXI.Application(w, h, {
+	pixigame = new PIXI.Application(w, h, {
 		antialias: true,
 		transparent: false
 	})
@@ -36,12 +37,12 @@ window.onload = function() {
 	// Sets up the 
 	window.onorientationchange = resize
 	window.onresize = resize
-	game.view.style.position = 'absolute'
-	game.view.style.display = 'block'
-	// put the game behind the other html elements
-	document.body.insertBefore(game.view, document.getElementById(TOP_DIV))
-	game.renderer.autoResize = true
-	game.renderer.backgroundColor = Colour.BACKGROUND
+	pixigame.view.style.position = 'absolute'
+	pixigame.view.style.display = 'block'
+	// put the pixigame behind the other html elements
+	document.body.insertBefore(pixigame.view, document.getElementById(TOP_DIV))
+	pixigame.renderer.autoResize = true
+	pixigame.renderer.backgroundColor = Colour.BACKGROUND
 	document.addEventListener('contextmenu', event => event.preventDefault())
 
 	// Viewport options. Not very important because it can vary (see resize() )
@@ -51,11 +52,11 @@ window.onload = function() {
 		screenHeight: h,
 		worldWidth: w,
 		worldHeight: h,
-		ticker: game.ticker
+		ticker: pixigame.ticker
 	}
 
 	viewport = new Viewport(viewportOptions)
-	game.stage.addChild(viewport)
+	pixigame.stage.addChild(viewport)
 
 	const clampOptions = {
 		minWidth: 1,
@@ -77,7 +78,7 @@ window.onload = function() {
 
 	lastElapsed = Date.now()
 
-	game.ticker.add(gameLoop)
+	pixigame.ticker.add(gameLoop)
 
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
@@ -115,9 +116,6 @@ window.onload = function() {
 //  _| |_| | | | | |_ 
 // |_____|_| |_|_|\__|
 
-var myTeam
-var system
-var teams
 var lastElapsed
 
 var ping = 200
@@ -179,7 +177,7 @@ function updateKeyboard() {
 
 	}
 
-	let screenPoint = game.renderer.plugins.interaction.mouse.global
+	let screenPoint = pixigame.renderer.plugins.interaction.mouse.global
 	if (PIXI.keyboardManager.isPressed(Key.W)) {
 		/* TODO
 		viewport.down(screenPoint.x, screenPoint.y, {
@@ -208,7 +206,7 @@ var allowMouseClick = true
 
 function onMouseClick(e) {
 	if (allowMouseClick) {
-		if (system) {
+		if (game && game.system) {
 			if (isChoosingShipSend()) {
 				// updateSelectedPlanet(e.world.x, e.world.y)
 
@@ -228,7 +226,7 @@ function onMouseClick(e) {
 				return
 			}*/
 
-			var planet = system.getPlanet(e.world.x, e.world.y)
+			var planet = game.system.getPlanet(e.world.x, e.world.y)
 			if (planet) {
 				// If the viewport is already following the planet that was clicked on, then don't do anything
 				var follow = viewport.plugins['follow']
@@ -306,7 +304,7 @@ function resize() {
 	var height = window.innerHeight
 	var ratio = height / h
 
-	game.renderer.resize(width, height)
+	pixigame.renderer.resize(width, height)
 	viewport.resize(width, height, width, height)
 	viewport.fitHeight(prevHeight, false)
 
@@ -318,15 +316,6 @@ function resize() {
 
 	stopSnap()
 	menu.resize()
-}
-
-function getTeam(id) {
-	for (var i in teams) {
-		if (teams[i].id == id) {
-			return teams[i]
-		}
-	}
-	return null
 }
 
 //   _____                      
@@ -353,22 +342,22 @@ function gameLoop() {
 	lastElapsed = now
 	let eTime = (elapsed * 0.001) // time elapsed in seconds
 
-	if (system) {
+	if (game && game.system) {
 
-		system.update(eTime)
+		game.update(eTime)
 
 		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
 
-		if (myTeam.shipCount != lastShips) {
-			lastShips = myTeam.shipCount
-			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
+		if (game.myTeam.shipCount != lastShips) {
+			lastShips = game.myTeam.shipCount
+			setText(Elem.Text.SHIPS, 'Ships: ' + game.myTeam.shipCount)
 			updatePlanetGui(focussed, false, true)
 		}
 
 		// TODO this can be done in parse() when the server sends new pixels
-		if (myTeam.pixels != lastPixels) {
-			lastPixels = myTeam.pixels
-			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
+		if (game.myTeam.pixels != lastPixels) {
+			lastPixels = game.myTeam.pixels
+			setText(Elem.Text.PIXELS, 'Pixels: ' + game.myTeam.pixels)
 
 			updatePlanetGui(focussed, true, false)
 		}
@@ -388,16 +377,16 @@ function gameLoop() {
 function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 
 	if (pixelUpdate) {
-		enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
-		enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
-		enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
+		enableButton(Elem.Button.BUY_SHIPS_1000, game.myTeam.pixels >= 800)
+		enableButton(Elem.Button.BUY_SHIPS_100, game.myTeam.pixels >= 90)
+		enableButton(Elem.Button.BUY_SHIPS_10, game.myTeam.pixels >= 10)
 
 		if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
 			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
 			disableButton(Elem.Button.BUY_SPAWN)
 		} else {
 			setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
-			enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
+			enableButton(Elem.Button.BUY_SPAWN, game.myTeam.pixels >= 200)
 		}
 	}
 
@@ -406,7 +395,5 @@ function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 	}
 }
 
-var gameIDDisplay = null
-var player = 0
 var inTeamSelection = false
 var countDown

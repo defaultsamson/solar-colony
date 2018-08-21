@@ -1,6 +1,11 @@
+if (IS_SERVER) Planet = require('./Planet.js')
+
 class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
-	constructor(x, y, radius) {
+	constructor(game, system, x, y, radius) {
 		super()
+
+		this.game = game
+		this.system = system
 
 		this.x = x
 		this.y = y
@@ -36,8 +41,8 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 	update(delta) {
 		// Rotate the orbit (purely for visual effects) 
 		// TODO a better way of doing this?
-		if (this.planets[0]) {
-			this.orbit.rotation = -this.age * this.planets[0].speed / 8
+		if (!IS_SERVER && this.planets[0]) {
+			this.rotation = -this.age * this.planets[0].speed / 8
 		}
 
 		for (var i in this.planets) {
@@ -47,7 +52,6 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 
 	addPlanet(planet) {
 		this.planets.push(planet)
-		planet.system = this.system
 		planet.orbit = this
 
 		if (IS_SERVER) {
@@ -58,6 +62,8 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 			li.setPoints(0, 0)
 			planet.drawLine = this.addChild(li)
 		}
+
+		return planet
 	}
 
 	getPlanet(x, y) {
@@ -95,12 +101,12 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 		return json
 	}
 
-	static fromJSON(json) {
-		var orbit = new Orbit(json.x, json.y, json.radius)
-		orbit.id = json.id
+	static fromJSON(game, system, json) {
+		var orbit = new Orbit(game, system, json.x, json.y, json.radius)
+		if (json.id) orbit.id = json.id
 
 		for (var i in json.planets) {
-			this.addPlanet(Planet.fromJSON(json.planets[i]))
+			orbit.addPlanet(Planet.fromJSON(game, system, json.planets[i]))
 		}
 
 		return orbit
