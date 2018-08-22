@@ -141,6 +141,10 @@ if (IS_SERVER) {
 // | |____| | |  __/ | | | |_ 
 //  \_____|_|_|\___|_| |_|\__|
 
+// This is variable, used here to initialize things
+const INIT_HEIGHT = 600
+const INIT_WIDTH = 600
+
 // The animation time (in milliseconds) for zooming, panning, etc.
 const ANIMATION_TIME = 300
 // The height of the viewport after zooming on a planet

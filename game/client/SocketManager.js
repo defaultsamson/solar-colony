@@ -3,6 +3,8 @@ class SocketManager extends Object {
 		super()
 
 		this.ws = null
+		this.ping = 200
+		this.countDown
 		this.connectionAttempts = -1
 		this.connected = false
 	}
@@ -88,8 +90,8 @@ class SocketManager extends Object {
 				break
 
 			case Pack.PING_SET:
-				ping = pack.ping
-				setText(Elem.Text.PING, 'Ping: ' + ping + 'ms')
+				this.ping = pack.ping
+				setText(Elem.Text.PING, 'Ping: ' + this.ping + 'ms')
 				break
 
 			case Pack.UPDATE_PIXELS: // update pixel count
@@ -97,7 +99,7 @@ class SocketManager extends Object {
 				break
 
 			case Pack.BUY_SHIPS: // buy ships
-				game.system.getPlanetByID(pack.pl).createShips(pack.n)
+				game.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
 				break
 
 			case Pack.FORM_FAIL:
@@ -105,35 +107,9 @@ class SocketManager extends Object {
 				break
 
 			case Pack.JOIN_GAME:
-				menu.hide()
-
-				countDown = COUNTDOWN_TIME
-				inTeamSelection = true
-
-				game = new Game(pack.gameID, pack.maxPlayers)
-
-				setVisible(Elem.Button.START)
-				setVisible(Elem.Button.QUIT)
-
-				setVisible(Elem.Text.ID_DISPLAY1)
-				setVisible(Elem.Text.ID_DISPLAY2)
-				setText(Elem.Text.ID_DISPLAY2, game.gameID)
-
-				setVisible(Elem.Button.TEAM_RED)
-				setVisible(Elem.Button.TEAM_ORANGE)
-				setVisible(Elem.Button.TEAM_YELLOW)
-				setVisible(Elem.Button.TEAM_GREEN)
-				setVisible(Elem.Button.TEAM_BLUE)
-				setVisible(Elem.Button.TEAM_PURPLE)
-
-				setVisible(Elem.List.TEAM_RED)
-				setVisible(Elem.List.TEAM_ORANGE)
-				setVisible(Elem.List.TEAM_YELLOW)
-				setVisible(Elem.List.TEAM_GREEN)
-				setVisible(Elem.List.TEAM_BLUE)
-				setVisible(Elem.List.TEAM_PURPLE)
-
-				setVisible(Elem.Text.PING)
+				this.countDown = COUNTDOWN_TIME
+				game = new ClientGame(pack.gameID, pack.maxPlayers)
+				menu.gotoTeamSelection()
 				break
 
 			case Pack.CREATE_SYSTEM:
@@ -167,9 +143,9 @@ class SocketManager extends Object {
 					// 1. subtract the counter that has happened while this packet sent
 					// 2. update the spawn counter by creating a spawn
 					// 3. push the spawn counter forward by the new rate
-					planet.spawnCounter -= planet.spawnRate * ping * 0.001
+					planet.spawnCounter -= planet.spawnRate * this.ping * 0.001
 					planet.createSpawn(false)
-					planet.spawnCounter += planet.spawnRate * ping * 0.001
+					planet.spawnCounter += planet.spawnRate * this.ping * 0.001
 				}
 
 				break
@@ -192,7 +168,7 @@ class SocketManager extends Object {
 				game.update(0) // this updates them from their default pos
 				game.pause() // This reverts the game state to being paused
 
-				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
+				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(this.countDown / 1000))
 				setVisible(Elem.Text.COUNTDOWN)
 
 				viewport.pausePlugin('drag')
@@ -202,13 +178,12 @@ class SocketManager extends Object {
 				break
 
 			case Pack.START_GAME:
-				inTeamSelection = false
-				countDown -= COUNTDOWN_INTERVAL
-				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
+				this.countDown -= COUNTDOWN_INTERVAL
+				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(this.countDown / 1000))
 
-				if (countDown <= 0) {
+				if (this.countDown <= 0) {
 					game.play()
-					game.update(ping / 1000) // fast forward based on our ping
+					game.update(this.ping / 1000) // fast forward based on our ping
 
 					setHidden(Elem.Text.COUNTDOWN)
 

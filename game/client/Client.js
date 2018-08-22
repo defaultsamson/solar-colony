@@ -7,10 +7,6 @@
 //                       | |    
 //                       |_|   
 
-// This is variable, used here to initialize things
-const h = 600
-const w = 600
-
 var game
 var pixigame
 var menu
@@ -20,7 +16,7 @@ var resources
 
 window.onload = function() {
 	// Creates the PIXI application
-	pixigame = new PIXI.Application(w, h, {
+	pixigame = new PIXI.Application(INIT_WIDTH, INIT_HEIGHT, {
 		antialias: true,
 		transparent: false
 	})
@@ -38,10 +34,10 @@ window.onload = function() {
 	// Viewport options. Not very important because it can vary (see resize() )
 	// These are mostly just used for initialization so that no errors occur
 	const viewportOptions = {
-		screenWidth: w,
-		screenHeight: h,
-		worldWidth: w,
-		worldHeight: h,
+		screenWidth: INIT_WIDTH,
+		screenHeight: INIT_HEIGHT,
+		worldWidth: INIT_WIDTH,
+		worldHeight: INIT_HEIGHT,
 		ticker: pixigame.ticker
 	}
 
@@ -51,7 +47,7 @@ window.onload = function() {
 	const clampOptions = {
 		minWidth: 1,
 		minHeight: MIN_HEIGHT,
-		maxWidth: 1000 * w,
+		maxWidth: 1000 * INIT_WIDTH,
 		maxHeight: MAX_HEIGHT
 	}
 
@@ -83,7 +79,6 @@ window.onload = function() {
 		stopSnap()
 	})
 
-
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
 
@@ -106,17 +101,6 @@ window.onload = function() {
 		.add('infantry', 'game/assets/infantry.png')
 		.load((loader, res) => { resources = res })
 }
-
-//  _____       _ _   
-// |_   _|     (_) |  
-//   | |  _ __  _| |_ 
-//   | | | '_ \| | __|
-//  _| |_| | | | | |_ 
-// |_____|_| |_|_|\__|
-
-var lastElapsed
-
-var ping = 200
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -163,44 +147,6 @@ function centerView() {
 		})
 	}
 }
-
-function updateKeyboard() {
-	if (PIXI.keyboardManager.isPressed(Key.P)) {
-		//myTeam.pixels += 500000000000
-	}
-	if (PIXI.keyboardManager.isPressed(Key.O)) {
-
-	}
-	if (PIXI.keyboardManager.isPressed(Key.L)) {
-
-	}
-
-	let screenPoint = pixigame.renderer.plugins.interaction.mouse.global
-	if (PIXI.keyboardManager.isPressed(Key.W)) {
-		/* TODO
-		viewport.down(screenPoint.x, screenPoint.y, {
-			id: 0
-		})*/
-	} else if (PIXI.keyboardManager.isDown(Key.W)) {
-		/* TODO
-		viewport.move(screenPoint.x, screenPoint.y, {
-			id: 0
-		})*/
-	}
-
-	if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
-
-		if (isChoosingShipSend()) {
-			cancelSendShips()
-		} else {
-			centerView()
-		}
-	}
-
-	PIXI.keyboardManager.update()
-}
-
-var allowMouseClick = true
 
 function onMouseClick(e) {
 	if (allowMouseClick) {
@@ -300,7 +246,7 @@ function resize() {
 
 	var width = window.innerWidth
 	var height = window.innerHeight
-	var ratio = height / h
+	var ratio = height / INIT_HEIGHT
 
 	pixigame.renderer.resize(width, height)
 	viewport.resize(width, height, width, height)
@@ -323,75 +269,28 @@ function resize() {
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
 
-// Stats
-var lastPixels = -1
-var lastShips = -1
-
-// Planet vars
-var lastFocus = true
+var allowMouseClick = true
 var focusPlanet
+var lastElapsed
 
 function gameLoop() {
+	{ // Updates Keyboard
+		if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
 
-	updateKeyboard()
+			if (isChoosingShipSend()) {
+				cancelSendShips()
+			} else {
+				centerView()
+			}
+		}
+
+		PIXI.keyboardManager.update()
+	}
 
 	let now = Date.now()
 	let elapsed = now - lastElapsed
 	lastElapsed = now
 	let eTime = (elapsed * 0.001) // time elapsed in seconds
 
-	if (game && game.system) {
-
-		game.update(eTime)
-
-		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
-
-		if (game.myTeam.shipCount != lastShips) {
-			lastShips = game.myTeam.shipCount
-			setText(Elem.Text.SHIPS, 'Ships: ' + game.myTeam.shipCount)
-			updatePlanetGui(focussed, false, true)
-		}
-
-		// TODO this can be done in parse() when the server sends new pixels
-		if (game.myTeam.pixels != lastPixels) {
-			lastPixels = game.myTeam.pixels
-			setText(Elem.Text.PIXELS, 'Pixels: ' + game.myTeam.pixels)
-
-			updatePlanetGui(focussed, true, false)
-		}
-
-		if (focussed != lastFocus) {
-			lastFocus = focussed
-
-			setVisible(Elem.Button.BUY_SPAWN, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_100, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_10, focussed)
-			updatePlanetGui(focussed, true, true)
-		}
-	}
+	if (game) game.update(eTime)
 }
-
-function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
-
-	if (pixelUpdate) {
-		enableButton(Elem.Button.BUY_SHIPS_1000, game.myTeam.pixels >= 800)
-		enableButton(Elem.Button.BUY_SHIPS_100, game.myTeam.pixels >= 90)
-		enableButton(Elem.Button.BUY_SHIPS_10, game.myTeam.pixels >= 10)
-
-		if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
-			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
-			disableButton(Elem.Button.BUY_SPAWN)
-		} else {
-			setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
-			enableButton(Elem.Button.BUY_SPAWN, game.myTeam.pixels >= 200)
-		}
-	}
-
-	if (shipsUpdate) {
-		// TODO send ships buttons
-	}
-}
-
-var inTeamSelection = false
-var countDown

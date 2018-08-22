@@ -12,24 +12,26 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 		this.sendingShips = []
 	}
 
-	update(delta) {
-		for (var i in this.planets) {
-			this.planets[i].update(delta)
-		}
-
-		if (!IS_SERVER) {
-			// Update the sun particle emitter regardless of this.update
-			this.sun.update(delta)
-
-			// If drawing the ship travel lines
-			if (isChoosingShipSend()) {
-				updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
+	update(delta, paused) {
+		if (!paused) {
+			for (var i in this.planets) {
+				this.planets[i].update(delta)
 			}
 
-			for (var i in this.sendingShips) {
-				this.sendingShips[i].update(delta)
+			if (!IS_SERVER) {
+				// If drawing the ship travel lines
+				if (isChoosingShipSend()) {
+					updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
+				}
+
+				// Update all travelling ships
+				for (var i in this.sendingShips) {
+					this.sendingShips[i].update(delta)
+				}
 			}
 		}
+
+		if (!IS_SERVER) this.sun.update(delta)
 	}
 
 	getPlanet(x, y) {

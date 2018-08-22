@@ -21,8 +21,8 @@ class Game extends Object {
 	}
 
 	update(delta) {
-		if (this.system && !this.paused) {
-			this.system.update(delta)
+		if (this.system) {
+			this.system.update(delta, this.paused)
 		}
 	}
 

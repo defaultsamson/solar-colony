@@ -4,4 +4,14 @@ class ClientGame extends Game {
 
 		this.myTeam = null
 	}
+
+	removeSystem() {
+		viewport.removeChild(game.system)
+		game.system = null
+	}
+
+	update(delta) {
+		super.update(delta)
+		menu.updateIngameGui()
+	}
 }

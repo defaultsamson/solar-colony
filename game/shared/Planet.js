@@ -224,7 +224,8 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 					this.system.game.sendPlayers({
 						type: Pack.BUY_SHIPS,
 						pl: this.id,
-						n: n
+						n: n,
+						c: cost
 					})
 				}
 			}

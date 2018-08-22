@@ -2,6 +2,12 @@ class Menu extends Object {
 	constructor() {
 		super()
 
+		this.inTeamSelection = false
+
+		this.lastPixels = -1
+		this.lastShips = -1
+		this.lastFocus = true
+
 		this.serverFail = false
 		this.formSent = false
 
@@ -129,7 +135,7 @@ class Menu extends Object {
 		document.getElementById(Elem.Button.TEAM_PURPLE).onmousedown = () => joinTeam(5)
 
 		document.getElementById(Elem.Button.START).onmousedown = function() {
-			if (inTeamSelection) {
+			if (me.inTeamSelection) {
 				var pack = {
 					type: Pack.START_BUTTON
 				}
@@ -208,11 +214,11 @@ class Menu extends Object {
 	gotoTitle() {
 
 		allowMouseClick = true
-		inTeamSelection = false
+		this.inTeamSelection = false
 
-		if (game && game.system) {
-			viewport.removeChild(game.system)
-			game.system = null
+		if (game) {
+			game.removeSystem()
+			game = null
 		}
 
 		this.formSent = false
@@ -419,6 +425,8 @@ class Menu extends Object {
 	}
 
 	hide() {
+		this.inTeamSelection = false
+
 		for (var i in Elem)
 			for (var j in Elem[i])
 				setHidden(Elem[i][j]);
@@ -449,5 +457,83 @@ class Menu extends Object {
 
 		document.getElementById(INPUT_DIV).style.transform = 'translate(-50%, -50%) ' + 'scale(' + scale + ')'
 		document.getElementById(TOP_DIV).style.transform = 'scale(' + scale + ')'
+	}
+
+	updateIngameGui() {
+		if (game.myTeam) {
+			var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
+
+			if (game.myTeam.shipCount != this.lastShips) {
+				this.lastShips = game.myTeam.shipCount
+				setText(Elem.Text.SHIPS, 'Ships: ' + game.myTeam.shipCount)
+				this.updatePlanetGui(focussed, false, true)
+			}
+
+			// TODO this can be done in parse() when the server sends new pixels
+			if (game.myTeam.pixels != this.lastPixels) {
+				this.lastPixels = game.myTeam.pixels
+				setText(Elem.Text.PIXELS, 'Pixels: ' + game.myTeam.pixels)
+
+				this.updatePlanetGui(focussed, true, false)
+			}
+
+			if (focussed != this.lastFocus) {
+				this.lastFocus = focussed
+
+				setVisible(Elem.Button.BUY_SPAWN, focussed)
+				setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
+				setVisible(Elem.Button.BUY_SHIPS_100, focussed)
+				setVisible(Elem.Button.BUY_SHIPS_10, focussed)
+				this.updatePlanetGui(focussed, true, true)
+			}
+		}
+	}
+
+	updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
+		if (pixelUpdate) {
+			enableButton(Elem.Button.BUY_SHIPS_1000, game.myTeam.pixels >= 800)
+			enableButton(Elem.Button.BUY_SHIPS_100, game.myTeam.pixels >= 90)
+			enableButton(Elem.Button.BUY_SHIPS_10, game.myTeam.pixels >= 10)
+
+			if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
+				setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
+				disableButton(Elem.Button.BUY_SPAWN)
+			} else {
+				setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
+				enableButton(Elem.Button.BUY_SPAWN, game.myTeam.pixels >= 200)
+			}
+		}
+
+		if (shipsUpdate) {
+			// TODO send ships buttons
+		}
+	}
+
+	gotoTeamSelection() {
+		this.hide()
+		this.inTeamSelection = true
+
+		setVisible(Elem.Button.START)
+		setVisible(Elem.Button.QUIT)
+
+		setVisible(Elem.Text.ID_DISPLAY1)
+		setVisible(Elem.Text.ID_DISPLAY2)
+		setText(Elem.Text.ID_DISPLAY2, game.gameID)
+
+		setVisible(Elem.Button.TEAM_RED)
+		setVisible(Elem.Button.TEAM_ORANGE)
+		setVisible(Elem.Button.TEAM_YELLOW)
+		setVisible(Elem.Button.TEAM_GREEN)
+		setVisible(Elem.Button.TEAM_BLUE)
+		setVisible(Elem.Button.TEAM_PURPLE)
+
+		setVisible(Elem.List.TEAM_RED)
+		setVisible(Elem.List.TEAM_ORANGE)
+		setVisible(Elem.List.TEAM_YELLOW)
+		setVisible(Elem.List.TEAM_GREEN)
+		setVisible(Elem.List.TEAM_BLUE)
+		setVisible(Elem.List.TEAM_PURPLE)
+
+		setVisible(Elem.Text.PING)
 	}
 }
