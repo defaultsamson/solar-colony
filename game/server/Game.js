@@ -5,7 +5,7 @@ const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
 
 class Game extends Object {
-	constructor(server, gameID, maxPlayers) {
+	constructor(gameID, maxPlayers, server) {
 		super()
 
 		this.ids = 0
@@ -229,7 +229,7 @@ class Game extends Object {
 		var packet = {
 			type: Pack.JOIN_GAME,
 			gameID: this.gameID,
-			player: this.players.length
+			maxPlayers: this.maxPlayers
 		}
 		sock.send(JSON.stringify(packet))
 

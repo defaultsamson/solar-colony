@@ -11,6 +11,8 @@
 const h = 600
 const w = 600
 
+var menu
+
 // Creates the PIXI application
 var game = new PIXI.Application(w, h, {
 	antialias: true,
@@ -97,13 +99,12 @@ function onLoad(loader, res) {
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
 
-	hideMenu()
-	menuInit()
+	menu = new Menu()
+	menu.gotoTitle()
 	resize()
 
 	socket = new SocketManager()
 
-	gotoTitle()
 	connect()
 }
 
@@ -319,7 +320,7 @@ function resize() {
 	}
 
 	stopSnap()
-	doGuiResize()
+	menu.resize()
 }
 
 function getTeam(id) {
@@ -409,7 +410,6 @@ function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 }
 
 var gameIDDisplay = null
-var player = 0
 var inTeamSelection = false
 var countDown
 
@@ -437,17 +437,17 @@ function parse(type, pack) {
 			break
 
 		case Pack.FORM_FAIL:
-			failSendForm(pack.reason)
+			menu.failSendForm(pack.reason)
 			break
 
 		case Pack.JOIN_GAME:
-			hideMenu()
+			menu.hide()
 
 			countDown = COUNTDOWN_TIME
 			inTeamSelection = true
 
 			gameIDDisplay = pack.gameID
-			player = pack.player
+			maxPlayers = pack.maxPlayers
 
 			teams = []
 			myTeam = null
@@ -522,7 +522,7 @@ function parse(type, pack) {
 
 		case Pack.SHOW_SYSTEM:
 			viewport.addChild(system)
-			hideMenu()
+			menu.hide()
 			setVisible(Elem.Text.PING)
 			setVisible(Elem.Text.PIXELS)
 			setVisible(Elem.Text.SHIPS)
