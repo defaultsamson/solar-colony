@@ -1,56 +1,3 @@
-// To be completely honest, most of this code is spaghetti, but the menu works sooo... :/
-
-var connectionAttempts = -1
-var connected = false
-
-function connect() {
-
-	setVisible(Elem.Text.CONNECTION_MESSAGE)
-
-	var ws = socket.connect()
-
-	ws.onerror = function(evt) {
-		console.log('The WebSocket experienced an error')
-		console.log(evt)
-	}
-
-	ws.onclose = function(evt) {
-		console.log('The WebSocket was closed [' + evt.code + '] (' + evt.reason + ')')
-
-		if (connected) {
-			menu.gotoTitle()
-		}
-
-		connectionAttempts++
-		connected = false
-
-		menu.formSent = false
-		menu.updateStartButton()
-
-		connect()
-	}
-
-	ws.onopen = function(evt) {
-		console.log('The WebSocket was opened succesfully!')
-
-		connectionAttempts = -1
-		connected = true
-		setHidden(Elem.Text.CONNECTION_MESSAGE)
-		menu.formSent = false
-		menu.updateStartButton()
-	}
-
-	ws.onmessage = function(evt) {
-		try {
-			// console.log('The WebSocket was messaged [' + evt.origin + '] (' + evt.data + ')')
-			var pack = JSON.parse(evt.data)
-			parse(pack.type, pack)
-		} catch (err) {
-			console.log(err)
-		}
-	}
-}
-
 class Menu extends Object {
 	constructor() {
 		super()
@@ -171,7 +118,7 @@ class Menu extends Object {
 				type: Pack.JOIN_TEAM,
 				team: i
 			}
-			socket.ws.send(JSON.stringify(pack))
+			socket.send(pack)
 		}
 
 		document.getElementById(Elem.Button.TEAM_RED).onmousedown = () => joinTeam(0)
@@ -186,7 +133,7 @@ class Menu extends Object {
 				var pack = {
 					type: Pack.START_BUTTON
 				}
-				socket.ws.send(JSON.stringify(pack))
+				socket.send(pack)
 				//disableButton(Elem.Button.START)
 			} else {
 				if (me.updateStartButton())
@@ -199,7 +146,7 @@ class Menu extends Object {
 			var pack = {
 				type: Pack.QUIT
 			}
-			socket.ws.send(JSON.stringify(pack))
+			socket.send(pack)
 		}
 
 		document.getElementById(Elem.Button.BUY_SPAWN).onmousedown = function() {
@@ -268,7 +215,7 @@ class Menu extends Object {
 		this.formSent = false
 
 		this.hide()
-		setVisible(Elem.Text.CONNECTION_MESSAGE, !connected)
+		setVisible(Elem.Text.CONNECTION_MESSAGE, !socket.connected)
 
 		this.updateGuiClick()
 	}
@@ -423,7 +370,7 @@ class Menu extends Object {
 
 			if (nameCheck) {
 				if (!idRequired || idCheck) {
-					if (connected) {
+					if (socket.connected) {
 						enableButton(Elem.Button.START)
 						return true
 					}
@@ -463,7 +410,7 @@ class Menu extends Object {
 			players: this.players
 		}
 
-		socket.ws.send(JSON.stringify(formPacket))
+		socket.send(formPacket)
 
 		this.formSent = true
 	}
