@@ -93,7 +93,7 @@ class SocketManager extends Object {
 				break
 
 			case Pack.UPDATE_PIXELS: // update pixel count
-				myTeam.setPixels(pack.pl)
+				game.myTeam.setPixels(pack.pl)
 				break
 
 			case Pack.BUY_SHIPS: // buy ships
@@ -110,18 +110,14 @@ class SocketManager extends Object {
 				countDown = COUNTDOWN_TIME
 				inTeamSelection = true
 
-				gameIDDisplay = pack.gameID
-				maxPlayers = pack.maxPlayers
-
-				teams = []
-				myTeam = null
+				game = new Game(pack.gameID, pack.maxPlayers)
 
 				setVisible(Elem.Button.START)
 				setVisible(Elem.Button.QUIT)
 
 				setVisible(Elem.Text.ID_DISPLAY1)
 				setVisible(Elem.Text.ID_DISPLAY2)
-				setText(Elem.Text.ID_DISPLAY2, gameIDDisplay)
+				setText(Elem.Text.ID_DISPLAY2, game.gameID)
 
 				setVisible(Elem.Button.TEAM_RED)
 				setVisible(Elem.Button.TEAM_ORANGE)
@@ -180,7 +176,7 @@ class SocketManager extends Object {
 
 			case Pack.SET_PLANET_TEAM:
 				var planet = system.getPlanetByID(pack.planet)
-				var team = getTeam(pack.team)
+				var team = game.getTeam(pack.team)
 				planet.setTeam(team)
 				break
 
@@ -224,11 +220,11 @@ class SocketManager extends Object {
 				break
 
 			case Pack.CREATE_TEAMS:
-				teams = []
+				game.teams = []
 				for (var i in pack.teams) {
 					var id = pack.teams[i].id
 					var colour = pack.teams[i].colour
-					teams.push(new Team(colour, id))
+					game.teams.push(new Team(colour, id))
 				}
 				break
 
@@ -241,15 +237,15 @@ class SocketManager extends Object {
 				document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
 				document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
 
-				for (var i in teams) {
-					teams[i].players = []
+				for (var i in game.teams) {
+					game.teams[i].players = []
 				}
 
 				for (var i in pack.teams) {
 					// Team Object and teamID
 					var team = pack.teams[i]
 					var teamID = team.id
-					var teamObj = getTeam(teamID)
+					var teamObj = game.getTeam(teamID)
 					for (var j in team.players) {
 						// player name
 						var name = team.players[j]
@@ -298,7 +294,7 @@ class SocketManager extends Object {
 				setVisible(Elem.Text.PLAYER_COUNT)
 				setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
 
-				myTeam = getTeam(pack.team)
+				game.myTeam = game.getTeam(pack.team)
 
 				break
 		}

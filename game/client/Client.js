@@ -11,6 +11,7 @@
 const h = 600
 const w = 600
 
+var game
 var pixigame
 var menu
 var socket
@@ -113,14 +114,10 @@ window.onload = function() {
 //  _| |_| | | | | |_ 
 // |_____|_| |_|_|\__|
 
-var myTeam
 var system
-var teams
 var lastElapsed
 
 var ping = 200
-var maxPlayers = 0
-
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -320,15 +317,6 @@ function resize() {
 	menu.resize()
 }
 
-function getTeam(id) {
-	for (var i in teams) {
-		if (teams[i].id == id) {
-			return teams[i]
-		}
-	}
-	return null
-}
-
 //   _____                      
 //  / ____|                     
 // | |  __  __ _ _ __ ___   ___ 
@@ -359,16 +347,16 @@ function gameLoop() {
 
 		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
 
-		if (myTeam.shipCount != lastShips) {
-			lastShips = myTeam.shipCount
-			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
+		if (game.myTeam.shipCount != lastShips) {
+			lastShips = game.myTeam.shipCount
+			setText(Elem.Text.SHIPS, 'Ships: ' + game.myTeam.shipCount)
 			updatePlanetGui(focussed, false, true)
 		}
 
 		// TODO this can be done in parse() when the server sends new pixels
-		if (myTeam.pixels != lastPixels) {
-			lastPixels = myTeam.pixels
-			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
+		if (game.myTeam.pixels != lastPixels) {
+			lastPixels = game.myTeam.pixels
+			setText(Elem.Text.PIXELS, 'Pixels: ' + game.myTeam.pixels)
 
 			updatePlanetGui(focussed, true, false)
 		}
@@ -388,16 +376,16 @@ function gameLoop() {
 function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 
 	if (pixelUpdate) {
-		enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
-		enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
-		enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
+		enableButton(Elem.Button.BUY_SHIPS_1000, game.myTeam.pixels >= 800)
+		enableButton(Elem.Button.BUY_SHIPS_100, game.myTeam.pixels >= 90)
+		enableButton(Elem.Button.BUY_SHIPS_10, game.myTeam.pixels >= 10)
 
 		if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
 			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
 			disableButton(Elem.Button.BUY_SPAWN)
 		} else {
 			setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
-			enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
+			enableButton(Elem.Button.BUY_SPAWN, game.myTeam.pixels >= 200)
 		}
 	}
 
@@ -406,6 +394,5 @@ function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
 	}
 }
 
-var gameIDDisplay = null
 var inTeamSelection = false
 var countDown

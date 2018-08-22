@@ -1,6 +1,6 @@
 var SocketManager = require('./SocketManager.js')
 let gameloop = require('node-gameloop')
-var Game = require('./Game.js')
+var ServerGame = require('./ServerGame.js')
 
 class GameManager extends Object {
 	constructor() {
@@ -62,7 +62,7 @@ class GameManager extends Object {
 		// Create a game with an ID
 		var id = this.generateSafeID()
 
-		var game = new Game(id, playerCount, this)
+		var game = new ServerGame(id, playerCount, this)
 		this.games.push(game)
 		console.log('Creating Game: ' + id + ' [' + playerCount + ']')
 
