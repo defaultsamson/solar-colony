@@ -1,6 +1,6 @@
 var SocketManager = require('./SocketManager.js')
 let gameloop = require('node-gameloop')
-var ServerGame = require('./ServerGame.js')
+var Game = require('./Game.js')
 
 class GameManager extends Object {
 	constructor() {
@@ -52,19 +52,21 @@ class GameManager extends Object {
 		return null
 	}
 
-	createGame(playerCount) {
-		if (exists(playerCount)) {
-			playerCount = Math.min(Math.max(playerCount, MIN_PLAYERS), MAX_PLAYERS)
+	createGame(maxPlayers) {
+		if (exists(maxPlayers)) {
+			maxPlayers = Math.min(maxPlayers, MAX_PLAYERS)
+			if (maxPlayers < 2)
+				maxPlayers = MAX_PLAYERS
 		} else {
-			playerCount = MAX_PLAYERS
+			maxPlayers = MAX_PLAYERS
 		}
 
 		// Create a game with an ID
 		var id = this.generateSafeID()
 
-		var game = new ServerGame(id, playerCount, this)
+		var game = new Game(this, id, maxPlayers)
 		this.games.push(game)
-		console.log('Creating Game: ' + id + ' [' + playerCount + ']')
+		console.log('Creating Game: ' + id + ' [' + maxPlayers + ']')
 
 		return game
 	}

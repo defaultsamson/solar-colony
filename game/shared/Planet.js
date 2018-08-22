@@ -1,21 +1,13 @@
 const shipSpeed = 15 // units per second
 
 class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
-	constructor(game, system, radius, rotationConstant, startAngle, opm) {
-		if (IS_SERVER) {
-			super()
-		} else {
-			super(resources.planet1.texture)
-		}
+	constructor(texture, scale, rotationConstant, startAngle, opm) {
+		super(texture)
 
-		this.game = game
-		this.system = system
-
-		this.radius = radius
-
-		var scale = radius / this.width
+		this.radius = IS_SERVER ? 0.5 * texture : 0.5 * this.width
 
 		if (IS_SERVER) {
+			this.scale = scale
 			this.infantry = {}
 		} else {
 			this.pivot.set(this.radius, this.radius)
@@ -44,6 +36,8 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 		this.spawnRate = 0
 		this.spawnCounter = 0
+
+		this.radius = this.radius * scale
 
 		this.startAngle = startAngle
 		// orbits per minute
@@ -88,6 +82,10 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		if (!IS_SERVER) {
 			// Rotate the planet (purely for visual effects)
 			this.rotation = this.age * this.rotationConstant
+			if (this.orbit) {
+				// Rotate the orbits (purely for visual effects)
+				this.orbit.rotation = -this.age * this.speed / 8
+			}
 			// Updates infantry
 			this.infantry.update(delta)
 		}
@@ -165,7 +163,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 	isMyPlanet() {
 		// Client-side only
-		return exists(this.team) ? this.team.id === game.myTeam.id : false
+		return exists(this.team) ? this.team.id === myTeam.id : false
 	}
 
 	isTeamsPlanet(team) {
@@ -182,7 +180,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				planet: this.id,
 				team: team.id
 			}
-			this.game.sendPlayers(pack)
+			this.system.game.sendPlayers(pack)
 		} else {
 			var colour = exists(team) ? team.colour : 0xFFFFFF
 			this.tint = colour
@@ -194,8 +192,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				this.spawns[i].tint = colour
 			}
 		}
-
-		return this
 	}
 
 	// A client-side function for ease of use
@@ -206,7 +202,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			n: n, // n 
 			c: cost // cost
 		}
-		socket.send(pack)
+		socket.ws.send(JSON.stringify(pack))
 	}
 
 	createShips(n, cost) {
@@ -225,7 +221,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 					this.shipCount += n
 					this.team.addPixels(-cost)
 					this.team.updateClientPixels()
-					this.game.sendPlayers({
+					this.system.game.sendPlayers({
 						type: Pack.BUY_SHIPS,
 						pl: this.id,
 						n: n
@@ -302,13 +298,16 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			type: Pack.CREATE_SPAWN,
 			pl: this.id, // planet
 		}
-		socket.send(pack)
+		socket.ws.send(JSON.stringify(pack))
 	}
 
 	createSpawn(force) {
 		var good = false
 		var nextSpawn = true; // TODO
 		if (!IS_SERVER) {
+			console.log("Team: " + this.team)
+			console.log("force: " + force)
+			console.log("do: " + (this.team && !force))
 			if (this.team && !force) this.team.addPixels(-200)
 			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
@@ -349,7 +348,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 					planet: this.id,
 					force: force
 				}
-				this.game.sendPlayers(pack)
+				this.system.game.sendPlayers(pack)
 				this.spawns++
 			}
 		}
@@ -391,26 +390,18 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		}
 	}*/
 
-	toJSON() {
-		var json = {
-			id: this.id,
-			radius: this.radius,
-			rotationConstant: this.rotationConstant,
-			startAngle: this.startAngle,
-			opm: this.opm,
-			//non-constructor members
-			shipCount: this.shipCount,
-			team: this.team ? this.team.id : -1
+	setOrbit(orbit) {
+		this.orbit = orbit
+
+		if (IS_SERVER) {
+			// Sets the planet's orbit on the client-side
+			var pack = {
+				type: Pack.SET_PLANET_ORBIT,
+				planet: this.id,
+				orbit: orbit.id
+			}
+			this.system.game.sendPlayers(pack)
 		}
-
-		return json
-	}
-
-	static fromJSON(game, system, json) {
-		var planet = new Planet(game, system, json.radius, json.rotationConstant, json.startAngle, json.opm)
-		if (json.shipCount) planet.shipCount = json.shipCount
-		if (json.team) planet.team = game.getTeam(json.team)
-		return planet
 	}
 }
 

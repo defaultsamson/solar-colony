@@ -1,16 +1,10 @@
-if (IS_SERVER) Planet = require('./Planet.js')
-
 class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
-	constructor(game, system, x, y, radius) {
+	constructor(x, y, radius) {
 		super()
-
-		this.game = game
-		this.system = system
 
 		this.x = x
 		this.y = y
 		this.radius = radius
-		this.planets = []
 
 		if (!IS_SERVER) {
 			var numOfDashes = Math.max(Math.floor(Math.PI * radius / DASH_LENGTH), MIN_DASHES)
@@ -36,80 +30,6 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 			// disgusting
 			// this.cacheAsBitmap = true
 		}
-	}
-
-	update(delta) {
-		// Rotate the orbit (purely for visual effects) 
-		// TODO a better way of doing this?
-		if (!IS_SERVER && this.planets[0]) {
-			this.rotation = -this.age * this.planets[0].speed / 8
-		}
-
-		for (var i in this.planets) {
-			this.planets[i].update(delta)
-		}
-	}
-
-	addPlanet(planet) {
-		this.planets.push(planet)
-		planet.orbit = this
-
-		if (IS_SERVER) {
-			planet.id = this.game.createID()
-		} else {
-			this.addChild(planet)
-			var li = new Line(2)
-			li.setPoints(0, 0)
-			planet.drawLine = this.addChild(li)
-		}
-
-		return planet
-	}
-
-	getPlanet(x, y) {
-		for (var i in this.planets) {
-			let clickRadius = this.planets[i].radius + PLANET_SELECT_RADIUS
-			if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickRadius * clickRadius) {
-				return this.planets[i]
-			}
-		}
-
-		return null
-	}
-
-	getPlanetByID(id) {
-		for (var i in this.planets)
-			if (this.planets[i].id == id)
-				return this.planets[i]
-
-		return null
-	}
-
-	toJSON() {
-		var json = {
-			id: this.id,
-			x: this.x,
-			y: this.y,
-			radius: this.radius
-		}
-		json.planets = []
-
-		for (var i in this.planets) {
-			json.planets.push(this.planets[i].toJSON())
-		}
-
-		return json
-	}
-
-	static fromJSON(game, system, json) {
-		var orbit = new Orbit(game, system, json.x, json.y, json.radius)
-		if (json.id) orbit.id = json.id
-
-		for (var i in json.planets) {
-			orbit.addPlanet(Planet.fromJSON(game, system, json.planets[i]))
-		}
-
-		return orbit
 	}
 }
 

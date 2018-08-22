@@ -1,15 +1,21 @@
+const Orbit = require('../shared/Orbit.js')
+const Planet = require('../shared/Planet.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
-const Game = require('../shared/Game.js')
 
-class ServerGame extends Game {
-	constructor(gameID, maxPlayers, server) {
-		super(gameID, maxPlayers)
+class Game extends Object {
+	constructor(server, gameID, maxPlayers) {
+		super()
 
 		this.ids = 0
+
 		this.server = server
+		this.gameID = gameID
+		this.maxPlayers = maxPlayers
+
 		this.players = []
+		this.teams = []
 
 		this.redTeam = this.addTeam(new Team(Colour.RED, 0))
 		this.orangeTeam = this.addTeam(new Team(Colour.ORANGE, 1))
@@ -17,10 +23,14 @@ class ServerGame extends Game {
 		this.greenTeam = this.addTeam(new Team(Colour.GREEN, 3))
 		this.blueTeam = this.addTeam(new Team(Colour.BLUE, 4))
 		this.purpleTeam = this.addTeam(new Team(Colour.PURPLE, 5))
+
+		this.system = null
 	}
 
 	update(delta) {
-		super.update(delta)
+		if (this.system) {
+			this.system.update(delta)
+		}
 
 		for (var i in this.players) {
 			this.players[i].pinger.update(delta)
@@ -85,6 +95,20 @@ class ServerGame extends Game {
 		return this.players.length < this.maxPlayers
 	}
 
+	addTeam(team) {
+		this.teams.push(team)
+		return team
+	}
+
+	getTeam(id) {
+		for (var i in this.teams) {
+			if (this.teams[i].id == id) {
+				return this.teams[i]
+			}
+		}
+		return null
+	}
+
 	createTeams(sock) {
 		var socks = exists(sock) ? [sock] : this.players
 
@@ -145,15 +169,17 @@ class ServerGame extends Game {
 
 		const total = this.players.length
 		var started = 0
-		for (var i in this.players)
-			if (this.players[i].start)
+		for (var i in this.players) {
+			if (this.players[i].start) {
 				started++
+			}
+		}
 
-				var pack = {
-					type: Pack.UPDATE_MESSAGE,
-					maxPlayers: this.maxPlayers,
-					playerCount: this.players.length
-				}
+		var pack = {
+			type: Pack.UPDATE_MESSAGE,
+			maxPlayers: this.maxPlayers,
+			playerCount: this.players.length
+		}
 
 		// Customizes start text and button text
 		for (var i in socks) {
@@ -203,7 +229,6 @@ class ServerGame extends Game {
 		var packet = {
 			type: Pack.JOIN_GAME,
 			gameID: this.gameID,
-			maxPlayers: this.maxPlayers,
 			player: this.players.length
 		}
 		sock.send(JSON.stringify(packet))
@@ -238,85 +263,10 @@ class ServerGame extends Game {
 
 	start() {
 		console.log('Starting Game: ' + this.gameID)
+
 		this.server.removeQueue(this)
 
-		var serverJSON = {
-			"orbits": [{
-				"id": 0,
-				"x": 0,
-				"y": 0,
-				"radius": 150,
-				"planets": [{
-					"id": 4,
-					"radius": 19,
-					"rotationConstant": -0.25,
-					"startAngle": 1.5707963267948966,
-					"opm": 2,
-					"shipCount": 0,
-					"team": -1
-				}]
-			}, {
-				"id": 1,
-				"x": 0,
-				"y": 0,
-				"radius": 220,
-				"planets": [{
-					"id": 5,
-					"radius": 19,
-					"rotationConstant": -0.16666666666666666,
-					"startAngle": 0,
-					"opm": 1,
-					"shipCount": 0,
-					"team": 0
-				}, {
-					"id": 6,
-					"radius": 19,
-					"rotationConstant": -0.16666666666666666,
-					"startAngle": 3.141592653589793,
-					"opm": 1,
-					"shipCount": 0,
-					"team": 4
-				}]
-			}, {
-				"id": 2,
-				"x": 0,
-				"y": 0,
-				"radius": 270,
-				"planets": [{
-					"id": 7,
-					"radius": 19,
-					"rotationConstant": 0.3333333333333333,
-					"startAngle": 0.7853981633974483,
-					"opm": 0.5,
-					"shipCount": 0,
-					"team": -1
-				}]
-			}, {
-				"id": 3,
-				"x": 0,
-				"y": 0,
-				"radius": 360,
-				"planets": [{
-					"id": 8,
-					"radius": 19,
-					"rotationConstant": -0.5,
-					"startAngle": 2.356194490192345,
-					"opm": 0.25,
-					"shipCount": 0,
-					"team": -1
-				}]
-			}]
-		}
-
-		this.system = System.fromJSON(this, serverJSON)
-		this.system.game = this
-		console.log(this.system)
-		this.sendPlayers({
-			type: Pack.CREATE_SYSTEM,
-			sys: this.system.toJSON()
-		})
-
-		/* this.system = new System()
+		this.system = new System()
 		this.system.game = this
 
 		// Creates the system on the client-side
@@ -330,21 +280,38 @@ class ServerGame extends Game {
 		const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
 		const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
-		const planet1 = orbit1.addPlanet(new Planet(19, -1 / 4, Math.PI / 2, 2))
+		const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
 
-		// builds the player planets
-		const planetCount = this.teams.length
-		const rotation = 2 * Math.PI / planetCount
-		for (var i = 0; i < planetCount; i++) {
-			var planet = orbit2.addPlanet(new Planet(19, -1 / 6, rotation * i, 1))
+		{
+			// Rebuilds the teams 
+			var tempTeams = []
+			for (var i in this.teams) {
+				if (this.teams[i].players.length > 0) {
+					tempTeams.push(this.teams[i])
+				}
+			}
+			this.teams = tempTeams
 
-			planet.setTeam(this.teams[i])
-			planet.createSpawn(true)
+			// builds the player planets
+			const planetCount = this.teams.length
+			const rotation = 2 * Math.PI / planetCount
+			for (var i = 0; i < planetCount; i++) {
+				var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
+
+				planet.setOrbit(orbit2)
+				planet.setTeam(this.teams[i])
+				planet.createSpawn(true)
+			}
 		}
 
-		const planet3 = orbit3.addPlanet(new Planet(19, 1 / 3, Math.PI / 4, 1 / 2))
+		const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
 
-		const planet4 = orbit4.addPlanet(new Planet(19, -0.5, 3 * Math.PI / 4, 1 / 4))
+		const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
+
+		planet1.setOrbit(orbit1)
+
+		planet3.setOrbit(orbit3)
+		planet4.setOrbit(orbit4)
 
 		for (var i in this.players) {
 			var pack = {
@@ -354,15 +321,14 @@ class ServerGame extends Game {
 			this.players[i].send(JSON.stringify(pack))
 		}
 
-		this.sendPlayers({
-			type: Pack.SHOW_SYSTEM
-		})*/
-
-		this.rebuildTeams()
 
 		// Start all teams off with 100 pixels
 		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
+
+		this.sendPlayers({
+			type: Pack.SHOW_SYSTEM
+		})
 
 		// starting sync and countdown for clients
 		let ga = this
@@ -377,7 +343,7 @@ class ServerGame extends Game {
 
 		// start the game on server-side
 		setTimeout(function() {
-			ga.play()
+			ga.system.play()
 		}, COUNTDOWN_TIME)
 	}
 
@@ -388,9 +354,18 @@ class ServerGame extends Game {
 		}
 	}
 
+	/* Do we really need this?
+	sendTeamByID(teamID, obj) {
+		let toSend = JSON.stringify(obj)
+		let team = this.getTeam(teamID)
+		for (var i in team.players) {
+			team.players[i].send(toSend)
+		}
+	}*/
+
 	createID() {
 		return this.ids++
 	}
 }
 
-module.exports = ServerGame
+module.exports = Game

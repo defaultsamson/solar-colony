@@ -1,10 +1,6 @@
-if (IS_SERVER) Orbit = require('./Orbit.js')
-
 class System extends(IS_SERVER ? Object : PIXI.Container) {
-	constructor(game) {
+	constructor() {
 		super()
-
-		this.game = game
 
 		if (!IS_SERVER) {
 			this.sun = new PIXI.particles.Emitter(this, resources.sunTexture.texture, Particle.Sun)
@@ -12,83 +8,118 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 		}
 
 		this.orbits = []
+		this.planets = []
 		this.sendingShips = []
+
+		// TODO implement game pausing when a player leaves
+		this.paused = true
+	}
+
+	play() {
+		this.paused = false
+	}
+
+	pause() {
+		this.paused = true
 	}
 
 	update(delta) {
-		for (var i in this.orbits) {
-			this.orbits[i].update(delta)
+		if (!this.paused) {
+			for (var i in this.planets) {
+				this.planets[i].update(delta)
+			}
 		}
 
 		if (!IS_SERVER) {
+			// Update the sun particle emitter regardless of this.update
 			this.sun.update(delta)
 
-			// If drawing the ship travel lines
-			if (isChoosingShipSend()) {
-				updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
-			}
+			if (!this.paused) {
+				// If drawing the ship travel lines
+				if (isChoosingShipSend()) {
+					updateSelectedPlanet(viewport.toWorld(game.renderer.plugins.interaction.mouse.global))
+				}
 
-			for (var i in this.sendingShips) {
-				this.sendingShips[i].update(delta)
+				for (var i in this.sendingShips) {
+					this.sendingShips[i].update(delta)
+				}
 			}
 		}
+	}
+
+	getPlanet(x, y) {
+		for (var i in this.planets) {
+			let clickRadius = this.planets[i].radius + PLANET_SELECT_RADIUS
+			if (distSqr(x, y, this.planets[i].x, this.planets[i].y) < clickRadius * clickRadius) {
+				return this.planets[i]
+			}
+		}
+
+		return null
 	}
 
 	addOrbit(orbit) {
 		this.orbits.push(orbit)
+		orbit.system = this
 
 		if (IS_SERVER) {
 			orbit.id = this.game.createID()
+			// Creates the orbit on the client-side
+			var pack = {
+				type: Pack.CREATE_ORBIT,
+				id: orbit.id,
+				x: orbit.x,
+				y: orbit.y,
+				radius: orbit.radius
+			}
+			this.game.sendPlayers(pack)
+			return orbit
 		} else {
 			this.addChild(orbit)
 		}
-
-		return orbit
 	}
 
 	getOrbit(id) {
-		for (var i in this.orbits)
-			if (this.orbits[i].id == id)
+		for (var i in this.orbits) {
+			if (this.orbits[i].id == id) {
 				return this.orbits[i]
-
+			}
+		}
 		return null
+	}
+
+	addPlanet(planet) {
+		this.planets.push(planet)
+		planet.system = this
+
+		if (IS_SERVER) {
+			planet.id = this.game.createID()
+			// Creates the planet on the client-side
+			var pack = {
+				type: Pack.CREATE_PLANET,
+				id: planet.id,
+				scale: planet.scale,
+				rotationConstant: planet.rotationConstant,
+				startAngle: planet.startAngle,
+				opm: planet.opm
+			}
+			this.game.sendPlayers(pack)
+			return planet
+		} else {
+			this.addChild(planet)
+			var li = new Line(2)
+			li.setPoints(0, 0)
+			planet.drawLine = this.addChild(li)
+		}
 	}
 
 	getPlanetByID(id) {
-		for (var i in this.orbits) {
-			var planet = this.orbits[i].getPlanetByID(id)
-			if (planet) return planet
+		for (var i in this.planets) {
+			if (this.planets[i].id == id) {
+				return this.planets[i]
+			}
 		}
 		return null
-	}
-
-	getPlanet(x, y) {
-		for (var i in this.orbits) {
-			var planet = this.orbits[i].getPlanet(x, y)
-			if (planet) return planet
-		}
-		return null
-	}
-
-	toJSON() {
-		var json = {}
-
-		json.orbits = []
-		for (var i in this.orbits) {
-			json.orbits.push(this.orbits[i].toJSON())
-		}
-
-		return json
-	}
-
-	static fromJSON(game, json) {
-		var system = new System(game)
-
-		for (var i in json.orbits) {
-			system.addOrbit(Orbit.fromJSON(game, system, json.orbits[i]))
-		}
-
-		return system
 	}
 }
 
