@@ -210,9 +210,9 @@ class Menu extends Object {
 		allowMouseClick = true
 		inTeamSelection = false
 
-		if (system) {
-			viewport.removeChild(system)
-			system = null
+		if (game && game.system) {
+			viewport.removeChild(game.system)
+			game.system = null
 		}
 
 		this.formSent = false

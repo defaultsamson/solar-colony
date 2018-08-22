@@ -114,7 +114,6 @@ window.onload = function() {
 //  _| |_| | | | | |_ 
 // |_____|_| |_|_|\__|
 
-var system
 var lastElapsed
 
 var ping = 200
@@ -205,7 +204,7 @@ var allowMouseClick = true
 
 function onMouseClick(e) {
 	if (allowMouseClick) {
-		if (system) {
+		if (game && game.system) {
 			if (isChoosingShipSend()) {
 				// updateSelectedPlanet(e.world.x, e.world.y)
 
@@ -225,7 +224,7 @@ function onMouseClick(e) {
 				return
 			}*/
 
-			var planet = system.getPlanet(e.world.x, e.world.y)
+			var planet = game.system.getPlanet(e.world.x, e.world.y)
 			if (planet) {
 				// If the viewport is already following the planet that was clicked on, then don't do anything
 				var follow = viewport.plugins['follow']
@@ -341,9 +340,9 @@ function gameLoop() {
 	lastElapsed = now
 	let eTime = (elapsed * 0.001) // time elapsed in seconds
 
-	if (system) {
+	if (game && game.system) {
 
-		system.update(eTime)
+		game.update(eTime)
 
 		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
 

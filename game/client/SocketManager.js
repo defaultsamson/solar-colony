@@ -97,7 +97,7 @@ class SocketManager extends Object {
 				break
 
 			case Pack.BUY_SHIPS: // buy ships
-				system.getPlanetByID(pack.pl).createShips(pack.n)
+				game.system.getPlanetByID(pack.pl).createShips(pack.n)
 				break
 
 			case Pack.FORM_FAIL:
@@ -137,29 +137,29 @@ class SocketManager extends Object {
 				break
 
 			case Pack.CREATE_SYSTEM:
-				system = new System()
+				game.system = new System()
 				break
 
 			case Pack.CREATE_ORBIT:
 				var orbit = new Orbit(pack.x, pack.y, pack.radius)
 				orbit.id = pack.id
-				system.addOrbit(orbit)
+				game.system.addOrbit(orbit)
 				break
 
 			case Pack.CREATE_PLANET:
 				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
 				planet.id = pack.id
-				system.addPlanet(planet)
+				game.system.addPlanet(planet)
 				break
 
 			case Pack.SET_PLANET_ORBIT:
-				var planet = system.getPlanetByID(pack.planet)
-				var orbit = system.getOrbit(pack.orbit)
+				var planet = game.system.getPlanetByID(pack.planet)
+				var orbit = game.system.getOrbit(pack.orbit)
 				planet.setOrbit(orbit)
 				break
 
 			case Pack.CREATE_SPAWN:
-				var planet = system.getPlanetByID(pack.planet)
+				var planet = game.system.getPlanetByID(pack.planet)
 
 				if (pack.force) {
 					planet.createSpawn(true)
@@ -175,22 +175,22 @@ class SocketManager extends Object {
 				break
 
 			case Pack.SET_PLANET_TEAM:
-				var planet = system.getPlanetByID(pack.planet)
+				var planet = game.system.getPlanetByID(pack.planet)
 				var team = game.getTeam(pack.team)
 				planet.setTeam(team)
 				break
 
 			case Pack.SHOW_SYSTEM:
-				viewport.addChild(system)
+				viewport.addChild(game.system)
 				menu.hide()
 				setVisible(Elem.Text.PING)
 				setVisible(Elem.Text.PIXELS)
 				setVisible(Elem.Text.SHIPS)
 
 				// A little hack to get planets to go to their correct positions when the game starts
-				system.play() // This lets us update the planets
-				system.update(0) // this updates them from their default pos
-				system.pause() // This reverts the game state to being paused
+				game.play() // This lets us update the planets
+				game.update(0) // this updates them from their default pos
+				game.pause() // This reverts the game state to being paused
 
 				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 				setVisible(Elem.Text.COUNTDOWN)
@@ -207,8 +207,8 @@ class SocketManager extends Object {
 				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
 
 				if (countDown <= 0) {
-					system.play()
-					system.update(ping / 1000) // fast forward based on our ping
+					game.play()
+					game.update(ping / 1000) // fast forward based on our ping
 
 					setHidden(Elem.Text.COUNTDOWN)
 

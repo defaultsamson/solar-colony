@@ -24,9 +24,7 @@ class ServerGame extends Game {
 	}
 
 	update(delta) {
-		if (this.system) {
-			this.system.update(delta)
-		}
+		super.update(delta)
 
 		for (var i in this.players) {
 			this.players[i].pinger.update(delta)
@@ -316,7 +314,7 @@ class ServerGame extends Game {
 
 		// start the game on server-side
 		setTimeout(function() {
-			ga.system.play()
+			ga.play()
 		}, COUNTDOWN_TIME)
 	}
 

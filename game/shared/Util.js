@@ -72,10 +72,10 @@ function updateSelectedPlanet(mouse) {
 	}
 
 	// For each planet, draw a line from the sendShipsFrom planet to it
-	for (var i in system.planets) {
+	for (var i in game.system.planets) {
 		// Don't draw a line from the sendShipsFrom planet to itself
-		if (system.planets[i] != sendShipsFrom) {
-			let planet = system.planets[i]
+		if (game.system.planets[i] != sendShipsFrom) {
+			let planet = game.system.planets[i]
 			// Only draw lines every update cycle
 			if (updateLines == 0) {
 				planet.outline.visible = false
@@ -110,10 +110,10 @@ function updateSelectedPlanet(mouse) {
 
 				// If it doesn't collide with the sun, test if it collides with a planet
 				if (!collides) {
-					for (var j in system.planets) {
-						if (system.planets[j] != sendShipsFrom && system.planets[j] != planet) {
+					for (var j in game.system.planets) {
+						if (game.system.planets[j] != sendShipsFrom && game.system.planets[j] != planet) {
 							// current planet of interest
-							let current = system.planets[j]
+							let current = game.system.planets[j]
 							let cPos = current.calcPosition(targetTime)
 							// If the target is within the bounds of the two planets
 							if (isBetween(cPos.x, pX, target.x, current.radius) && isBetween(cPos.y, pY, target.y, current.radius)) {
@@ -193,11 +193,11 @@ function goToSendShipsScreen(fromPlanet, amount) {
 }
 
 function cancelSendShips() {
-	for (var i in system.planets) {
-		system.planets[i].outline.visible = false
-		system.planets[i].ghost.visible = false
-		system.planets[i].ghost.outline.visible = false
-		system.planets[i].drawLine.visible = false
+	for (var i in game.system.planets) {
+		game.system.planets[i].outline.visible = false
+		game.system.planets[i].ghost.visible = false
+		game.system.planets[i].ghost.outline.visible = false
+		game.system.planets[i].drawLine.visible = false
 	}
 	sendShipsFrom = null
 	sendShipsAmount = 0

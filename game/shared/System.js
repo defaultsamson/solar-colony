@@ -10,39 +10,24 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 		this.orbits = []
 		this.planets = []
 		this.sendingShips = []
-
-		// TODO implement game pausing when a player leaves
-		this.paused = true
-	}
-
-	play() {
-		this.paused = false
-	}
-
-	pause() {
-		this.paused = true
 	}
 
 	update(delta) {
-		if (!this.paused) {
-			for (var i in this.planets) {
-				this.planets[i].update(delta)
-			}
+		for (var i in this.planets) {
+			this.planets[i].update(delta)
 		}
 
 		if (!IS_SERVER) {
 			// Update the sun particle emitter regardless of this.update
 			this.sun.update(delta)
 
-			if (!this.paused) {
-				// If drawing the ship travel lines
-				if (isChoosingShipSend()) {
-					updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
-				}
+			// If drawing the ship travel lines
+			if (isChoosingShipSend()) {
+				updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
+			}
 
-				for (var i in this.sendingShips) {
-					this.sendingShips[i].update(delta)
-				}
+			for (var i in this.sendingShips) {
+				this.sendingShips[i].update(delta)
 			}
 		}
 	}

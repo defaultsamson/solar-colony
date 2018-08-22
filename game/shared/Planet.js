@@ -51,7 +51,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			ghost.visible = false
 			ghost.pivot.set(this.radius, this.radius)
 			ghost.outline = ghost.addChild(gring)
-			this.ghost = system.addChild(ghost)
+			this.ghost = game.system.addChild(ghost)
 		}
 
 		// The rotation speed in radians/second
