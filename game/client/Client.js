@@ -11,87 +11,76 @@
 const h = 600
 const w = 600
 
+var game
 var menu
-
-// Creates the PIXI application
-var game = new PIXI.Application(w, h, {
-	antialias: true,
-	transparent: false
-})
-
-// Sets up the 
-window.onorientationchange = resize
-window.onresize = resize
-game.view.style.position = 'absolute'
-game.view.style.display = 'block'
-document.body.appendChild(game.view)
-game.renderer.autoResize = true
-game.renderer.backgroundColor = Colour.BACKGROUND
-document.addEventListener('contextmenu', event => event.preventDefault())
-
-// Viewport options. Not very important because it can vary (see resize() )
-// These are mostly just used for initialization so that no errors occur
-const viewportOptions = {
-	screenWidth: w,
-	screenHeight: h,
-	worldWidth: w,
-	worldHeight: h,
-	ticker: game.ticker
-}
-
-var viewport = new Viewport(viewportOptions)
-game.stage.addChild(viewport)
-
-const clampOptions = {
-	minWidth: 1,
-	minHeight: MIN_HEIGHT,
-	maxWidth: 1000 * w,
-	maxHeight: MAX_HEIGHT
-}
-
-const pinchOptions = {
-	percent: 4.5
-}
-
-viewport
-	.drag()
-	.wheel()
-	.pinch(pinchOptions)
-	.clampZoom(clampOptions)
-	.decelerate()
-
-window.onload = function() {
-	PIXI.loader
-		.add('sunTexture', 'game/assets/sun.png')
-		.add('planet1', 'game/assets/planet1.png')
-		.add('planet2', 'game/assets/planet2.png')
-		.add('ship', 'game/assets/ship.png')
-		.add('spawn', 'game/assets/spawn.png')
-		.add('infantry', 'game/assets/infantry.png')
-		.load(onLoad)
-}
-
-//  _____       _ _   
-// |_   _|     (_) |  
-//   | |  _ __  _| |_ 
-//   | | | '_ \| | __|
-//  _| |_| | | | | |_ 
-// |_____|_| |_|_|\__|
-
-var myTeam
-var system
-var teams
-var lastElapsed
-
 var socket
-var ping = 200
-var maxPlayers = 0
-
+var viewport
 var resources
 
-function onLoad(loader, res) {
+window.onload = function() {
+	// Creates the PIXI application
+	game = new PIXI.Application(w, h, {
+		antialias: true,
+		transparent: false
+	})
 
-	resources = res
+	// Sets up the 
+	window.onorientationchange = resize
+	window.onresize = resize
+	game.view.style.position = 'absolute'
+	game.view.style.display = 'block'
+	document.body.insertBefore(game.view, document.getElementById(TOP_DIV))
+	game.renderer.autoResize = true
+	game.renderer.backgroundColor = Colour.BACKGROUND
+	document.addEventListener('contextmenu', event => event.preventDefault())
+
+	// Viewport options. Not very important because it can vary (see resize() )
+	// These are mostly just used for initialization so that no errors occur
+	const viewportOptions = {
+		screenWidth: w,
+		screenHeight: h,
+		worldWidth: w,
+		worldHeight: h,
+		ticker: game.ticker
+	}
+
+	viewport = new Viewport(viewportOptions)
+	game.stage.addChild(viewport)
+
+	const clampOptions = {
+		minWidth: 1,
+		minHeight: MIN_HEIGHT,
+		maxWidth: 1000 * w,
+		maxHeight: MAX_HEIGHT
+	}
+
+	const pinchOptions = {
+		percent: 4.5
+	}
+
+	viewport
+		.drag()
+		.wheel()
+		.pinch(pinchOptions)
+		.clampZoom(clampOptions)
+		.decelerate()
+
+	viewport.on('drag-start', function(e) {
+		stopSnap()
+		stopFollow()
+	})
+	viewport.on('pinch-start', stopSnap)
+	viewport.on('wheel', stopSnap)
+	viewport.on('clicked', onMouseClick)
+
+	// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
+	viewport.on('snap-end', function() {
+		if (snappingToPlanet) {
+			viewport.follow(snappingToPlanet)
+			focusPlanet = snappingToPlanet
+		}
+		stopSnap()
+	})
 
 	lastElapsed = Date.now()
 
@@ -106,7 +95,32 @@ function onLoad(loader, res) {
 	menu = new Menu()
 	menu.gotoTitle()
 	resize()
+
+	PIXI.loader
+		.add('sunTexture', 'game/assets/sun.png')
+		.add('planet1', 'game/assets/planet1.png')
+		.add('planet2', 'game/assets/planet2.png')
+		.add('ship', 'game/assets/ship.png')
+		.add('spawn', 'game/assets/spawn.png')
+		.add('infantry', 'game/assets/infantry.png')
+		.load((loader, res) => { resources = res })
 }
+
+//  _____       _ _   
+// |_   _|     (_) |  
+//   | |  _ __  _| |_ 
+//   | | | '_ \| | __|
+//  _| |_| | | | | |_ 
+// |_____|_| |_|_|\__|
+
+var myTeam
+var system
+var teams
+var lastElapsed
+
+var ping = 200
+var maxPlayers = 0
+
 
 //  _____                   _   
 // |_   _|                 | |  
@@ -190,14 +204,6 @@ function updateKeyboard() {
 	PIXI.keyboardManager.update()
 }
 
-viewport.on('drag-start', function(e) {
-	stopSnap()
-	stopFollow()
-})
-viewport.on('pinch-start', stopSnap)
-viewport.on('wheel', stopSnap)
-viewport.on('clicked', onMouseClick)
-
 var allowMouseClick = true
 
 function onMouseClick(e) {
@@ -278,15 +284,6 @@ function onMouseClick(e) {
 		}
 	}
 }
-
-// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
-viewport.on('snap-end', function() {
-	if (snappingToPlanet) {
-		viewport.follow(snappingToPlanet)
-		focusPlanet = snappingToPlanet
-	}
-	stopSnap()
-})
 
 //  _    _ _   _ _ 
 // | |  | | | (_) |

@@ -183,13 +183,16 @@ class Menu extends Object {
 						return false
 					}
 				} else if (!ACCEPTABLE_REGEX.test(txt)) {
+					/*
 					if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
 
 					} else {
 						// console.log(txt + ' : ' + e.which)
 						e.preventDefault()
 						return false
-					}
+					}*/
+					e.preventDefault()
+					return false
 				}
 			} else if (keyCode == Key.ENTER) {
 				e.preventDefault()
