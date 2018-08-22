@@ -11,7 +11,7 @@
 const h = 600
 const w = 600
 
-var game
+var pixigame
 var menu
 var socket
 var viewport
@@ -19,7 +19,7 @@ var resources
 
 window.onload = function() {
 	// Creates the PIXI application
-	game = new PIXI.Application(w, h, {
+	pixigame = new PIXI.Application(w, h, {
 		antialias: true,
 		transparent: false
 	})
@@ -27,11 +27,11 @@ window.onload = function() {
 	// Sets up the 
 	window.onorientationchange = resize
 	window.onresize = resize
-	game.view.style.position = 'absolute'
-	game.view.style.display = 'block'
-	document.body.insertBefore(game.view, document.getElementById(TOP_DIV))
-	game.renderer.autoResize = true
-	game.renderer.backgroundColor = Colour.BACKGROUND
+	pixigame.view.style.position = 'absolute'
+	pixigame.view.style.display = 'block'
+	document.body.insertBefore(pixigame.view, document.getElementById(TOP_DIV))
+	pixigame.renderer.autoResize = true
+	pixigame.renderer.backgroundColor = Colour.BACKGROUND
 	document.addEventListener('contextmenu', event => event.preventDefault())
 
 	// Viewport options. Not very important because it can vary (see resize() )
@@ -41,11 +41,11 @@ window.onload = function() {
 		screenHeight: h,
 		worldWidth: w,
 		worldHeight: h,
-		ticker: game.ticker
+		ticker: pixigame.ticker
 	}
 
 	viewport = new Viewport(viewportOptions)
-	game.stage.addChild(viewport)
+	pixigame.stage.addChild(viewport)
 
 	const clampOptions = {
 		minWidth: 1,
@@ -82,12 +82,12 @@ window.onload = function() {
 		stopSnap()
 	})
 
-	lastElapsed = Date.now()
-
-	game.ticker.add(gameLoop)
 
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
+
+	lastElapsed = Date.now()
+	pixigame.ticker.add(gameLoop)
 
 	socket = new SocketManager()
 	socket.connect()
@@ -179,7 +179,7 @@ function updateKeyboard() {
 
 	}
 
-	let screenPoint = game.renderer.plugins.interaction.mouse.global
+	let screenPoint = pixigame.renderer.plugins.interaction.mouse.global
 	if (PIXI.keyboardManager.isPressed(Key.W)) {
 		/* TODO
 		viewport.down(screenPoint.x, screenPoint.y, {
@@ -306,7 +306,7 @@ function resize() {
 	var height = window.innerHeight
 	var ratio = height / h
 
-	game.renderer.resize(width, height)
+	pixigame.renderer.resize(width, height)
 	viewport.resize(width, height, width, height)
 	viewport.fitHeight(prevHeight, false)
 
