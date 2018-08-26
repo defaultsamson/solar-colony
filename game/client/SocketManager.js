@@ -132,7 +132,7 @@ class SocketManager extends Object {
 				viewport.pausePlugin('drag')
 				viewport.pausePlugin('pinch')
 				viewport.pausePlugin('wheel')
-				allowMouseClick = false
+				viewport.moveCenter(0, 0)
 				break
 
 				/* NE
@@ -187,7 +187,6 @@ class SocketManager extends Object {
 					viewport.resumePlugin('drag')
 					viewport.resumePlugin('pinch')
 					viewport.resumePlugin('wheel')
-					allowMouseClick = true
 				}
 				break
 

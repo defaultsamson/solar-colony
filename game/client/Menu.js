@@ -212,8 +212,6 @@ class Menu extends Object {
 	}
 
 	gotoTitle() {
-
-		allowMouseClick = true
 		this.inTeamSelection = false
 
 		if (game) {

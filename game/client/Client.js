@@ -62,16 +62,20 @@ window.onload = function() {
 		.clampZoom(clampOptions)
 		.decelerate()
 
-	viewport.on('drag-start', function(e) {
+	viewport.on('drag-start', (e) => {
 		stopSnap()
 		stopFollow()
 	})
 	viewport.on('pinch-start', stopSnap)
 	viewport.on('wheel', stopSnap)
-	viewport.on('clicked', onMouseClick)
+	viewport.on('clicked', (e) => {
+		if (game) {
+			game.onMouseClick(e)
+		}
+	})
 
 	// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
-	viewport.on('snap-end', function() {
+	viewport.on('snap-end', () => {
 		if (snappingToPlanet) {
 			viewport.follow(snappingToPlanet)
 			focusPlanet = snappingToPlanet
@@ -148,85 +152,6 @@ function centerView() {
 	}
 }
 
-function onMouseClick(e) {
-	if (allowMouseClick) {
-		if (game && game.system) {
-			if (isChoosingShipSend()) {
-				// updateSelectedPlanet(e.world.x, e.world.y)
-
-				if (selectedPlanet) {
-					sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
-				}
-				cancelSendShips()
-
-				return
-			}
-
-			stopSnap()
-
-			/*
-			if (sendShipText.clicked(point)) {
-				goToSendShipsScreen(focusPlanet, 100)
-				return
-			}*/
-
-			var planet = game.system.getPlanet(e.world.x, e.world.y)
-			if (planet) {
-				// If the viewport is already following the planet that was clicked on, then don't do anything
-				var follow = viewport.plugins['follow']
-				if (follow && (follow.target == planet)) {
-					// Do the zoom if holding shift
-					if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
-						viewport.snapZoom({
-							height: SUN_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					} else {
-						viewport.snapZoom({
-							height: PLANET_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					}
-
-					return
-				}
-
-				snappingToPlanet = planet
-
-				// The calculated future positions of the planet
-				var pos = planet.calcPosition(ANIMATION_TIME / 1000)
-
-				// Snap to that position
-				viewport.snap(pos.x, pos.y, {
-					time: ANIMATION_TIME,
-					removeOnComplete: true,
-					ease: 'easeOutQuart'
-				})
-
-				// Do the zoom if not holding shift
-				if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-					viewport.snapZoom({
-						height: PLANET_HEIGHT,
-						time: ANIMATION_TIME,
-						removeOnComplete: true,
-						ease: 'easeInOutSine'
-					})
-				}
-
-				return
-			}
-
-			// If nothing was clicked on, remove the follow plugin
-			stopFollow()
-			centerView()
-		}
-	}
-}
-
 //  _    _ _   _ _ 
 // | |  | | | (_) |
 // | |  | | |_ _| |
@@ -269,7 +194,6 @@ function resize() {
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
 
-var allowMouseClick = true
 var focusPlanet
 var lastElapsed
 
@@ -290,7 +214,5 @@ function gameLoop() {
 	let now = Date.now()
 	let elapsed = now - lastElapsed
 	lastElapsed = now
-	let eTime = (elapsed * 0.001) // time elapsed in seconds
-
-	if (game) game.update(eTime)
+	if (game) game.update(elapsed * 0.001) // time elapsed in seconds
 }
