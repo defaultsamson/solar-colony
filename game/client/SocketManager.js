@@ -113,45 +113,8 @@ class SocketManager extends Object {
 				break
 
 			case Pack.CREATE_SYSTEM:
-				game.system = new System(game)
-				break
+				game.system = System.load(pack.sys, game)
 
-			case Pack.CREATE_ORBIT:
-				var orbit = new Orbit(pack.x, pack.y, pack.radius)
-				orbit.id = pack.id
-				game.system.addOrbit(orbit)
-				break
-
-			case Pack.CREATE_PLANET:
-				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
-				planet.id = pack.id
-				var orbit = game.system.getOrbit(pack.orbit)
-				orbit.addPlanet(planet)
-				break
-
-			case Pack.CREATE_SPAWN:
-				var planet = game.system.getPlanetByID(pack.planet)
-
-				if (pack.force) {
-					planet.createSpawn(true)
-				} else {
-					// 1. subtract the counter that has happened while this packet sent
-					// 2. update the spawn counter by creating a spawn
-					// 3. push the spawn counter forward by the new rate
-					planet.spawnCounter -= planet.spawnRate * this.ping * 0.001
-					planet.createSpawn(false)
-					planet.spawnCounter += planet.spawnRate * this.ping * 0.001
-				}
-
-				break
-
-			case Pack.SET_PLANET_TEAM:
-				var planet = game.system.getPlanetByID(pack.planet)
-				var team = game.getTeam(pack.team)
-				planet.setTeam(team)
-				break
-
-			case Pack.SHOW_SYSTEM:
 				viewport.addChild(game.system)
 				menu.hide()
 				setVisible(Elem.Text.PING)
@@ -170,6 +133,45 @@ class SocketManager extends Object {
 				viewport.pausePlugin('pinch')
 				viewport.pausePlugin('wheel')
 				allowMouseClick = false
+				break
+
+				/* NE
+			case Pack.CREATE_ORBIT:
+				var orbit = new Orbit(pack.x, pack.y, pack.radius)
+				orbit.id = pack.id
+				game.system.addOrbit(orbit)
+				break
+
+			case Pack.CREATE_PLANET:
+				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
+				planet.id = pack.id
+				var orbit = game.system.getOrbit(pack.orbit)
+				orbit.addPlanet(planet)
+				break
+				*/
+
+			case Pack.CREATE_SPAWN:
+				var planet = game.system.getPlanetByID(pack.planet)
+
+				if (pack.force) {
+					planet.createSpawn(true)
+				} else {
+					// 1. subtract the counter that has happened while this packet sent
+					// 2. update the spawn counter by creating a spawn
+					// 3. push the spawn counter forward by the new rate
+					planet.spawnCounter -= planet.spawnRate * this.ping * 0.001
+					planet.createSpawn(false)
+					planet.spawnCounter += planet.spawnRate * this.ping * 0.001
+				}
+
+				break
+
+			case Pack.SET_PLANET_TEAM:
+				// TODO make a way with the fighting system to check when a planet has captured
+				// a planet without needing to use this SET_TEAM_PLANET packet
+				var planet = game.system.getPlanetByID(pack.planet)
+				var team = game.getTeam(pack.team)
+				planet.setTeam(team)
 				break
 
 			case Pack.START_GAME:

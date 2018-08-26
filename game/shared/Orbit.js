@@ -1,3 +1,5 @@
+const SPlanet = IS_SERVER ? require('../shared/Planet.js') : Planet
+
 class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 	constructor(x, y, radius) {
 		super()
@@ -42,6 +44,7 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 		if (IS_SERVER) {
 			planet.id = planet.game.createID()
 			// Creates the planet on the client-side
+			/* NE
 			var pack = {
 				type: Pack.CREATE_PLANET,
 				id: planet.id,
@@ -52,12 +55,10 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 				opm: planet.opm
 			}
 			planet.game.sendPlayers(pack)
+			*/
 			return planet
 		} else {
 			planet.system.addChild(planet)
-			var li = new Line(2)
-			li.setPoints(0, 0)
-			planet.drawLine = planet.system.addChild(li)
 		}
 	}
 
@@ -101,10 +102,10 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 		var orb = {
 			x: this.x,
 			y: this.y,
-			radius: this.radius
+			radius: this.radius,
+			planets: []
 		}
-		if (literal) orb.id = {}
-		orb.planets = []
+		if (literal) orb.id = this.id
 
 		for (var i in this.planets) {
 			orb.planets.push(this.planets[i].save(literal))
@@ -113,8 +114,21 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 		return orb
 	}
 
-	load() {
+	static load(json, game, system) {
+		var orb = new Orbit(json.x, json.y, json.radius)
+		if (exists(json.id)) orb.id = json.id
 
+		// TODO make orbits independant of the system, and 
+		// make planets independant of the game and system.
+		// Then we can move this addOrbit call to the System.load
+		// in the same fashion as the addPlanet call is in the
+		// loop below
+		system.addOrbit(orb)
+
+		for (var i in json.planets)
+			orb.addPlanet(SPlanet.load(json.planets[i], game, system))
+
+		return orb
 	}
 }
 

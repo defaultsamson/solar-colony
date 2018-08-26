@@ -1,33 +1,39 @@
 const shipSpeed = 15 // units per second
 
 class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
-	constructor(texture, scale, rotationConstant, startAngle, opm) {
-		super(texture)
+	constructor(radius, rotationConstant, startAngle, opm, system) {
+		if (IS_SERVER) {
+			super()
+		} else {
+			super(resources.planet1.texture)
+		}
 
-		this.radius = IS_SERVER ? 0.5 * texture : 0.5 * this.width
+		this.radius = radius
 
 		if (IS_SERVER) {
-			this.scale = scale
 			this.infantry = {}
 		} else {
-			this.pivot.set(this.radius, this.radius)
+			var scale = radius / this.width
+			this.pixelRadius = this.width / 2
+
+			this.pivot.set(this.pixelRadius, this.pixelRadius)
 
 			// Infantry
 			this.infantry = new PIXI.particles.Emitter(this, resources.infantry.texture, Particle.Infantry)
-			this.infantry.updateSpawnPos(this.radius, this.radius)
+			this.infantry.updateSpawnPos(this.pixelRadius, this.pixelRadius)
 			this.infantry.emit = false
 
 			// Selection ring
 			var ring = new PIXI.Graphics()
 			ring.lineStyle(DASH_THICKNESS * 46, Colour.DARK8)
-			ring.arc(this.radius, this.radius, this.radius * 3, 0, 7)
+			ring.arc(this.pixelRadius, this.pixelRadius, this.pixelRadius * 3, 0, 7)
 			ring.visible = false
 			this.outline = this.addChild(ring)
 
 			// Ghost selection ring
 			var gring = new PIXI.Graphics()
 			gring.lineStyle(scale * DASH_THICKNESS * 46, Colour.DARK8)
-			gring.arc(scale * this.radius, scale * this.radius, scale * this.radius * 3, 0, 7)
+			gring.arc(scale * this.pixelRadius, scale * this.pixelRadius, scale * this.pixelRadius * 3, 0, 7)
 			gring.visible = false
 
 			// Set the scale
@@ -37,8 +43,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		this.spawnRate = 0
 		this.spawnCounter = 0
 
-		this.radius = this.radius * scale
-
 		this.startAngle = startAngle
 		// orbits per minute
 		this.opm = opm
@@ -47,11 +51,15 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			// Ghosting ring
 			var ghost = new PIXI.Graphics()
 			ghost.lineStyle(DASH_THICKNESS * 2, Colour.DARK8)
-			ghost.arc(this.radius, this.radius, this.radius, 0, 7)
+			ghost.arc(this.pixelRadius, this.pixelRadius, this.pixelRadius, 0, 7)
 			ghost.visible = false
-			ghost.pivot.set(this.radius, this.radius)
+			ghost.pivot.set(this.pixelRadius, this.pixelRadius)
 			ghost.outline = ghost.addChild(gring)
-			this.ghost = game.system.addChild(ghost)
+			this.ghost = system.addChild(ghost)
+
+			var li = new Line(2)
+			li.setPoints(0, 0)
+			this.drawLine = system.addChild(li)
 		}
 
 		// The rotation speed in radians/second
@@ -69,7 +77,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		}
 
 		this.team = null
-		this.id = null
 		this.ships = []
 		this.shipCount = 0
 	}
@@ -171,12 +178,14 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 		if (IS_SERVER) {
 			// Creates the planet on the client-side
+			/* NE
 			var pack = {
 				type: Pack.SET_PLANET_TEAM,
 				planet: this.id,
 				team: team.id
 			}
 			this.system.game.sendPlayers(pack)
+			*/
 		} else {
 			var colour = exists(team) ? team.colour : 0xFFFFFF
 			this.tint = colour
@@ -237,11 +246,11 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 					let distFromPlanet = 60
 
 					// hypotenuse, opposite, adjacent
-					let h = this.radius / this.scale.x + distFromPlanet
+					let h = this.pixelRadius + distFromPlanet
 					let o = h * Math.sin(angle)
 					let a = h * Math.cos(angle)
-					let x = a + this.radius / this.scale.x
-					let y = o + this.radius / this.scale.x
+					let x = a + this.pixelRadius
+					let y = o + this.pixelRadius
 
 					ship.tint = this.tint
 					ship.pivot.set(ship.width * 0.5, ship.height * 0.5)
@@ -312,11 +321,11 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			let distFromPlanet = -8
 
 			// hypotenuse, opposite, adjacent
-			let h = this.radius / this.scale.x + distFromPlanet
+			let h = this.pixelRadius + distFromPlanet
 			let o = h * Math.sin(angle)
 			let a = h * Math.cos(angle)
-			let x = a + this.radius / this.scale.x
-			let y = o + this.radius / this.scale.x
+			let x = a + this.pixelRadius
+			let y = o + this.pixelRadius
 
 			spawn.tint = this.tint
 			spawn.pivot.set(spawn.width * 0.5, spawn.height)
@@ -388,19 +397,23 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		if (!exists(literal)) literal = true
 
 		var pla = {
-			texture: this.texture,
-			scale: this.scale,
+			radius: this.radius,
 			rotationConstant: this.rotationConstant,
 			startAngle: this.startAngle,
 			opm: this.opm
 		}
-		if (literal) pla.id = {}
-
+		if (literal) {
+			pla.id = this.id
+			pla.team = this.team ? this.team.id : -1
+		}
 		return pla
 	}
 
-	load() {
-
+	static load(json, game, system) {
+		var pla = new Planet(json.radius, json.rotationConstant, json.startAngle, json.opm, system)
+		if (exists(json.id)) pla.id = json.id
+		if (exists(json.team)) pla.setTeam(game.getTeam(json.team))
+		return pla
 	}
 }
 

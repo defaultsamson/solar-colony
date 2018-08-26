@@ -1,5 +1,5 @@
-const Orbit = require('../shared/Orbit.js')
 const Planet = require('../shared/Planet.js')
+const Orbit = require('../shared/Orbit.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
@@ -248,33 +248,89 @@ class ServerGame extends Game {
 
 		this.rebuildTeams()
 
+		/*var sys = {
+			"orbits": [{
+				"x": 0,
+				"y": 0,
+				"radius": 150,
+				"planets": [{
+					"radius": 9.5,
+					"rotationConstant": -0.25,
+					"startAngle": 1.5707963267948966,
+					"opm": 2
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 220,
+				"planets": [{
+					"radius": 9.5,
+					"rotationConstant": -0.16666666666666666,
+					"startAng/* NEle": 0,
+					"opm": 1
+				}, {
+					"radius": 9.5,
+					"rotationConstant": -0.16666666666666666,
+					"startAngle": 3.141592653589793,
+					"opm": 1
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 270,
+				"planets": [{
+					"radius": 9.5,
+					"rotationConstant": 0.3333333333333333,
+					"startAngle": 0.7853981633974483,
+					"opm": 0.5
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 360,
+				"planets": [{
+					"radius": 9.5,
+					"rotationConstant": -0.5,
+					"startAngle": 2.356194490192345,
+					"opm": 0.25
+				}]
+			}]
+		}*/
+
 		this.system = new System(this)
 
 		// Creates the system on the client-side
+		/* NE
 		var pack = {
 			type: Pack.CREATE_SYSTEM
 		}
 		this.sendPlayers(pack)
+		*/
 
 		const orbit1 = this.system.addOrbit(new Orbit(0, 0, 150))
 		const orbit2 = this.system.addOrbit(new Orbit(0, 0, 220))
 		const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
 		const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
-		const planet1 = orbit1.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
+		const planet1 = orbit1.addPlanet(new Planet(12, -1 / 4, Math.PI / 2, 2))
 
 		// builds the player planets
 		const planetCount = this.teams.length
 		const rotation = 2 * Math.PI / planetCount
 		for (var i = 0; i < planetCount; i++) {
-			var planet = orbit2.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
+			var planet = orbit2.addPlanet(new Planet(12, -1 / 6, rotation * i, 1))
 
 			planet.setTeam(this.teams[i])
 			planet.createSpawn(true)
 		}
 
-		const planet3 = orbit3.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
-		const planet4 = orbit4.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
+		const planet3 = orbit3.addPlanet(new Planet(12, 1 / 3, Math.PI / 4, 1 / 2))
+		const planet4 = orbit4.addPlanet(new Planet(12, -0.5, 3 * Math.PI / 4, 1 / 4))
+
+		this.sendPlayers({
+			type: Pack.CREATE_SYSTEM,
+			sys: this.system.save(true)
+		})
 
 		for (var i in this.players) {
 			var pack = {
@@ -284,14 +340,15 @@ class ServerGame extends Game {
 			this.players[i].send(JSON.stringify(pack))
 		}
 
-
 		// Start all teams off with 100 pixels
 		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
 
+		/* NE
 		this.sendPlayers({
 			type: Pack.SHOW_SYSTEM
 		})
+		*/
 
 		// starting sync and countdown for clients
 		let ga = this
@@ -310,56 +367,7 @@ class ServerGame extends Game {
 		}, COUNTDOWN_TIME)
 
 
-		//console.log(JSON.stringify(this.system.save(false)))
-
-		var sys = {
-			"orbits": [{
-				"x": 0,
-				"y": 0,
-				"radius": 150,
-				"planets": [{
-					"scale": 0.1,
-					"rotationConstant": -0.25,
-					"startAngle": 1.5707963267948966,
-					"opm": 2
-				}]
-			}, {
-				"x": 0,
-				"y": 0,
-				"radius": 220,
-				"planets": [{
-					"scale": 0.1,
-					"rotationConstant": -0.16666666666666666,
-					"startAngle": 0,
-					"opm": 1
-				}, {
-					"scale": 0.1,
-					"rotationConstant": -0.16666666666666666,
-					"startAngle": 3.141592653589793,
-					"opm": 1
-				}]
-			}, {
-				"x": 0,
-				"y": 0,
-				"radius": 270,
-				"planets": [{
-					"scale": 0.1,
-					"rotationConstant": 0.3333333333333333,
-					"startAngle": 0.7853981633974483,
-					"opm": 0.5
-				}]
-			}, {
-				"x": 0,
-				"y": 0,
-				"radius": 360,
-				"planets": [{
-					"scale": 0.1,
-					"rotationConstant": -0.5,
-					"startAngle": 2.356194490192345,
-					"opm": 0.25
-				}]
-			}]
-		}
+		// console.log(System.load(this.system.save(), this))
 	}
 
 	sendPlayers(obj) {
