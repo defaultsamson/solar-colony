@@ -43,19 +43,6 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 
 		if (IS_SERVER) {
 			planet.id = planet.game.createID()
-			// Creates the planet on the client-side
-			/* NE
-			var pack = {
-				type: Pack.CREATE_PLANET,
-				id: planet.id,
-				orbit: planet.orbit.id,
-				scale: planet.scale,
-				rotationConstant: planet.rotationConstant,
-				startAngle: planet.startAngle,
-				opm: planet.opm
-			}
-			planet.game.sendPlayers(pack)
-			*/
 			return planet
 		} else {
 			planet.system.addChild(planet)

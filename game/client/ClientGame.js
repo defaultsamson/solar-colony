@@ -15,6 +15,14 @@ class ClientGame extends Game {
 		menu.updateIngameGui()
 	}
 
+	onEscape() {
+		if (isChoosingShipSend()) {
+			cancelSendShips()
+		} else {
+			centerView()
+		}
+	}
+
 	onMouseClick(e) {
 		if (this.system) {
 			if (isChoosingShipSend()) {
@@ -34,7 +42,8 @@ class ClientGame extends Game {
 			if (sendShipText.clicked(point)) {
 				goToSendShipsScreen(focusPlanet, 100)
 				return
-			}*/
+			}
+			*/
 
 			var planet = game.system.getPlanet(e.world.x, e.world.y)
 			if (planet) {
@@ -42,21 +51,12 @@ class ClientGame extends Game {
 				var follow = viewport.plugins['follow']
 				if (follow && (follow.target == planet)) {
 					// Do the zoom if holding shift
-					if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
-						viewport.snapZoom({
-							height: SUN_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					} else {
-						viewport.snapZoom({
-							height: PLANET_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					}
+					viewport.snapZoom({
+						height: PLANET_HEIGHT,
+						time: ANIMATION_TIME,
+						removeOnComplete: true,
+						ease: 'easeInOutSine'
+					})
 
 					return
 				}
@@ -73,15 +73,13 @@ class ClientGame extends Game {
 					ease: 'easeOutQuart'
 				})
 
-				// Do the zoom if not holding shift
-				if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-					viewport.snapZoom({
-						height: PLANET_HEIGHT,
-						time: ANIMATION_TIME,
-						removeOnComplete: true,
-						ease: 'easeInOutSine'
-					})
-				}
+				// Do the zoom
+				viewport.snapZoom({
+					height: PLANET_HEIGHT,
+					time: ANIMATION_TIME,
+					removeOnComplete: true,
+					ease: 'easeInOutSine'
+				})
 
 				return
 			}

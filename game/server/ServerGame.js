@@ -299,14 +299,6 @@ class ServerGame extends Game {
 
 		this.system = new System(this)
 
-		// Creates the system on the client-side
-		/* NE
-		var pack = {
-			type: Pack.CREATE_SYSTEM
-		}
-		this.sendPlayers(pack)
-		*/
-
 		const orbit1 = this.system.addOrbit(new Orbit(0, 0, 150))
 		const orbit2 = this.system.addOrbit(new Orbit(0, 0, 220))
 		const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
@@ -343,12 +335,6 @@ class ServerGame extends Game {
 		// Start all teams off with 100 pixels
 		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
-
-		/* NE
-		this.sendPlayers({
-			type: Pack.SHOW_SYSTEM
-		})
-		*/
 
 		// starting sync and countdown for clients
 		let ga = this

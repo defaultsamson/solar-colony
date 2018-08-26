@@ -182,7 +182,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 		if (IS_SERVER) {
 			// Creates the planet on the client-side
-			/* NE
+			/* Will we need this???
 			var pack = {
 				type: Pack.SET_PLANET_TEAM,
 				planet: this.id,

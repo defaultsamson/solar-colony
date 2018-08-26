@@ -8,7 +8,6 @@ class Menu extends Object {
 		this.lastShips = -1
 		this.lastFocus = true
 
-		this.serverFail = false
 		this.formSent = false
 
 		this.joinGame = false
@@ -20,9 +19,6 @@ class Menu extends Object {
 		this.username = ''
 		this.gameID = ''
 		this.players = 4
-
-		this.nameGotGood = false
-		this.idGotGood = false
 
 		let me = this
 
@@ -174,35 +170,19 @@ class Menu extends Object {
 
 		document.onkeypress = function(e) {
 			var keyCode = e.keyCode
-			if (isButtonEnabled(Elem.Button.START)) {
-				var txt = String.fromCharCode(e.which)
-
-				if (keyCode == Key.ENTER) {
-					if (!USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))) {} else if (me.joinGame && me.withFriends && !ID_REGEX.test(getInput(Elem.Input.ID))) {
-
-					} else if (me.updateStartButton()) {
-						me.sendForm()
-						e.preventDefault()
-						return false
-					} else {
-						e.preventDefault()
-						return false
-					}
-				} else if (!ACCEPTABLE_REGEX.test(txt)) {
-					/*
-					if (keyCode == Key.BACKSPACE || keyCode == Key.DELETE || keyCode == Key.TAB || keyCode == Key.ESCAPE || keyCode == Key.ENTER || keyCode == Key.CTRL || keyCode == Key.SHIFT || keyCode == Key.CMD || keyCode == Key.ALT || keyCode == Key.F1 || keyCode == Key.F2 || keyCode == Key.F3 || keyCode == Key.F4 || keyCode == Key.F5 || keyCode == Key.F6 || keyCode == Key.F7 || keyCode == Key.F8 || keyCode == Key.F9 || keyCode == Key.F10 || keyCode == Key.F11 || keyCode == Key.F12) {
-
-					} else {
-						// console.log(txt + ' : ' + e.which)
-						e.preventDefault()
-						return false
-					}*/
-					e.preventDefault()
-					return false
+			if (keyCode == Key.ENTER) {
+				if (me.updateStartButton()) {
+					me.sendForm()
 				}
-			} else if (keyCode == Key.ENTER) {
 				e.preventDefault()
 				return false
+			}
+		}
+
+		document.onkeydown = function(e) {
+			var keyCode = e.keyCode
+			if (game && (keyCode == Key.ESCAPE || keyCode == Key.SPACE)) {
+				game.onEscape()
 			}
 		}
 
@@ -349,29 +329,18 @@ class Menu extends Object {
 			setHidden(Elem.Image.ID_CROSS)
 
 			let nameCheck = USERNAME_REGEX.test(getInput(Elem.Input.USERNAME))
-			if (nameCheck) {
-				setVisible(Elem.Image.USERNAME_CHECK)
-				this.nameGotGood = true
-			} else if (this.nameGotGood) {
-				setVisible(Elem.Image.USERNAME_CROSS)
-			}
+			setVisible(Elem.Image.USERNAME_CHECK, nameCheck)
+			setVisible(Elem.Image.USERNAME_CROSS, !nameCheck)
 
 			let idRequired = this.joinGame && this.withFriends
 			let idCheck
 			if (idRequired) {
 				idCheck = ID_REGEX.test(getInput(Elem.Input.ID))
-				if (idCheck) {
-					setVisible(Elem.Image.ID_CHECK)
-					this.idGotGood = true
-				} else if (this.idGotGood) {
-					setVisible(Elem.Image.ID_CROSS)
-				}
+				setVisible(Elem.Image.ID_CHECK, idCheck)
+				setVisible(Elem.Image.ID_CROSS, !idCheck)
 			}
 
-			// TODO remove this? double check where it's used
-			if (!this.serverFail) {
-				setHidden(Elem.Text.MESSAGE)
-			}
+			setHidden(Elem.Text.MESSAGE)
 
 			// If the Join/Create game and Random/Friend buttons have been selected
 
@@ -381,10 +350,10 @@ class Menu extends Object {
 						enableButton(Elem.Button.START)
 						return true
 					}
-				} else if (this.idGotGood) {
+				} else {
 					this.failSendForm('Game ID must be 6 characters, letters and numbers only')
 				}
-			} else if (this.nameGotGood) {
+			} else {
 				this.failSendForm('Username must be 3-20 characters, letters and numbers only')
 			}
 			disableButton(Elem.Button.START)
@@ -395,12 +364,7 @@ class Menu extends Object {
 	failSendForm(message) {
 		setText(Elem.Text.MESSAGE, message)
 		setVisible(Elem.Text.MESSAGE)
-		if (this.formSent) {
-			this.serverFail = true
-			this.formSent = false
-		} else {
-			this.serverFail = false
-		}
+		this.formSent = false
 	}
 
 	sendForm() {

@@ -135,21 +135,6 @@ class SocketManager extends Object {
 				viewport.moveCenter(0, 0)
 				break
 
-				/* NE
-			case Pack.CREATE_ORBIT:
-				var orbit = new Orbit(pack.x, pack.y, pack.radius)
-				orbit.id = pack.id
-				game.system.addOrbit(orbit)
-				break
-
-			case Pack.CREATE_PLANET:
-				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
-				planet.id = pack.id
-				var orbit = game.system.getOrbit(pack.orbit)
-				orbit.addPlanet(planet)
-				break
-				*/
-
 			case Pack.CREATE_SPAWN:
 				var planet = game.system.getPlanetByID(pack.planet)
 

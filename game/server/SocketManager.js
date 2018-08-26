@@ -90,15 +90,15 @@ class SocketManager extends Object {
 			if (USERNAME_REGEX.test(name)) {
 				// Test if no ID was given
 				if (id == '') {
-					this.connections.push(sock)
 
 					if (host) {
 						// Create new game and add a player to it
+						this.connections.push(sock)
 						this.server.createGame(playerCount).addPlayer(sock, name)
 
 					} else {
 						// Join a random game
-						this.server.queue(sock, name, playerCount)
+						this.server.queue(this, sock, name, playerCount)
 					}
 
 					// If ID was given make sure it's proper
@@ -107,27 +107,7 @@ class SocketManager extends Object {
 
 					if (game) {
 
-						var allowName = true
-						for (var i in game.players) {
-							//console.log('name: ' + )
-							if (game.players[i].name == name) {
-								allowName = false
-								break
-							}
-						}
-
-						if (allowName) {
-							this.connections.push(sock)
-
-							game.addPlayer(sock, name)
-						} else {
-							// name already exists
-							var formPacket = {
-								type: Pack.FORM_FAIL,
-								reason: 'A player with username ' + name + ' already exists'
-							}
-							sock.send(JSON.stringify(formPacket))
-						}
+						checkName(game, sock, name)
 					} else {
 						// No game found with given ID
 						var formPacket = {
@@ -152,6 +132,30 @@ class SocketManager extends Object {
 				}
 				sock.send(JSON.stringify(formPacket))
 			}
+		}
+	}
+
+	checkName(game, sock, name) {
+		var allowName = true
+		for (var i in game.players) {
+			//console.log('name: ' + )
+			if (game.players[i].name == name) {
+				allowName = false
+				break
+			}
+		}
+
+		if (allowName) {
+			this.connections.push(sock)
+
+			game.addPlayer(sock, name)
+		} else {
+			// name already exists
+			var formPacket = {
+				type: Pack.FORM_FAIL,
+				reason: 'A player with username ' + name + ' already exists'
+			}
+			sock.send(JSON.stringify(formPacket))
 		}
 	}
 

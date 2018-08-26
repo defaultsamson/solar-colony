@@ -198,19 +198,6 @@ var focusPlanet
 var lastElapsed
 
 function gameLoop() {
-	{ // Updates Keyboard
-		if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
-
-			if (isChoosingShipSend()) {
-				cancelSendShips()
-			} else {
-				centerView()
-			}
-		}
-
-		PIXI.keyboardManager.update()
-	}
-
 	let now = Date.now()
 	let elapsed = now - lastElapsed
 	lastElapsed = now

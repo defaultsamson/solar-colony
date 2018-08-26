@@ -89,17 +89,17 @@ class GameManager extends Object {
 		}
 	}
 
-	queue(sock, name, playerCount) {
+	queue(sm, sock, name, playerCount) {
 		// When queuing a player begin looking for existing queued games
 		for (var i in this.queuedGames) {
 			let game = this.queuedGames[i]
 
 			// If the game has the player count being looked for
-			let playerCountSatisfied = playerCount < 2 || game.maxPlayers == playerCount
+			let playerCountSatisfied = game.maxPlayers == playerCount
 
 			// If the player count is good and the player can be added to the game
 			if (playerCountSatisfied && game.canAddPlayer()) {
-				game.addPlayer(sock, name)
+				sm.checkName(game, sock, name)
 				return
 			}
 		}

@@ -52,17 +52,6 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 
 		if (IS_SERVER) {
 			orbit.id = orbit.game.createID()
-			// Creates the orbit on the client-side
-			/* NE
-			var pack = {
-				type: Pack.CREATE_ORBIT,
-				id: orbit.id,
-				x: orbit.x,
-				y: orbit.y,
-				radius: orbit.radius
-			}
-			orbit.game.sendPlayers(pack)
-			*/
 			return orbit
 		} else {
 			orbit.system.addChild(orbit)
