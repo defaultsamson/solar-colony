@@ -83,6 +83,8 @@ const Colour = {
 }
 
 const MAX_SPAWNS = 10 // The max number of spawns permitted per planet
+const MAX_PIXEL_RATE = 10
+const SPAWN_LN = Math.log(MAX_SPAWNS + 1) // value used for some math
 
 // The extra pixels to add to the radius of a planet to determine whether it was clicked
 const PLANET_SELECT_RADIUS = 40
@@ -114,6 +116,8 @@ if (IS_SERVER) {
 	global.Colour = Colour
 
 	global.MAX_SPAWNS = MAX_SPAWNS
+	global.MAX_PIXEL_RATE = MAX_PIXEL_RATE
+	global.SPAWN_LN = SPAWN_LN
 
 	global.PLANET_SELECT_RADIUS = PLANET_SELECT_RADIUS
 	global.SUN_COLLISION_RADIUS = SUN_COLLISION_RADIUS

@@ -248,15 +248,15 @@ class ServerGame extends Game {
 
 		this.rebuildTeams()
 
-		/*var sys = {
+		var sys = {
 			"orbits": [{
 				"x": 0,
 				"y": 0,
 				"radius": 150,
 				"planets": [{
-					"radius": 9.5,
-					"rotationConstant": -0.25,
-					"startAngle": 1.5707963267948966,
+					"radius": 13,
+					"rotationConstant": -1 / 4,
+					"startAngle": Math.PI / 2,
 					"opm": 2
 				}]
 			}, {
@@ -264,14 +264,14 @@ class ServerGame extends Game {
 				"y": 0,
 				"radius": 220,
 				"planets": [{
-					"radius": 9.5,
-					"rotationConstant": -0.16666666666666666,
-					"startAng/* NEle": 0,
+					"radius": 13,
+					"rotationConstant": -1 / 6,
+					"startAngle": 0,
 					"opm": 1
 				}, {
-					"radius": 9.5,
-					"rotationConstant": -0.16666666666666666,
-					"startAngle": 3.141592653589793,
+					"radius": 13,
+					"rotationConstant": -1 / 6,
+					"startAngle": Math.PI,
 					"opm": 1
 				}]
 			}, {
@@ -279,23 +279,23 @@ class ServerGame extends Game {
 				"y": 0,
 				"radius": 270,
 				"planets": [{
-					"radius": 9.5,
-					"rotationConstant": 0.3333333333333333,
-					"startAngle": 0.7853981633974483,
-					"opm": 0.5
+					"radius": 13,
+					"rotationConstant": 1 / 3,
+					"startAngle": Math.PI / 4,
+					"opm": 1 / 2
 				}]
 			}, {
 				"x": 0,
 				"y": 0,
 				"radius": 360,
 				"planets": [{
-					"radius": 9.5,
-					"rotationConstant": -0.5,
-					"startAngle": 2.356194490192345,
-					"opm": 0.25
+					"radius": 13,
+					"rotationConstant": -1 / 2,
+					"startAngle": 3 * Math.PI / 4,
+					"opm": 1 / 4
 				}]
 			}]
-		}*/
+		}
 
 		this.system = new System(this)
 

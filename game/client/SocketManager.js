@@ -159,9 +159,9 @@ class SocketManager extends Object {
 					// 1. subtract the counter that has happened while this packet sent
 					// 2. update the spawn counter by creating a spawn
 					// 3. push the spawn counter forward by the new rate
-					planet.spawnCounter -= planet.spawnRate * this.ping * 0.001
+					planet.pixelCounter -= planet.pixelRate * this.ping * 0.001
 					planet.createSpawn(false)
-					planet.spawnCounter += planet.spawnRate * this.ping * 0.001
+					planet.pixelCounter += planet.pixelRate * this.ping * 0.001
 				}
 
 				break

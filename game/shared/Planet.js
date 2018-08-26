@@ -40,8 +40,8 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 			this.scale.set(scale)
 		}
 
-		this.spawnRate = 0
-		this.spawnCounter = 0
+		this.pixelRate = 0
+		this.pixelCounter = 0
 
 		this.startAngle = startAngle
 		// orbits per minute
@@ -84,8 +84,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 	update(delta) {
 		// Age the planet
 		this.age += delta
-		var pos = this.calcPosition()
-		this.position.set(pos.x, pos.y)
+		this.updatePosition()
 		if (!IS_SERVER) {
 			// Rotate the planet (purely for visual effects)
 			this.rotation = this.age * this.rotationConstant
@@ -94,12 +93,12 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		}
 
 		if (IS_SERVER || this.isMyPlanet()) {
-			this.spawnCounter += this.spawnRate * delta
+			this.pixelCounter += this.pixelRate * delta
 
 			// Adds the accumulated number of pixels to a user
-			let toAdd = Math.floor(this.spawnCounter)
+			let toAdd = Math.floor(this.pixelCounter)
 			if (toAdd > 0) {
-				this.spawnCounter -= toAdd
+				this.pixelCounter -= toAdd
 				this.team.addPixels(toAdd)
 			}
 		}
@@ -141,6 +140,11 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		}
 
 		return time
+	}
+
+	updatePosition() {
+		var pos = this.calcPosition()
+		this.position.set(pos.x, pos.y)
 	}
 
 	calcPosition(additionalAge) {
@@ -211,6 +215,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 	}
 
 	createShips(n, cost) {
+		if (n <= 0) return
 		if (IS_SERVER) {
 			// Validate to make sure the client isn't lying about the packet
 			if (this.team.pixels >= cost && n > 0) {
@@ -225,7 +230,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 				if (good) {
 					this.shipCount += n
 					this.team.addPixels(-cost)
-					this.team.updateClientPixels()
 					this.system.game.sendPlayers({
 						type: Pack.BUY_SHIPS,
 						pl: this.id,
@@ -311,7 +315,9 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		var good = false
 		var nextSpawn = true; // TODO
 		if (!IS_SERVER) {
-			if (this.team && !force) this.team.addPixels(-200)
+			if (this.team && !force) {
+				this.team.addPixels(-200)
+			}
 			var spawn = new PIXI.Sprite(resources.spawn.texture)
 
 			// The position on this planet's surface to place the spawn (the angle)
@@ -358,15 +364,16 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 		// Updates the pixel spawn rate
 		if (good) {
-			let spawnsSqr = this.spawnCount() * this.spawnCount()
-
-			this.spawnRate = spawnsSqr
+			this.pixelRate = MAX_PIXEL_RATE * Math.log(this.spawnCount() + 1) / SPAWN_LN
 
 			if (!IS_SERVER) {
-				this.infantry.maxParticles = spawnsSqr
-				this.infantry.frequency = 1 / spawnsSqr
-
-				this.infantry.emit = spawnsSqr > 0
+				this.infantry.maxParticles = this.pixelRate
+				if (this.pixelRate > 0) {
+					this.infantry.frequency = 1 / this.pixelRate
+					this.infantry.emit = true
+				} else {
+					this.infantry.emit = false
+				}
 			}
 		}
 	}
@@ -378,7 +385,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 
 		if (removeTo >= 0) {
 			if (IS_SERVER) {
-				this.spawnCount = removeTo
+				this.spawns = removeTo
 			} else {
 				for (var i = this.spawns.length - 1; i >= removeTo && i >= 0; i--) {
 					this.removeChild(this.spawns[i])
@@ -405,6 +412,10 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		if (literal) {
 			pla.id = this.id
 			pla.team = this.team ? this.team.id : -1
+			pla.shipCount = this.shipCount
+			pla.spawnCount = this.spawnCount()
+			pla.pixelCounter = this.pixelCounter
+			pla.age = this.age
 		}
 		return pla
 	}
@@ -413,6 +424,16 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		var pla = new Planet(json.radius, json.rotationConstant, json.startAngle, json.opm, system)
 		if (exists(json.id)) pla.id = json.id
 		if (exists(json.team)) pla.setTeam(game.getTeam(json.team))
+		if (exists(json.shipCount)) pla.createShips(json.shipCount)
+		if (exists(json.spawnCount)) {
+			for (var i = 0; i < json.spawnCount; i++)
+				pla.createSpawn(true)
+		}
+		if (exists(json.pixelCounter)) pla.pixelCounter = json.pixelCounter
+		if (exists(json.age)) pla.age = json.age
+
+		pla.updatePosition()
+
 		return pla
 	}
 }
