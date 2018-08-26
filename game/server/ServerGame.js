@@ -1,5 +1,3 @@
-const Planet = require('../shared/Planet.js')
-const Orbit = require('../shared/Orbit.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')

@@ -1,5 +1,3 @@
-const SPlanet = IS_SERVER ? require('../shared/Planet.js') : Planet
-
 class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 	constructor(x, y, radius) {
 		super()
@@ -113,7 +111,7 @@ class Orbit extends(IS_SERVER ? Object : PIXI.Graphics) {
 		system.addOrbit(orb)
 
 		for (var i in json.planets)
-			orb.addPlanet(SPlanet.load(json.planets[i], game, system))
+			orb.addPlanet(Planet.load(json.planets[i], game, system))
 
 		return orb
 	}

@@ -1,5 +1,3 @@
-const SOrbit = IS_SERVER ? require('../shared/Orbit.js') : Orbit
-
 class System extends(IS_SERVER ? Object : PIXI.Container) {
 	constructor(game) {
 		super()
@@ -96,7 +94,7 @@ class System extends(IS_SERVER ? Object : PIXI.Container) {
 		var sys = new System(game)
 
 		for (var i in json.orbits)
-			SOrbit.load(json.orbits[i], game, sys)
+			Orbit.load(json.orbits[i], game, sys)
 
 		return sys
 	}
