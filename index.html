@@ -383,21 +383,23 @@
 
 <body>
 	<!-- Shared (Order matters, they may be used in other files) -->
-	<script src='game/client/libraries.js'></script>
-	<script src='game/client/PreClient.js'></script>
-	<script src='game/shared/Constants.js'></script>
-	<script src='game/shared/Util.js'></script>
-	<script src='game/shared/Orbit.js'></script>
-	<script src='game/shared/Planet.js'></script>
-	<script src='game/shared/Ship.js'></script>
-	<script src='game/shared/System.js'></script>
-	<script src='game/shared/Team.js'></script>
+	<script src='./game/client/libraries.js'></script>
+	<script src='./game/client/PreClient.js'></script>
+	<script src='./game/shared/Constants.js'></script>
+	<script src='./game/shared/Util.js'></script>
+	<script src='./game/shared/Planet.js'></script>
+	<script src='./game/shared/Orbit.js'></script>
+	<script src='./game/shared/System.js'></script>
+	<script src='./game/shared/Ship.js'></script>
+	<script src='./game/shared/Team.js'></script>
+	<script src='./game/shared/Game.js'></script>
 	<!-- Client -->
-	<script src='game/client/Line.js'></script>
-	<script src='game/client/Menu.js'></script>
-	<script src='game/client/Player.js'></script>
-	<script src='game/client/SocketManager.js'></script>
-	<script src='game/client/Client.js'></script>
+	<script src='./game/client/ClientGame.js'></script>
+	<script src='./game/client/Line.js'></script>
+	<script src='./game/client/Menu.js'></script>
+	<script src='./game/client/Player.js'></script>
+	<script src='./game/client/SocketManager.js'></script>
+	<script src='./game/client/Client.js'></script>
 	<div id='top_display'>
 		<p id='t_ping' class='txt tny'>Ping: 200</p>
 		<p id='t_pixels' class='txt med'>Pixels: 0</p>
@@ -422,13 +424,13 @@
 		</form>
 		<img id='p_idG' alt="acceptable" src='game/assets/check.png' class='idSymbol' />
 		<img id='p_idB' alt="failed" src='game/assets/cross.png' class='idSymbol' />
-		<p id='t_players' class='txt med'>Players:</p>
+		<p id='t_players' class='txt med'>Max Players:</p>
 		<p id='b_p2' class='btn txt med'>2</p>
 		<p id='b_p3' class='btn txt med'>3</p>
 		<p id='b_p4' class='btn txt med'>4</p>
 		<p id='b_p8' class='btn txt med'>8</p>
 		<p id='b_p16' class='btn txt med'>16</p>
-		<p id='b_pRnd' class='btn txt med'>Rnd</p>
+		<p id='b_pRnd' class='btn txt med'>Any</p>
 		<p id='b_start' class='btn txt big'>Start!</p>
 		<p id='b_quit' class='btn txt sml'>Quit</p>
 		<p id='t_id_display1' class='txt med'>Game ID:</p>

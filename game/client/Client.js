@@ -7,58 +7,95 @@
 //                       | |    
 //                       |_|   
 
-// This is variable, used here to initialize things
-const h = 600
-const w = 600
-
-// Creates the PIXI application
-var game = new PIXI.Application(w, h, {
-	antialias: true,
-	transparent: false
-})
-
-// Sets up the 
-window.onorientationchange = resize
-window.onresize = resize
-game.view.style.position = 'absolute'
-game.view.style.display = 'block'
-document.body.appendChild(game.view)
-game.renderer.autoResize = true
-game.renderer.backgroundColor = Colour.BACKGROUND
-document.addEventListener('contextmenu', event => event.preventDefault())
-
-// Viewport options. Not very important because it can vary (see resize() )
-// These are mostly just used for initialization so that no errors occur
-const viewportOptions = {
-	screenWidth: w,
-	screenHeight: h,
-	worldWidth: w,
-	worldHeight: h,
-	ticker: game.ticker
-}
-
-var viewport = new Viewport(viewportOptions)
-game.stage.addChild(viewport)
-
-const clampOptions = {
-	minWidth: 1,
-	minHeight: MIN_HEIGHT,
-	maxWidth: 1000 * w,
-	maxHeight: MAX_HEIGHT
-}
-
-const pinchOptions = {
-	percent: 4.5
-}
-
-viewport
-	.drag()
-	.wheel()
-	.pinch(pinchOptions)
-	.clampZoom(clampOptions)
-	.decelerate()
+var game
+var pixigame
+var menu
+var socket
+var viewport
+var resources
 
 window.onload = function() {
+	// Creates the PIXI application
+	pixigame = new PIXI.Application(INIT_WIDTH, INIT_HEIGHT, {
+		antialias: true,
+		transparent: false
+	})
+
+	// Sets up the 
+	window.onorientationchange = resize
+	window.onresize = resize
+	pixigame.view.style.position = 'absolute'
+	pixigame.view.style.display = 'block'
+	document.body.insertBefore(pixigame.view, document.getElementById(TOP_DIV))
+	pixigame.renderer.autoResize = true
+	pixigame.renderer.backgroundColor = Colour.BACKGROUND
+	document.addEventListener('contextmenu', event => event.preventDefault())
+
+	// Viewport options. Not very important because it can vary (see resize() )
+	// These are mostly just used for initialization so that no errors occur
+	const viewportOptions = {
+		screenWidth: INIT_WIDTH,
+		screenHeight: INIT_HEIGHT,
+		worldWidth: INIT_WIDTH,
+		worldHeight: INIT_HEIGHT,
+		ticker: pixigame.ticker
+	}
+
+	viewport = new Viewport(viewportOptions)
+	pixigame.stage.addChild(viewport)
+
+	const clampOptions = {
+		minWidth: 1,
+		minHeight: MIN_HEIGHT,
+		maxWidth: 1000 * INIT_WIDTH,
+		maxHeight: MAX_HEIGHT
+	}
+
+	const pinchOptions = {
+		percent: 4.5
+	}
+
+	viewport
+		.drag()
+		.wheel()
+		.pinch(pinchOptions)
+		.clampZoom(clampOptions)
+		.decelerate()
+
+	viewport.on('drag-start', (e) => {
+		stopSnap()
+		stopFollow()
+	})
+	viewport.on('pinch-start', stopSnap)
+	viewport.on('wheel', stopSnap)
+	viewport.on('clicked', (e) => {
+		if (game) {
+			game.onMouseClick(e)
+		}
+	})
+
+	// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
+	viewport.on('snap-end', () => {
+		if (snappingToPlanet) {
+			viewport.follow(snappingToPlanet)
+			focusPlanet = snappingToPlanet
+		}
+		stopSnap()
+	})
+
+	viewport.fitHeight(SUN_HEIGHT)
+	viewport.moveCenter(0, 0)
+
+	lastElapsed = Date.now()
+	pixigame.ticker.add(gameLoop)
+
+	socket = new SocketManager()
+	socket.connect()
+
+	menu = new Menu()
+	menu.gotoTitle()
+	resize()
+
 	PIXI.loader
 		.add('sunTexture', 'game/assets/sun.png')
 		.add('planet1', 'game/assets/planet1.png')
@@ -66,45 +103,7 @@ window.onload = function() {
 		.add('ship', 'game/assets/ship.png')
 		.add('spawn', 'game/assets/spawn.png')
 		.add('infantry', 'game/assets/infantry.png')
-		.load(onLoad)
-}
-
-//  _____       _ _   
-// |_   _|     (_) |  
-//   | |  _ __  _| |_ 
-//   | | | '_ \| | __|
-//  _| |_| | | | | |_ 
-// |_____|_| |_|_|\__|
-
-var myTeam
-var system
-var teams
-var lastElapsed
-
-var socket
-var ping = 200
-
-var resources
-
-function onLoad(loader, res) {
-
-	resources = res
-
-	lastElapsed = Date.now()
-
-	game.ticker.add(gameLoop)
-
-	viewport.fitHeight(SUN_HEIGHT)
-	viewport.moveCenter(0, 0)
-
-	hideMenu()
-	menuInit()
-	resize()
-
-	socket = new SocketManager()
-
-	gotoTitle()
-	connect()
+		.load((loader, res) => { resources = res })
 }
 
 //  _____                   _   
@@ -153,140 +152,6 @@ function centerView() {
 	}
 }
 
-function updateKeyboard() {
-	if (PIXI.keyboardManager.isPressed(Key.P)) {
-		//myTeam.pixels += 500000000000
-	}
-	if (PIXI.keyboardManager.isPressed(Key.O)) {
-
-	}
-	if (PIXI.keyboardManager.isPressed(Key.L)) {
-
-	}
-
-	let screenPoint = game.renderer.plugins.interaction.mouse.global
-	if (PIXI.keyboardManager.isPressed(Key.W)) {
-		/* TODO
-		viewport.down(screenPoint.x, screenPoint.y, {
-			id: 0
-		})*/
-	} else if (PIXI.keyboardManager.isDown(Key.W)) {
-		/* TODO
-		viewport.move(screenPoint.x, screenPoint.y, {
-			id: 0
-		})*/
-	}
-
-	if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
-
-		if (isChoosingShipSend()) {
-			cancelSendShips()
-		} else {
-			centerView()
-		}
-	}
-
-	PIXI.keyboardManager.update()
-}
-
-viewport.on('drag-start', function(e) {
-	stopSnap()
-	stopFollow()
-})
-viewport.on('pinch-start', stopSnap)
-viewport.on('wheel', stopSnap)
-viewport.on('clicked', onMouseClick)
-
-var allowMouseClick = true
-
-function onMouseClick(e) {
-	if (allowMouseClick) {
-		if (system) {
-			if (isChoosingShipSend()) {
-				// updateSelectedPlanet(e.world.x, e.world.y)
-
-				if (selectedPlanet) {
-					sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
-				}
-				cancelSendShips()
-
-				return
-			}
-
-			stopSnap()
-
-			/*
-			if (sendShipText.clicked(point)) {
-				goToSendShipsScreen(focusPlanet, 100)
-				return
-			}*/
-
-			var planet = system.getPlanet(e.world.x, e.world.y)
-			if (planet) {
-				// If the viewport is already following the planet that was clicked on, then don't do anything
-				var follow = viewport.plugins['follow']
-				if (follow && (follow.target == planet)) {
-					// Do the zoom if holding shift
-					if (PIXI.keyboardManager.isDown(Key.SHIFT)) {
-						viewport.snapZoom({
-							height: SUN_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					} else {
-						viewport.snapZoom({
-							height: PLANET_HEIGHT,
-							time: ANIMATION_TIME,
-							removeOnComplete: true,
-							ease: 'easeInOutSine'
-						})
-					}
-
-					return
-				}
-
-				snappingToPlanet = planet
-
-				// The calculated future positions of the planet
-				var pos = planet.calcPosition(ANIMATION_TIME / 1000)
-
-				// Snap to that position
-				viewport.snap(pos.x, pos.y, {
-					time: ANIMATION_TIME,
-					removeOnComplete: true,
-					ease: 'easeOutQuart'
-				})
-
-				// Do the zoom if not holding shift
-				if (!PIXI.keyboardManager.isDown(Key.SHIFT)) {
-					viewport.snapZoom({
-						height: PLANET_HEIGHT,
-						time: ANIMATION_TIME,
-						removeOnComplete: true,
-						ease: 'easeInOutSine'
-					})
-				}
-
-				return
-			}
-
-			// If nothing was clicked on, remove the follow plugin
-			stopFollow()
-			centerView()
-		}
-	}
-}
-
-// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
-viewport.on('snap-end', function() {
-	if (snappingToPlanet) {
-		viewport.follow(snappingToPlanet)
-		focusPlanet = snappingToPlanet
-	}
-	stopSnap()
-})
-
 //  _    _ _   _ _ 
 // | |  | | | (_) |
 // | |  | | |_ _| |
@@ -306,9 +171,9 @@ function resize() {
 
 	var width = window.innerWidth
 	var height = window.innerHeight
-	var ratio = height / h
+	var ratio = height / INIT_HEIGHT
 
-	game.renderer.resize(width, height)
+	pixigame.renderer.resize(width, height)
 	viewport.resize(width, height, width, height)
 	viewport.fitHeight(prevHeight, false)
 
@@ -319,16 +184,7 @@ function resize() {
 	}
 
 	stopSnap()
-	doGuiResize()
-}
-
-function getTeam(id) {
-	for (var i in teams) {
-		if (teams[i].id == id) {
-			return teams[i]
-		}
-	}
-	return null
+	menu.resize()
 }
 
 //   _____                      
@@ -338,307 +194,25 @@ function getTeam(id) {
 // | |__| | (_| | | | | | |  __/
 //  \_____|\__,_|_| |_| |_|\___|
 
-// Stats
-var lastPixels = -1
-var lastShips = -1
-
-// Planet vars
-var lastFocus = true
 var focusPlanet
+var lastElapsed
 
 function gameLoop() {
+	{ // Updates Keyboard
+		if (PIXI.keyboardManager.isPressed(Key.ESCAPE) || PIXI.keyboardManager.isPressed(Key.A) || PIXI.keyboardManager.isPressed(Key.D) || PIXI.keyboardManager.isPressed(Key.SPACE)) {
 
-	updateKeyboard()
+			if (isChoosingShipSend()) {
+				cancelSendShips()
+			} else {
+				centerView()
+			}
+		}
+
+		PIXI.keyboardManager.update()
+	}
 
 	let now = Date.now()
 	let elapsed = now - lastElapsed
 	lastElapsed = now
-	let eTime = (elapsed * 0.001) // time elapsed in seconds
-
-	if (system) {
-
-		system.update(eTime)
-
-		var focussed = exists(focusPlanet) && focusPlanet.isMyPlanet()
-
-		if (myTeam.shipCount != lastShips) {
-			lastShips = myTeam.shipCount
-			setText(Elem.Text.SHIPS, 'Ships: ' + myTeam.shipCount)
-			updatePlanetGui(focussed, false, true)
-		}
-
-		// TODO this can be done in parse() when the server sends new pixels
-		if (myTeam.pixels != lastPixels) {
-			lastPixels = myTeam.pixels
-			setText(Elem.Text.PIXELS, 'Pixels: ' + myTeam.pixels)
-
-			updatePlanetGui(focussed, true, false)
-		}
-
-		if (focussed != lastFocus) {
-			lastFocus = focussed
-
-			setVisible(Elem.Button.BUY_SPAWN, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_100, focussed)
-			setVisible(Elem.Button.BUY_SHIPS_10, focussed)
-			updatePlanetGui(focussed, true, true)
-		}
-	}
-}
-
-function updatePlanetGui(focussed, pixelUpdate, shipsUpdate) {
-
-	if (pixelUpdate) {
-		enableButton(Elem.Button.BUY_SHIPS_1000, myTeam.pixels >= 800)
-		enableButton(Elem.Button.BUY_SHIPS_100, myTeam.pixels >= 90)
-		enableButton(Elem.Button.BUY_SHIPS_10, myTeam.pixels >= 10)
-
-		if (focussed && focusPlanet.spawnCount() >= MAX_SPAWNS) {
-			setText(Elem.Button.BUY_SPAWN, 'MAX SPAWNS')
-			disableButton(Elem.Button.BUY_SPAWN)
-		} else {
-			setText(Elem.Button.BUY_SPAWN, '1 Spawn (200P)')
-			enableButton(Elem.Button.BUY_SPAWN, myTeam.pixels >= 200)
-		}
-	}
-
-	if (shipsUpdate) {
-		// TODO send ships buttons
-	}
-}
-
-var gameIDDisplay = null
-var player = 0
-var inTeamSelection = false
-var countDown
-
-function parse(type, pack) {
-
-	switch (type) {
-		case Pack.PING_PROBE:
-			let pPack = {
-				type: Pack.PING_PROBE,
-			}
-			socket.ws.send(JSON.stringify(pPack))
-			break
-
-		case Pack.PING_SET:
-			ping = pack.ping
-			setText(Elem.Text.PING, 'Ping: ' + ping + 'ms')
-			break
-
-		case Pack.UPDATE_PIXELS: // update pixel count
-			myTeam.setPixels(pack.pl)
-			break
-
-		case Pack.BUY_SHIPS: // buy ships
-			system.getPlanetByID(pack.pl).createShips(pack.n)
-			break
-
-		case Pack.FORM_FAIL:
-			failSendForm(pack.reason)
-			break
-
-		case Pack.JOIN_GAME:
-			hideMenu()
-
-			countDown = COUNTDOWN_TIME
-			inTeamSelection = true
-
-			gameIDDisplay = pack.gameID
-			player = pack.player
-
-			teams = []
-			myTeam = null
-
-			setVisible(Elem.Button.START)
-			setVisible(Elem.Button.QUIT)
-
-			setVisible(Elem.Text.ID_DISPLAY1)
-			setVisible(Elem.Text.ID_DISPLAY2)
-			setText(Elem.Text.ID_DISPLAY2, gameIDDisplay)
-
-			setVisible(Elem.Button.TEAM_RED)
-			setVisible(Elem.Button.TEAM_ORANGE)
-			setVisible(Elem.Button.TEAM_YELLOW)
-			setVisible(Elem.Button.TEAM_GREEN)
-			setVisible(Elem.Button.TEAM_BLUE)
-			setVisible(Elem.Button.TEAM_PURPLE)
-
-			setVisible(Elem.List.TEAM_RED)
-			setVisible(Elem.List.TEAM_ORANGE)
-			setVisible(Elem.List.TEAM_YELLOW)
-			setVisible(Elem.List.TEAM_GREEN)
-			setVisible(Elem.List.TEAM_BLUE)
-			setVisible(Elem.List.TEAM_PURPLE)
-
-			setVisible(Elem.Text.PING)
-			break
-
-		case Pack.CREATE_SYSTEM:
-			system = new System()
-			break
-
-		case Pack.CREATE_ORBIT:
-			var orbit = new Orbit(pack.x, pack.y, pack.radius)
-			orbit.id = pack.id
-			system.addOrbit(orbit)
-			break
-
-		case Pack.CREATE_PLANET:
-			var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
-			planet.id = pack.id
-			system.addPlanet(planet)
-			break
-
-		case Pack.SET_PLANET_ORBIT:
-			var planet = system.getPlanetByID(pack.planet)
-			var orbit = system.getOrbit(pack.orbit)
-			planet.setOrbit(orbit)
-			break
-
-		case Pack.CREATE_SPAWN:
-			var planet = system.getPlanetByID(pack.planet)
-
-			if (pack.force) {
-				planet.createSpawn(true)
-			} else {
-				// 1. subtract the counter that has happened while this packet sent
-				// 2. update the spawn counter by creating a spawn
-				// 3. push the spawn counter forward by the new rate
-				planet.spawnCounter -= planet.spawnRate * ping * 0.001
-				planet.createSpawn(false)
-				planet.spawnCounter += planet.spawnRate * ping * 0.001
-			}
-
-			break
-
-		case Pack.SET_PLANET_TEAM:
-			var planet = system.getPlanetByID(pack.planet)
-			var team = getTeam(pack.team)
-			planet.setTeam(team)
-			break
-
-		case Pack.SHOW_SYSTEM:
-			viewport.addChild(system)
-			hideMenu()
-			setVisible(Elem.Text.PING)
-			setVisible(Elem.Text.PIXELS)
-			setVisible(Elem.Text.SHIPS)
-
-			// A little hack to get planets to go to their correct positions when the game starts
-			system.play() // This lets us update the planets
-			system.update(0) // this updates them from their default pos
-			system.pause() // This reverts the game state to being paused
-
-			setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
-			setVisible(Elem.Text.COUNTDOWN)
-
-			viewport.pausePlugin('drag')
-			viewport.pausePlugin('pinch')
-			viewport.pausePlugin('wheel')
-			allowMouseClick = false
-			break
-
-		case Pack.START_GAME:
-			inTeamSelection = false
-			countDown -= COUNTDOWN_INTERVAL
-			setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(countDown / 1000))
-
-			if (countDown <= 0) {
-				system.play()
-				system.update(ping / 1000) // fast forward based on our ping
-
-				setHidden(Elem.Text.COUNTDOWN)
-
-				viewport.resumePlugin('drag')
-				viewport.resumePlugin('pinch')
-				viewport.resumePlugin('wheel')
-				allowMouseClick = true
-			}
-			break
-
-		case Pack.CREATE_TEAMS:
-			teams = []
-			for (var i in pack.teams) {
-				var id = pack.teams[i].id
-				var colour = pack.teams[i].colour
-				teams.push(new Team(colour, id))
-			}
-			break
-
-		case Pack.UPDATE_TEAMS:
-			// Clear the GUI
-			document.getElementById(Elem.List.TEAM_RED).innerHTML = '';
-			document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = '';
-			document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = '';
-			document.getElementById(Elem.List.TEAM_GREEN).innerHTML = '';
-			document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
-			document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
-
-			for (var i in teams) {
-				teams[i].players = []
-			}
-
-			for (var i in pack.teams) {
-				// Team Object and teamID
-				var team = pack.teams[i]
-				var teamID = team.id
-				var teamObj = getTeam(teamID)
-				for (var j in team.players) {
-					// player name
-					var name = team.players[j]
-
-					// Adds new player object to the team object
-					teamObj.addPlayer(new Player(name))
-
-					var list
-					// Chooses a list to add the player to based on ID
-					switch (teamID) {
-						case 0:
-							list = document.getElementById(Elem.List.TEAM_RED)
-							break
-						case 1:
-							list = document.getElementById(Elem.List.TEAM_ORANGE)
-							break
-						case 2:
-							list = document.getElementById(Elem.List.TEAM_YELLOW)
-							break
-						case 3:
-							list = document.getElementById(Elem.List.TEAM_GREEN)
-							break
-						case 4:
-							list = document.getElementById(Elem.List.TEAM_BLUE)
-							break
-						case 5:
-							list = document.getElementById(Elem.List.TEAM_PURPLE)
-							break
-					}
-
-					// Creates the HTML list entry for the GUI
-					var entry = document.createElement('li');
-					entry.appendChild(document.createTextNode(name));
-					list.appendChild(entry);
-				}
-			}
-
-			break
-
-		case Pack.UPDATE_MESSAGE:
-			enableButton(Elem.Button.START, pack.startEnabled)
-
-			setVisible(Elem.Text.MESSAGE)
-			setText(Elem.Text.MESSAGE, pack.message)
-
-			setVisible(Elem.Text.PLAYER_COUNT)
-			setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
-
-			myTeam = getTeam(pack.team)
-
-			break
-	}
-
-	//console.log('type: ' + type)
-	//console.log('pack: ' + JSON.stringify(pack))
+	if (game) game.update(elapsed * 0.001) // time elapsed in seconds
 }

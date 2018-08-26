@@ -1,21 +1,19 @@
-const Orbit = require('../shared/Orbit.js')
 const Planet = require('../shared/Planet.js')
+const Orbit = require('../shared/Orbit.js')
 const System = require('../shared/System.js')
 const Team = require('../shared/Team.js')
 const Timeskewer = require('./Timeskewer.js')
+const Game = require('../shared/Game.js')
 
-class Game extends Object {
-	constructor(server, gameID, maxPlayers) {
-		super()
+class ServerGame extends Game {
+	constructor(gameID, maxPlayers, server) {
+		super(gameID, maxPlayers)
 
 		this.ids = 0
 
 		this.server = server
-		this.gameID = gameID
-		this.maxPlayers = maxPlayers
 
 		this.players = []
-		this.teams = []
 
 		this.redTeam = this.addTeam(new Team(Colour.RED, 0))
 		this.orangeTeam = this.addTeam(new Team(Colour.ORANGE, 1))
@@ -23,14 +21,10 @@ class Game extends Object {
 		this.greenTeam = this.addTeam(new Team(Colour.GREEN, 3))
 		this.blueTeam = this.addTeam(new Team(Colour.BLUE, 4))
 		this.purpleTeam = this.addTeam(new Team(Colour.PURPLE, 5))
-
-		this.system = null
 	}
 
 	update(delta) {
-		if (this.system) {
-			this.system.update(delta)
-		}
+		super.update(delta)
 
 		for (var i in this.players) {
 			this.players[i].pinger.update(delta)
@@ -93,20 +87,6 @@ class Game extends Object {
 
 	canAddPlayer() {
 		return this.players.length < this.maxPlayers
-	}
-
-	addTeam(team) {
-		this.teams.push(team)
-		return team
-	}
-
-	getTeam(id) {
-		for (var i in this.teams) {
-			if (this.teams[i].id == id) {
-				return this.teams[i]
-			}
-		}
-		return null
 	}
 
 	createTeams(sock) {
@@ -229,7 +209,7 @@ class Game extends Object {
 		var packet = {
 			type: Pack.JOIN_GAME,
 			gameID: this.gameID,
-			player: this.players.length
+			maxPlayers: this.maxPlayers
 		}
 		sock.send(JSON.stringify(packet))
 
@@ -266,52 +246,91 @@ class Game extends Object {
 
 		this.server.removeQueue(this)
 
-		this.system = new System()
-		this.system.game = this
+		this.rebuildTeams()
+
+		var sys = {
+			"orbits": [{
+				"x": 0,
+				"y": 0,
+				"radius": 150,
+				"planets": [{
+					"radius": 13,
+					"rotationConstant": -1 / 4,
+					"startAngle": Math.PI / 2,
+					"opm": 2
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 220,
+				"planets": [{
+					"radius": 13,
+					"rotationConstant": -1 / 6,
+					"startAngle": 0,
+					"opm": 1
+				}, {
+					"radius": 13,
+					"rotationConstant": -1 / 6,
+					"startAngle": Math.PI,
+					"opm": 1
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 270,
+				"planets": [{
+					"radius": 13,
+					"rotationConstant": 1 / 3,
+					"startAngle": Math.PI / 4,
+					"opm": 1 / 2
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 360,
+				"planets": [{
+					"radius": 13,
+					"rotationConstant": -1 / 2,
+					"startAngle": 3 * Math.PI / 4,
+					"opm": 1 / 4
+				}]
+			}]
+		}
+
+		this.system = new System(this)
 
 		// Creates the system on the client-side
+		/* NE
 		var pack = {
 			type: Pack.CREATE_SYSTEM
 		}
 		this.sendPlayers(pack)
+		*/
 
 		const orbit1 = this.system.addOrbit(new Orbit(0, 0, 150))
 		const orbit2 = this.system.addOrbit(new Orbit(0, 0, 220))
 		const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
 		const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
-		const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
+		const planet1 = orbit1.addPlanet(new Planet(12, -1 / 4, Math.PI / 2, 2))
 
-		{
-			// Rebuilds the teams 
-			var tempTeams = []
-			for (var i in this.teams) {
-				if (this.teams[i].players.length > 0) {
-					tempTeams.push(this.teams[i])
-				}
-			}
-			this.teams = tempTeams
+		// builds the player planets
+		const planetCount = this.teams.length
+		const rotation = 2 * Math.PI / planetCount
+		for (var i = 0; i < planetCount; i++) {
+			var planet = orbit2.addPlanet(new Planet(12, -1 / 6, rotation * i, 1))
 
-			// builds the player planets
-			const planetCount = this.teams.length
-			const rotation = 2 * Math.PI / planetCount
-			for (var i = 0; i < planetCount; i++) {
-				var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
-
-				planet.setOrbit(orbit2)
-				planet.setTeam(this.teams[i])
-				planet.createSpawn(true)
-			}
+			planet.setTeam(this.teams[i])
+			planet.createSpawn(true)
 		}
 
-		const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
+		const planet3 = orbit3.addPlanet(new Planet(12, 1 / 3, Math.PI / 4, 1 / 2))
+		const planet4 = orbit4.addPlanet(new Planet(12, -0.5, 3 * Math.PI / 4, 1 / 4))
 
-		const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
-
-		planet1.setOrbit(orbit1)
-
-		planet3.setOrbit(orbit3)
-		planet4.setOrbit(orbit4)
+		this.sendPlayers({
+			type: Pack.CREATE_SYSTEM,
+			sys: this.system.save(true)
+		})
 
 		for (var i in this.players) {
 			var pack = {
@@ -321,14 +340,15 @@ class Game extends Object {
 			this.players[i].send(JSON.stringify(pack))
 		}
 
-
 		// Start all teams off with 100 pixels
 		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
 
+		/* NE
 		this.sendPlayers({
 			type: Pack.SHOW_SYSTEM
 		})
+		*/
 
 		// starting sync and countdown for clients
 		let ga = this
@@ -343,8 +363,11 @@ class Game extends Object {
 
 		// start the game on server-side
 		setTimeout(function() {
-			ga.system.play()
+			ga.play()
 		}, COUNTDOWN_TIME)
+
+
+		// console.log(System.load(this.system.save(), this))
 	}
 
 	sendPlayers(obj) {
@@ -354,18 +377,9 @@ class Game extends Object {
 		}
 	}
 
-	/* Do we really need this?
-	sendTeamByID(teamID, obj) {
-		let toSend = JSON.stringify(obj)
-		let team = this.getTeam(teamID)
-		for (var i in team.players) {
-			team.players[i].send(toSend)
-		}
-	}*/
-
 	createID() {
 		return this.ids++
 	}
 }
 
-module.exports = Game
+module.exports = ServerGame

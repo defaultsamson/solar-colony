@@ -94,7 +94,7 @@ class SocketManager extends Object {
 
 					if (host) {
 						// Create new game and add a player to it
-						this.server.createGame().addPlayer(sock, name)
+						this.server.createGame(playerCount).addPlayer(sock, name)
 
 					} else {
 						// Join a random game
