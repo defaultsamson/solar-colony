@@ -45134,7 +45134,7 @@ try {
 	window.IS_SERVER = false
 }*/
 
-const LOCAL_DEBUG = true
+const LOCAL_DEBUG = false
 const PORT = 3141
 
 const USERNAME_REGEX = /^([A-Za-z0-9]{3,20})$/
@@ -46423,7 +46423,7 @@ class Orbit extends PIXI.Graphics {
 		system.addOrbit(orb)
 
 		for (var i in json.planets)
-			orb.addPlanet(SPlanet.load(json.planets[i], game, system))
+			orb.addPlanet(Planet.load(json.planets[i], game, system))
 
 		return orb
 	}
@@ -47679,8 +47679,15 @@ window.onload = function() {
 	viewport.fitHeight(SUN_HEIGHT)
 	viewport.moveCenter(0, 0)
 
-	lastElapsed = Date.now()
-	pixigame.ticker.add(gameLoop)
+	window.lastElapsed = Date.now()
+	pixigame.ticker.add(() => {
+		if (game) {
+			let now = Date.now()
+			let elapsed = now - lastElapsed
+			lastElapsed = now
+			game.update(elapsed * 0.001) // time elapsed in seconds
+		}
+	})
 
 	socket = new SocketManager()
 	socket.connect()
@@ -47788,14 +47795,6 @@ function resize() {
 //  \_____|\__,_|_| |_| |_|\___|
 
 var focusPlanet
-var lastElapsed
-
-function gameLoop() {
-	let now = Date.now()
-	let elapsed = now - lastElapsed
-	lastElapsed = now
-	if (game) game.update(elapsed * 0.001) // time elapsed in seconds
-}
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
