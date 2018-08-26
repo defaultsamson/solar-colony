@@ -113,7 +113,7 @@ class SocketManager extends Object {
 				break
 
 			case Pack.CREATE_SYSTEM:
-				game.system = new System()
+				game.system = new System(game)
 				break
 
 			case Pack.CREATE_ORBIT:
@@ -125,13 +125,8 @@ class SocketManager extends Object {
 			case Pack.CREATE_PLANET:
 				var planet = new Planet(resources.planet1.texture, pack.scale, pack.rotationConstant, pack.startAngle, pack.opm)
 				planet.id = pack.id
-				game.system.addPlanet(planet)
-				break
-
-			case Pack.SET_PLANET_ORBIT:
-				var planet = game.system.getPlanetByID(pack.planet)
 				var orbit = game.system.getOrbit(pack.orbit)
-				planet.setOrbit(orbit)
+				orbit.addPlanet(planet)
 				break
 
 			case Pack.CREATE_SPAWN:

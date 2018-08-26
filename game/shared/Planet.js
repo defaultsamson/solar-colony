@@ -82,10 +82,6 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		if (!IS_SERVER) {
 			// Rotate the planet (purely for visual effects)
 			this.rotation = this.age * this.rotationConstant
-			if (this.orbit) {
-				// Rotate the orbits (purely for visual effects)
-				this.orbit.rotation = -this.age * this.speed / 8
-			}
 			// Updates infantry
 			this.infantry.update(delta)
 		}
@@ -388,18 +384,23 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 		}
 	}*/
 
-	setOrbit(orbit) {
-		this.orbit = orbit
+	save(literal) {
+		if (!exists(literal)) literal = true
 
-		if (IS_SERVER) {
-			// Sets the planet's orbit on the client-side
-			var pack = {
-				type: Pack.SET_PLANET_ORBIT,
-				planet: this.id,
-				orbit: orbit.id
-			}
-			this.system.game.sendPlayers(pack)
+		var pla = {
+			texture: this.texture,
+			scale: this.scale,
+			rotationConstant: this.rotationConstant,
+			startAngle: this.startAngle,
+			opm: this.opm
 		}
+		if (literal) pla.id = {}
+
+		return pla
+	}
+
+	load() {
+
 	}
 }
 

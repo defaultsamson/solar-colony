@@ -246,8 +246,9 @@ class ServerGame extends Game {
 
 		this.server.removeQueue(this)
 
-		this.system = new System()
-		this.system.game = this
+		this.rebuildTeams()
+
+		this.system = new System(this)
 
 		// Creates the system on the client-side
 		var pack = {
@@ -260,29 +261,20 @@ class ServerGame extends Game {
 		const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
 		const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
 
-		const planet1 = this.system.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
-
-		this.rebuildTeams()
+		const planet1 = orbit1.addPlanet(new Planet(190, 0.1, -1 / 4, Math.PI / 2, 2))
 
 		// builds the player planets
 		const planetCount = this.teams.length
 		const rotation = 2 * Math.PI / planetCount
 		for (var i = 0; i < planetCount; i++) {
-			var planet = this.system.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
+			var planet = orbit2.addPlanet(new Planet(190, 0.1, -1 / 6, rotation * i, 1))
 
-			planet.setOrbit(orbit2)
 			planet.setTeam(this.teams[i])
 			planet.createSpawn(true)
 		}
 
-		const planet3 = this.system.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
-
-		const planet4 = this.system.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
-
-		planet1.setOrbit(orbit1)
-
-		planet3.setOrbit(orbit3)
-		planet4.setOrbit(orbit4)
+		const planet3 = orbit3.addPlanet(new Planet(190, 0.1, 1 / 3, Math.PI / 4, 1 / 2))
+		const planet4 = orbit4.addPlanet(new Planet(190, 0.1, -0.5, 3 * Math.PI / 4, 1 / 4))
 
 		for (var i in this.players) {
 			var pack = {
@@ -316,6 +308,58 @@ class ServerGame extends Game {
 		setTimeout(function() {
 			ga.play()
 		}, COUNTDOWN_TIME)
+
+
+		//console.log(JSON.stringify(this.system.save(false)))
+
+		var sys = {
+			"orbits": [{
+				"x": 0,
+				"y": 0,
+				"radius": 150,
+				"planets": [{
+					"scale": 0.1,
+					"rotationConstant": -0.25,
+					"startAngle": 1.5707963267948966,
+					"opm": 2
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 220,
+				"planets": [{
+					"scale": 0.1,
+					"rotationConstant": -0.16666666666666666,
+					"startAngle": 0,
+					"opm": 1
+				}, {
+					"scale": 0.1,
+					"rotationConstant": -0.16666666666666666,
+					"startAngle": 3.141592653589793,
+					"opm": 1
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 270,
+				"planets": [{
+					"scale": 0.1,
+					"rotationConstant": 0.3333333333333333,
+					"startAngle": 0.7853981633974483,
+					"opm": 0.5
+				}]
+			}, {
+				"x": 0,
+				"y": 0,
+				"radius": 360,
+				"planets": [{
+					"scale": 0.1,
+					"rotationConstant": -0.5,
+					"startAngle": 2.356194490192345,
+					"opm": 0.25
+				}]
+			}]
+		}
 	}
 
 	sendPlayers(obj) {
