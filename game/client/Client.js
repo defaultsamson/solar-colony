@@ -63,11 +63,10 @@ window.onload = function() {
 		.decelerate()
 
 	viewport.on('drag-start', (e) => {
-		stopSnap()
-		stopFollow()
+		stopViewport()
 	})
-	viewport.on('pinch-start', stopSnap)
-	viewport.on('wheel', stopSnap)
+	viewport.on('pinch-start', stopViewport)
+	viewport.on('wheel', () => { stopViewport(false) })
 	viewport.on('clicked', (e) => {
 		if (game) {
 			game.onMouseClick(e)
@@ -76,11 +75,10 @@ window.onload = function() {
 
 	// Upon ending of the snap, if it was just snapping to a planet, begin to follow it
 	viewport.on('snap-end', () => {
-		if (snappingToPlanet) {
-			viewport.follow(snappingToPlanet)
-			focusPlanet = snappingToPlanet
+		stopViewport(false)
+		if (focusPlanet) {
+			viewport.follow(focusPlanet)
 		}
-		stopSnap()
 	})
 
 	viewport.fitHeight(SUN_HEIGHT)
@@ -122,26 +120,22 @@ window.onload = function() {
 //             | |              
 //             |_|              
 
-var snappingToPlanet = false
 var snappingToCenter = false
 
-function stopSnap() {
-	snappingToPlanet = false
+function stopViewport(removeFocus) {
 	snappingToCenter = false
 	viewport.removePlugin('snap')
 	viewport.removePlugin('snap-zoom')
-}
-
-function stopFollow() {
-	viewport.removePlugin('follow')
-	focusPlanet = null
+	if (!exists(removeFocus) || removeFocus) {
+		focusPlanet = null
+		viewport.removePlugin('follow')
+	}
 }
 
 function centerView() {
 	if (!snappingToCenter) {
-		stopSnap()
+		stopViewport()
 		snappingToCenter = true
-		stopFollow()
 		viewport.snap(0, 0, {
 			time: ANIMATION_TIME,
 			removeOnComplete: true,
@@ -190,7 +184,7 @@ function resize() {
 		viewport.moveCenter(oldCenter)
 	}
 
-	stopSnap()
+	stopViewport(false)
 	menu.resize()
 }
 

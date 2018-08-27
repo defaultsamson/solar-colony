@@ -216,6 +216,8 @@ const Elem = {
 		PING: 't_ping',
 		PIXELS: 't_pixels',
 		SHIPS: 't_ships',
+		PLANET_TEXT: 't_plantext',
+		PLANET_SHIPS: 't_planships',
 
 		USERNAME: 't_user',
 		ID: 't_id',

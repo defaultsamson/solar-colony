@@ -57,6 +57,7 @@ class Menu extends Object {
 			elem.addEventListener('touchend', function(e) {
 				unhoverButton(e.target)
 				e.target.setAttribute('touch', true)
+				// Little bit of a hack to make sure the other events see the attribute
 				setTimeout(function() {
 					e.target.setAttribute('touch', false)
 				}, 10)
@@ -64,11 +65,11 @@ class Menu extends Object {
 			elem.addEventListener('mousedown', function(e) {
 				if (e.target.getAttribute('enable_click') != 'false') {
 					hoverButton(e.target)
-					// if it was a touch tap, unhover it after 100ms
+					// if it was a touch tap, unhover it after 50ms
 					if (e.target.getAttribute('touch') == 'true') {
 						setTimeout(function() {
 							unhoverButton(e.target)
-						}, 100)
+						}, 50)
 					}
 				}
 			}, false)
@@ -391,7 +392,7 @@ class Menu extends Object {
 
 		for (var i in Elem)
 			for (var j in Elem[i])
-				setHidden(Elem[i][j]);
+				setHidden(Elem[i][j])
 	}
 
 	// Thanks to https://css-tricks.com/scaled-proportional-blocks-with-css-and-javascript/
@@ -428,7 +429,6 @@ class Menu extends Object {
 			if (game.myTeam.shipCount != this.lastShips) {
 				this.lastShips = game.myTeam.shipCount
 				setText(Elem.Text.SHIPS, 'Ships: ' + game.myTeam.shipCount)
-				this.updatePlanetGui(focussed, false, true)
 			}
 
 			// TODO this can be done in parse() when the server sends new pixels
@@ -442,11 +442,23 @@ class Menu extends Object {
 			if (focussed != this.lastFocus) {
 				this.lastFocus = focussed
 
+				setVisible(Elem.Text.PLANET_TEXT, focussed)
+				setVisible(Elem.Text.PLANET_SHIPS, focussed)
+				this.lastPlanetShips = -1
+
 				setVisible(Elem.Button.BUY_SPAWN, focussed)
 				setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
 				setVisible(Elem.Button.BUY_SHIPS_100, focussed)
 				setVisible(Elem.Button.BUY_SHIPS_10, focussed)
 				this.updatePlanetGui(focussed, true, true)
+			}
+
+			if (focussed) {
+				if (focusPlanet.shipCount != this.lastPlanetShips) {
+					this.lastPlanetShips = focusPlanet.shipCount
+					setText(Elem.Text.PLANET_SHIPS, 'Ships: ' + focusPlanet.shipCount)
+					this.updatePlanetGui(focussed, false, true)
+				}
 			}
 		}
 	}
