@@ -8,8 +8,8 @@ class Game extends Object {
 		this.teams = []
 		this.system = null
 
-		// TODO implement game pausing when a player leaves
 		this.paused = true
+		this.time = 0
 	}
 
 	play() {
@@ -23,6 +23,9 @@ class Game extends Object {
 	update(delta) {
 		if (this.system) {
 			this.system.update(delta, this.paused)
+			if (!this.paused) {
+				this.time += delta
+			}
 		}
 	}
 

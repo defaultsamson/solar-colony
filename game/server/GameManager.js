@@ -20,6 +20,7 @@ class GameManager extends Object {
 					console.log("ERROR: Server game tick error...")
 					console.log("================================")
 					console.log(err)
+					console.log("================================")
 				}
 			}
 		}, 1000 / TICKS_PER_SECOND);

@@ -206,7 +206,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 	// A client-side function for ease of use
 	createShipsClick(n, cost) {
 		var pack = {
-			type: Pack.BUY_SHIPS,
+			type: Pack.CREATE_SHIPS,
 			pl: this.id, // planet
 			n: n, // n 
 			c: cost // cost
@@ -231,7 +231,7 @@ class Planet extends(IS_SERVER ? Object : PIXI.Sprite) {
 					this.shipCount += n
 					this.team.addPixels(-cost)
 					this.system.game.sendPlayers({
-						type: Pack.BUY_SHIPS,
+						type: Pack.CREATE_SHIPS,
 						pl: this.id,
 						n: n,
 						c: cost

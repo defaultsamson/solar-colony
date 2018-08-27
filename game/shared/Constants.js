@@ -25,37 +25,30 @@ const USERNAME_REGEX = /^([A-Za-z0-9]{3,20})$/
 const ID_REGEX = /^([A-Za-z0-9]{6})$/
 
 const Pack = {
-	BUY_SHIPS: 1,
+	CREATE_SHIPS: 1,
 	PING_PROBE: 2, // Tells the client to respond with this packet
 	PING_SET: 3, // Tells the client what their ping is
 	UPDATE_PIXELS: 4,
 	FORM_FAIL: 5,
 	CREATE_SYSTEM: 6,
-	CREATE_ORBIT: 7,
-	CREATE_PLANET: 8,
-	SET_PLANET_ORBIT: 9,
-	CREATE_TEAMS: 10,
-	SET_PLANET_TEAM: 11,
-	SET_CLIENT_TEAM: 12,
-	START_GAME: 13,
-	START_BUTTON: 14,
-	POPULATE_TEAM: 15,
-	CLEAR_TEAMS: 16,
-	CLEAR_TEAM_GUI: 17,
-	JOIN_GAME: 18,
-	JOIN_TEAM: 19,
-	QUIT: 20,
-	FORM_SEND: 21,
-	SHOW_SYSTEM: 22,
-	UPDATE_TEAMS: 23,
-	UPDATE_MESSAGE: 24,
-	CREATE_SPAWN: 25
+	CREATE_TEAMS: 7,
+	SET_PLANET_TEAM: 8,
+	SET_CLIENT_TEAM: 9,
+	START_GAME: 10,
+	START_BUTTON: 11,
+	JOIN_GAME: 12,
+	JOIN_TEAM: 13,
+	QUIT: 14,
+	FORM_SEND: 15,
+	UPDATE_TEAMS: 16,
+	UPDATE_MESSAGE: 17,
+	CREATE_SPAWN: 18,
+	PAUSE: 19,
+	PLAY: 20
 }
 
-// Note: make sure that GAME_COUNTDOWN_TIME is divisible by PACKET_INTERVAL
-const COUNTDOWN_TIME = 6000 // 3 second countdown
-const COUNTDOWN_INTERVAL = 250 // interval between packets send to client
-const COUNTDOWN_PACKET_SENDS = COUNTDOWN_TIME / COUNTDOWN_INTERVAL
+const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)
+const COUNTDOWN_TIME = 4000 // 4 second countdown
 
 const Colour = {
 	BACKGROUND: 0x2A2C31,
@@ -109,9 +102,8 @@ if (IS_SERVER) {
 
 	global.Pack = Pack
 
+	global.COUNTDOWN_BUFFER = COUNTDOWN_BUFFER
 	global.COUNTDOWN_TIME = COUNTDOWN_TIME
-	global.COUNTDOWN_INTERVAL = COUNTDOWN_INTERVAL
-	global.COUNTDOWN_PACKET_SENDS = COUNTDOWN_PACKET_SENDS
 
 	global.Colour = Colour
 

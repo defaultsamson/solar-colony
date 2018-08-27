@@ -94,20 +94,11 @@ class SocketManager extends Object {
 				setText(Elem.Text.PING, 'Ping: ' + this.ping + 'ms')
 				break
 
-			case Pack.UPDATE_PIXELS: // update pixel count
-				game.myTeam.setPixels(pack.pl)
-				break
-
-			case Pack.BUY_SHIPS: // buy ships
-				game.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
-				break
-
 			case Pack.FORM_FAIL:
 				menu.failSendForm(pack.reason)
 				break
 
 			case Pack.JOIN_GAME:
-				this.countDown = COUNTDOWN_TIME
 				game = new ClientGame(pack.gameID, pack.maxPlayers)
 				menu.gotoTeamSelection()
 				break
@@ -126,53 +117,15 @@ class SocketManager extends Object {
 				game.update(0) // this updates them from their default pos
 				game.pause() // This reverts the game state to being paused
 
-				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(this.countDown / 1000))
+				setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
 				setVisible(Elem.Text.COUNTDOWN)
 
-				viewport.pausePlugin('drag')
-				viewport.pausePlugin('pinch')
-				viewport.pausePlugin('wheel')
+				// TODO may not need to resume these?
+				// they may not be paused
+				viewport.resumePlugin('drag')
+				viewport.resumePlugin('pinch')
+				viewport.resumePlugin('wheel')
 				viewport.moveCenter(0, 0)
-				break
-
-			case Pack.CREATE_SPAWN:
-				var planet = game.system.getPlanetByID(pack.planet)
-
-				if (pack.force) {
-					planet.createSpawn(true)
-				} else {
-					// 1. subtract the counter that has happened while this packet sent
-					// 2. update the spawn counter by creating a spawn
-					// 3. push the spawn counter forward by the new rate
-					planet.pixelCounter -= planet.pixelRate * this.ping * 0.001
-					planet.createSpawn(false)
-					planet.pixelCounter += planet.pixelRate * this.ping * 0.001
-				}
-
-				break
-
-			case Pack.SET_PLANET_TEAM:
-				// TODO make a way with the fighting system to check when a planet has captured
-				// a planet without needing to use this SET_TEAM_PLANET packet
-				var planet = game.system.getPlanetByID(pack.planet)
-				var team = game.getTeam(pack.team)
-				planet.setTeam(team)
-				break
-
-			case Pack.START_GAME:
-				this.countDown -= COUNTDOWN_INTERVAL
-				setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(this.countDown / 1000))
-
-				if (this.countDown <= 0) {
-					game.play()
-					game.update(this.ping / 1000) // fast forward based on our ping
-
-					setHidden(Elem.Text.COUNTDOWN)
-
-					viewport.resumePlugin('drag')
-					viewport.resumePlugin('pinch')
-					viewport.resumePlugin('wheel')
-				}
 				break
 
 			case Pack.CREATE_TEAMS:
@@ -250,9 +203,12 @@ class SocketManager extends Object {
 				setVisible(Elem.Text.PLAYER_COUNT)
 				setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
 
+				// TODO put this in the UPDATE_TEAMS section??
 				game.myTeam = game.getTeam(pack.team)
 
 				break
+			default:
+				game.parse(type, pack)
 		}
 	}
 }

@@ -29,14 +29,45 @@ class ServerGame extends Game {
 		}
 	}
 
+	pause() {
+		super.pause()
+
+		sendPlayers({
+			type: Pack.PAUSE,
+			time: this.time
+		})
+	}
+
+	play() {
+		// starting sync for clients
+		for (var i in this.players) {
+			var p = this.players[i]
+
+			setTimeout((pl) => {
+				pl.send(JSON.stringify({
+					type: Pack.PLAY
+				}))
+			}, Math.max(COUNTDOWN_BUFFER - p.pinger.ping + p.diff, 0), p)
+
+			p.diff = 0
+		}
+
+		// The countdown will start for the clients at the same time as this
+		setTimeout(() => {
+			super.play()
+		}, COUNTDOWN_BUFFER + COUNTDOWN_TIME)
+	}
+
 	parse(sender, type, pack) {
 		switch (type) {
-			case Pack.BUY_SHIPS:
+			case Pack.CREATE_SHIPS:
 				this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
 				break
+
 			case Pack.CREATE_SPAWN: // create spawn
 				this.system.getPlanetByID(pack.pl).createSpawn()
 				break
+
 			case Pack.JOIN_TEAM:
 				// Reset the start status
 				for (var i in this.players) {
@@ -49,13 +80,8 @@ class ServerGame extends Game {
 				// TODO more efficient way of switching teams than resending the list each time? e.g. deltas
 				this.getTeam(pack.team).addPlayer(sender)
 				this.updateTeams()
-
-				var packet = {
-					type: Pack.SET_CLIENT_TEAM,
-					team: sender.team.id
-				}
-				sender.send(JSON.stringify(packet))
 				break
+
 			case Pack.START_BUTTON:
 				// If the sender didn't start and the sender has a team
 				if (!sender.start && sender.team) {
@@ -76,6 +102,11 @@ class ServerGame extends Game {
 					}
 				}
 				break
+
+			case Pack.PAUSE:
+				sender.diff = pack.diff
+				break
+
 			case Pack.QUIT:
 				this.removePlayer(sender)
 				sender.approved = false
@@ -202,6 +233,7 @@ class ServerGame extends Game {
 		sock.game = this
 		sock.approved = true
 		sock.pinger = new Timeskewer(sock)
+		sock.diff = 0
 		this.players.push(sock)
 
 		var packet = {
@@ -233,6 +265,7 @@ class ServerGame extends Game {
 			// TODO remove team if it is empty
 			// TODO end game if only one team remaining
 			// TODO pause game and wait for players?
+			this.pause()
 			this.updateTeams()
 		} else {
 			this.server.removeGame(this)
@@ -322,34 +355,11 @@ class ServerGame extends Game {
 			sys: this.system.save(true)
 		})
 
-		for (var i in this.players) {
-			var pack = {
-				type: Pack.SET_CLIENT_TEAM,
-				team: this.players[i].team.id
-			}
-			this.players[i].send(JSON.stringify(pack))
-		}
-
-		// Start all teams off with 100 pixels
+		// Start all teams off with an amount of pixels
 		for (var i in this.teams)
 			this.teams[i].setPixels(STARTING_PIXELS);
 
-		// starting sync and countdown for clients
-		let ga = this
-
-		for (var i = 0; i < COUNTDOWN_PACKET_SENDS; i++) {
-			setTimeout(function() {
-				ga.sendPlayers({
-					type: Pack.START_GAME
-				})
-			}, (i + 1) * COUNTDOWN_INTERVAL) // i + 1 so that the first one won't immediately send
-		}
-
-		// start the game on server-side
-		setTimeout(function() {
-			ga.play()
-		}, COUNTDOWN_TIME)
-
+		this.play()
 
 		// console.log(System.load(this.system.save(), this))
 	}
