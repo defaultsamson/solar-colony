@@ -218,7 +218,10 @@ const Elem = {
 		CONNECTION_MESSAGE: 't_connecting',
 		MESSAGE: 't_message',
 
-		COUNTDOWN: 't_countdown'
+		COUNTDOWN: 't_countdown',
+
+		PAUSE: 't_pause',
+		PAUSE_MESSAGE: 't_pausemess'
 	},
 
 	List: {

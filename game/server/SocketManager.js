@@ -107,7 +107,7 @@ class SocketManager extends Object {
 
 					if (game) {
 
-						checkName(game, sock, name)
+						this.checkName(game, sock, name)
 					} else {
 						// No game found with given ID
 						var formPacket = {

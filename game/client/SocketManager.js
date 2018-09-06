@@ -139,12 +139,12 @@ class SocketManager extends Object {
 
 			case Pack.UPDATE_TEAMS:
 				// Clear the GUI
-				document.getElementById(Elem.List.TEAM_RED).innerHTML = '';
-				document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = '';
-				document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = '';
-				document.getElementById(Elem.List.TEAM_GREEN).innerHTML = '';
-				document.getElementById(Elem.List.TEAM_BLUE).innerHTML = '';
-				document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = '';
+				document.getElementById(Elem.List.TEAM_RED).innerHTML = ''
+				document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = ''
+				document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = ''
+				document.getElementById(Elem.List.TEAM_GREEN).innerHTML = ''
+				document.getElementById(Elem.List.TEAM_BLUE).innerHTML = ''
+				document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = ''
 
 				for (var i in game.teams) {
 					game.teams[i].players = []
@@ -195,17 +195,18 @@ class SocketManager extends Object {
 				break
 
 			case Pack.UPDATE_MESSAGE:
-				enableButton(Elem.Button.START, pack.startEnabled)
+				if (!(game && game.system)) {
+					enableButton(Elem.Button.START, pack.startEnabled)
 
-				setVisible(Elem.Text.MESSAGE)
-				setText(Elem.Text.MESSAGE, pack.message)
+					setVisible(Elem.Text.MESSAGE)
+					setText(Elem.Text.MESSAGE, pack.message)
 
-				setVisible(Elem.Text.PLAYER_COUNT)
-				setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
+					setVisible(Elem.Text.PLAYER_COUNT)
+					setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
+				}
 
 				// TODO put this in the UPDATE_TEAMS section??
 				game.myTeam = game.getTeam(pack.team)
-
 				break
 			default:
 				game.parse(type, pack)

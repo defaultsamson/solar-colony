@@ -32,13 +32,20 @@ class ServerGame extends Game {
 	pause() {
 		super.pause()
 
-		sendPlayers({
+		this.sendPlayers({
 			type: Pack.PAUSE,
 			time: this.time
 		})
 	}
 
 	play() {
+		// When starting the game, the number of current players is
+		// now the new number of max players allowed
+		this.maxPlayers = this.players.length
+
+		var maxPing = 0
+		for (var i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping)
+
 		// starting sync for clients
 		for (var i in this.players) {
 			var p = this.players[i]
@@ -47,7 +54,7 @@ class ServerGame extends Game {
 				pl.send(JSON.stringify({
 					type: Pack.PLAY
 				}))
-			}, Math.max(COUNTDOWN_BUFFER - p.pinger.ping + p.diff, 0), p)
+			}, Math.max(maxPing - p.pinger.ping + p.diff, 0), p)
 
 			p.diff = 0
 		}
@@ -55,7 +62,7 @@ class ServerGame extends Game {
 		// The countdown will start for the clients at the same time as this
 		setTimeout(() => {
 			super.play()
-		}, COUNTDOWN_BUFFER + COUNTDOWN_TIME)
+		}, maxPing + COUNTDOWN_TIME)
 	}
 
 	parse(sender, type, pack) {

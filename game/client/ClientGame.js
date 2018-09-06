@@ -83,23 +83,35 @@ class ClientGame extends Game {
 	parse(type, pack) {
 		switch (type) {
 			case Pack.PAUSE:
+				this.stopCountdown = true
+
 				// The difference from the current time to the server time
 				this.diff = this.time - pack.time
+				//console.log('this: ' + this.time)
+				//console.log('pack: ' + pack.time)
+				//console.log('diff: ' + this.diff)
 
-				if (diff > 0) {
+				if (this.diff > 0) {
 					// Client is now ahead by diff
 					// This is usual since the server will pause, 
 					// then it will take the ping time for this 
 					// client to recieve the message
 
-				} else if (diff < 0) {
+				} else if (this.diff < 0) {
 					// Client is now behind by diff
 					// This is very rare (impossible?)
-					this.update(diff)
+					this.update(this.diff)
 					this.diff = 0
 				}
 
 				this.pause()
+
+				setHidden(Elem.Text.COUNTDOWN)
+				setVisible(Elem.Text.ID_DISPLAY1)
+				setVisible(Elem.Text.ID_DISPLAY2)
+				setVisible(Elem.Text.PAUSE)
+				setVisible(Elem.Text.PAUSE_MESSAGE)
+				setText(Elem.Text.PAUSE_MESSAGE, "A player has left and the game has paused")
 
 				socket.send({
 					type: Pack.PAUSE,
@@ -109,6 +121,8 @@ class ClientGame extends Game {
 				break
 
 			case Pack.PLAY:
+				this.stopCountdown = false
+
 				var INTERVAL = 25
 				var time = COUNTDOWN_TIME
 
@@ -119,7 +133,9 @@ class ClientGame extends Game {
 				function count(time, INTERVAL) {
 					setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(time / 1000))
 
-					if (time > 0) {
+					if (ga.stopCountdown) {
+						setHidden(Elem.Text.COUNTDOWN)
+					} else if (time > 0) {
 						INTERVAL = Math.min(INTERVAL, time)
 						setTimeout(() => {
 							count(time - INTERVAL, INTERVAL)
@@ -129,6 +145,11 @@ class ClientGame extends Game {
 						ga.play()
 					}
 				}
+
+				setHidden(Elem.Text.ID_DISPLAY1)
+				setHidden(Elem.Text.ID_DISPLAY2)
+				setHidden(Elem.Text.PAUSE)
+				setHidden(Elem.Text.PAUSE_MESSAGE)
 
 				count(time, INTERVAL)
 
