@@ -44,7 +44,7 @@ class ServerGame extends Game {
 		this.maxPlayers = this.players.length
 
 		var maxPing = 0
-		for (var i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping)
+		for (var i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping - this.players[i].diff)
 
 		// starting sync for clients
 		for (var i in this.players) {
@@ -61,6 +61,7 @@ class ServerGame extends Game {
 
 		// The countdown will start for the clients at the same time as this
 		setTimeout(() => {
+			console.log("Starting serbvsajerh")
 			super.play()
 		}, maxPing + COUNTDOWN_TIME)
 	}

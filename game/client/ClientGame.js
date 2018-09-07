@@ -15,6 +15,18 @@ class ClientGame extends Game {
 	update(delta) {
 		super.update(delta)
 		menu.updateIngameGui()
+
+		if (this.countdown) {
+			var elapsed = this.targetTime - Date.now()
+			setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(elapsed / 1000))
+
+			if (elapsed <= 0) {
+				setHidden(Elem.Text.COUNTDOWN)
+				this.countdown = false
+				this.play()
+				this.update(-elapsed)
+			}
+		}
 	}
 
 	onEscape() {
@@ -83,13 +95,13 @@ class ClientGame extends Game {
 	parse(type, pack) {
 		switch (type) {
 			case Pack.PAUSE:
-				this.stopCountdown = true
+				this.countdown = false
 
 				// The difference from the current time to the server time
 				this.diff = this.time - pack.time
-				//console.log('this: ' + this.time)
-				//console.log('pack: ' + pack.time)
-				//console.log('diff: ' + this.diff)
+				console.log('this: ' + this.time)
+				console.log('pack: ' + pack.time)
+				console.log('diff: ' + this.diff)
 
 				if (this.diff > 0) {
 					// Client is now ahead by diff
@@ -100,7 +112,7 @@ class ClientGame extends Game {
 				} else if (this.diff < 0) {
 					// Client is now behind by diff
 					// This is very rare (impossible?)
-					this.update(this.diff)
+					this.update(-this.diff)
 					this.diff = 0
 				}
 
@@ -121,37 +133,15 @@ class ClientGame extends Game {
 				break
 
 			case Pack.PLAY:
-				this.stopCountdown = false
-
-				var INTERVAL = 25
-				var time = COUNTDOWN_TIME
+				this.countdown = true
+				this.targetTime = Date.now() + COUNTDOWN_TIME
 
 				setVisible(Elem.Text.COUNTDOWN)
-
-				let ga = this
-
-				function count(time, INTERVAL) {
-					setText(Elem.Text.COUNTDOWN, 'Starting Game in ' + Math.ceil(time / 1000))
-
-					if (ga.stopCountdown) {
-						setHidden(Elem.Text.COUNTDOWN)
-					} else if (time > 0) {
-						INTERVAL = Math.min(INTERVAL, time)
-						setTimeout(() => {
-							count(time - INTERVAL, INTERVAL)
-						}, INTERVAL)
-					} else {
-						setHidden(Elem.Text.COUNTDOWN)
-						ga.play()
-					}
-				}
 
 				setHidden(Elem.Text.ID_DISPLAY1)
 				setHidden(Elem.Text.ID_DISPLAY2)
 				setHidden(Elem.Text.PAUSE)
 				setHidden(Elem.Text.PAUSE_MESSAGE)
-
-				count(time, INTERVAL)
 
 				break
 
