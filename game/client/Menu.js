@@ -510,4 +510,13 @@ class Menu extends Object {
 
 		setVisible(Elem.Text.PING)
 	}
+
+	gotoPauseMenu() {
+		setHidden(Elem.Text.COUNTDOWN)
+		setVisible(Elem.Text.ID_DISPLAY1)
+		setVisible(Elem.Text.ID_DISPLAY2)
+		setVisible(Elem.Text.PAUSE)
+		setVisible(Elem.Text.PAUSE_MESSAGE)
+		setText(Elem.Text.PAUSE_MESSAGE, "A player has left and the game has paused")
+	}
 }

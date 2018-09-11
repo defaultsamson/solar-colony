@@ -44,26 +44,19 @@ class ServerGame extends Game {
 		this.maxPlayers = this.players.length
 
 		var maxPing = 0
-		for (var i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping - this.players[i].diff)
+		for (var i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping)
 
 		// starting sync for clients
-		for (var i in this.players) {
-			var p = this.players[i]
-
-			setTimeout((pl) => {
-				pl.send(JSON.stringify({
-					type: Pack.PLAY
-				}))
-			}, Math.max(maxPing - p.pinger.ping + p.diff, 0), p)
-
-			p.diff = 0
-		}
+		this.sendPlayers({
+			type: Pack.PLAY,
+			maxPing: maxPing
+		})
 
 		// The countdown will start for the clients at the same time as this
 		setTimeout(() => {
 			console.log("Starting serbvsajerh")
 			super.play()
-		}, maxPing + COUNTDOWN_TIME)
+		}, COUNTDOWN_TIME + maxPing)
 	}
 
 	parse(sender, type, pack) {
@@ -109,10 +102,6 @@ class ServerGame extends Game {
 						this.updateSelectionMessages()
 					}
 				}
-				break
-
-			case Pack.PAUSE:
-				sender.diff = pack.diff
 				break
 
 			case Pack.QUIT:
@@ -241,7 +230,6 @@ class ServerGame extends Game {
 		sock.game = this
 		sock.approved = true
 		sock.pinger = new Timeskewer(sock)
-		sock.diff = 0
 		this.players.push(sock)
 
 		var packet = {

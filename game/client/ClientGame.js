@@ -24,7 +24,7 @@ class ClientGame extends Game {
 				setHidden(Elem.Text.COUNTDOWN)
 				this.countdown = false
 				this.play()
-				this.update(-elapsed)
+				this.update(-elapsed * 0.001)
 			}
 		}
 	}
@@ -97,44 +97,35 @@ class ClientGame extends Game {
 			case Pack.PAUSE:
 				this.countdown = false
 
-				// The difference from the current time to the server time
-				this.diff = this.time - pack.time
+				// The difference from the server time to the current time
+				this.diff = pack.time - this.time
 				console.log('this: ' + this.time)
 				console.log('pack: ' + pack.time)
 				console.log('diff: ' + this.diff)
 
-				if (this.diff > 0) {
+				if (this.diff < 0) {
 					// Client is now ahead by diff
-					// This is usual since the server will pause, 
+					// This happens when the server will pause, 
 					// then it will take the ping time for this 
 					// client to recieve the message
+					this.diff = -this.diff
 
-				} else if (this.diff < 0) {
+				} else if (this.diff > 0) {
 					// Client is now behind by diff
-					// This is very rare (impossible?)
-					this.update(-this.diff)
+					// Catch up!
+					this.update(this.diff * 0.001)
 					this.diff = 0
 				}
 
 				this.pause()
 
-				setHidden(Elem.Text.COUNTDOWN)
-				setVisible(Elem.Text.ID_DISPLAY1)
-				setVisible(Elem.Text.ID_DISPLAY2)
-				setVisible(Elem.Text.PAUSE)
-				setVisible(Elem.Text.PAUSE_MESSAGE)
-				setText(Elem.Text.PAUSE_MESSAGE, "A player has left and the game has paused")
-
-				socket.send({
-					type: Pack.PAUSE,
-					diff: this.diff
-				})
+				menu.gotoPauseMenu()
 
 				break
 
 			case Pack.PLAY:
 				this.countdown = true
-				this.targetTime = Date.now() + COUNTDOWN_TIME
+				this.targetTime = Date.now() + COUNTDOWN_TIME + pack.maxPing + this.diff - socket.ping
 
 				setVisible(Elem.Text.COUNTDOWN)
 
