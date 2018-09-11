@@ -107,7 +107,7 @@ class GameManager extends Object {
 
 		// If no game in the queue satisfied the requirements...
 		let game = this.createGame(playerCount)
-		game.addPlayer(sock, name)
+		sm.startSession(game, sock, name)
 		this.queuedGames.push(game)
 		console.log('Queueing Game: ' + game.gameID)
 	}

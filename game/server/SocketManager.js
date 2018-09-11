@@ -3,12 +3,15 @@ const express = require('express')
 const https = require('https')
 const fs = require('fs')
 
+const uuidv4 = require('uuid/v4');
+
 class SocketManager extends Object {
 	constructor(gameManager) {
 		super()
 
 		this.server = gameManager
-		this.connections = []
+		// this.connections = []
+		this.sessions = []
 	}
 
 	connect() {
@@ -72,10 +75,11 @@ class SocketManager extends Object {
 	}
 
 	removeConnection(sock) {
+		/*
 		var i = this.connections.indexOf(sock)
 		if (i != -1) {
 			this.connections.splice(i, 1)
-		}
+		}*/
 
 		if (sock.game) {
 			sock.game.removePlayer(sock)
@@ -93,8 +97,8 @@ class SocketManager extends Object {
 
 					if (host) {
 						// Create new game and add a player to it
-						this.connections.push(sock)
-						this.server.createGame(playerCount).addPlayer(sock, name)
+						var game = this.server.createGame(playerCount)
+						startSession(game, sock, name)
 
 					} else {
 						// Join a random game
@@ -135,6 +139,12 @@ class SocketManager extends Object {
 		}
 	}
 
+	startSession(game, sock, name) {
+		// this.connections.push(sock)
+
+		game.addPlayer(sock, name)
+	}
+
 	checkName(game, sock, name) {
 		var allowName = true
 		for (var i in game.players) {
@@ -146,9 +156,7 @@ class SocketManager extends Object {
 		}
 
 		if (allowName) {
-			this.connections.push(sock)
-
-			game.addPlayer(sock, name)
+			this.startSession(game, sock, name)
 		} else {
 			// name already exists
 			var formPacket = {
