@@ -1,7 +1,7 @@
 class Player extends Object {
-	constructor(name) {
-		super()
+  constructor(name) {
+    super()
 
-		this.name = name
-	}
+    this.name = name
+  }
 }
