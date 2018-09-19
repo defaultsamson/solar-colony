@@ -5,7 +5,7 @@
   "main": "./game/server/Server.js",
   "dependencies": {
     "express": "^4.16.3",
-    "fs": "^0.0.1-security",
+    "fs": "0.0.1-security",
     "node-gameloop": "^0.1.4",
     "pixi-keyboard": "^0.9.4",
     "pixi-particles": "^3.1.0",
