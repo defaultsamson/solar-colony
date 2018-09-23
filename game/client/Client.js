@@ -36,7 +36,7 @@ window.onload = function () {
   const viewportOptions = {
     screenWidth: INIT_WIDTH,
     screenHeight: INIT_HEIGHT,
-    worldWidth: INIT_WIDTHgithub,
+    worldWidth: INIT_WIDTH,
     worldHeight: INIT_HEIGHT,
     ticker: pixigame.ticker
   }

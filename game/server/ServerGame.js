@@ -4,14 +4,13 @@ const Timeskewer = require('./Timeskewer.js')
 const Game = require('../shared/Game.js')
 
 class ServerGame extends Game {
-  constructor (gameID, maxPlayers, server) {
+  constructor (gameID, maxPlayers, gm) {
     super(gameID, maxPlayers)
 
     this.ids = 0
-
-    this.server = server
-
+    this.gm = gm
     this.players = []
+    this.started = false
 
     this.redTeam = this.addTeam(new Team(Colour.RED, 0))
     this.orangeTeam = this.addTeam(new Team(Colour.ORANGE, 1))
@@ -42,6 +41,7 @@ class ServerGame extends Game {
     // When starting the game, the number of current players is
     // now the new number of max players allowed
     this.maxPlayers = this.players.length
+    this.started = true
 
     let maxPing = 0
     for (let i in this.players) maxPing = Math.max(maxPing, this.players[i].pinger.ping)
@@ -54,39 +54,40 @@ class ServerGame extends Game {
 
     // The countdown will start for the clients at the same time as this
     setTimeout(() => {
-      console.log('Starting serbvsajerh')
+      console.log('Starting game: ' + this.gameID)
       super.play()
     }, COUNTDOWN_TIME + maxPing)
   }
 
-  parse (sender, type, pack) {
+  parse (sock, type, pack) {
     switch (type) {
-      case Pack.CREATE_SHIPS:
+      case Pack.CREATE_SHIPS: {
         this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+      }
         break
-
-      case Pack.CREATE_SPAWN: // create spawn
+      case Pack.CREATE_SPAWN: { // create spawn
         this.system.getPlanetByID(pack.pl).createSpawn()
+      }
         break
-
-      case Pack.JOIN_TEAM:
+      case Pack.JOIN_TEAM: {
         // Reset the start status
         for (let i in this.players) {
           this.players[i].start = false
         }
         // Remove the players from their previous team
-        if (sender.team != null) {
-          sender.team.removePlayer(sender)
+        if (exists(sock.team)) {
+          sock.team.removePlayer(sock)
         }
-        // TODO more efficient way of switching teams than resending the list each time? e.g. deltas
-        this.getTeam(pack.team).addPlayer(sender)
+        let team = this.getTeam(pack.team)
+        team.addPlayer(sock)
+        sock.sess.teamID = team.id
         this.updateTeams()
+      }
         break
-
-      case Pack.START_BUTTON:
+      case Pack.START_BUTTON: {
         // If the sender didn't start and the sender has a team
-        if (!sender.start && sender.team) {
-          sender.start = true
+        if (!sock.start && sock.team) {
+          sock.start = true
           let chosen = 0
           for (let i in this.players) {
             if (this.players[i].start) {
@@ -102,11 +103,14 @@ class ServerGame extends Game {
             this.updateSelectionMessages()
           }
         }
+      }
         break
-
-      case Pack.QUIT:
-        this.removePlayer(sender)
-        sender.approved = false
+      case Pack.QUIT: {
+        this.removePlayer(sock)
+        sock.approved = false
+        sock.sess.gameID = null
+        sock.sess.teamID = null
+      }
         break
     }
   }
@@ -157,7 +161,7 @@ class ServerGame extends Game {
 
       // Adds the player names to this team
       for (let j in this.teams[i].players) {
-        team.players.push(this.teams[i].players[j].name)
+        team.players.push(this.teams[i].players[j].sess.name)
       }
       pack.teams.push(team)
     }
@@ -225,8 +229,8 @@ class ServerGame extends Game {
     }
   }
 
-  addPlayer (sock, name) {
-    sock.name = name
+  addPlayer (sock) {
+    sock.sess.gameID = this.gameID
     sock.game = this
     sock.approved = true
     sock.pinger = new Timeskewer(sock)
@@ -240,7 +244,20 @@ class ServerGame extends Game {
     sock.send(JSON.stringify(packet))
 
     this.createTeams(sock)
-    this.updateSelectionMessages()
+
+    if (exists(sock.sess.teamID)) {
+      let team = this.getTeam(sock.sess.teamID)
+      if (team) {
+        team.addPlayer(sock)
+        this.updateTeams()
+      }
+    }
+
+    if (this.started) {
+      // TODO send the system and resume the game
+    } else {
+      this.updateSelectionMessages()
+    }
   }
 
   removePlayer (sock) {
@@ -256,22 +273,20 @@ class ServerGame extends Game {
 
     // If there's still players left in the game
     if (this.players.length > 0) {
-      // Update the teams for them
-      // TODO may break if performed mid-game
-      // TODO remove team if it is empty
-      // TODO end game if only one team remaining
-      // TODO pause game and wait for players?
-      this.pause()
-      this.updateTeams()
+      if (!this.paused) {
+        this.pause()
+      } else if (!this.started) {
+        this.updateTeams()
+      }
     } else {
-      this.server.removeGame(this)
+      this.gm.removeGame(this)
     }
   }
 
   start () {
     console.log('Starting Game: ' + this.gameID)
 
-    this.server.removeQueue(this)
+    this.gm.removeQueue(this)
 
     this.rebuildTeams()
 

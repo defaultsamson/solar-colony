@@ -29,24 +29,13 @@ class GameManager extends Object {
     this.socket.connect()
   }
 
-  parse (sender, type, packet) {
-    if (type === Pack.PING_PROBE) {
-      if (sender.pinger) {
-        sender.pinger.recieve()
-      }
-    } else if (this.socket.approved(sender)) {
-      sender.game.parse(sender, type, packet)
-    } else if (type === Pack.FORM_SEND) {
-      this.socket.addConnection(sender, packet.host, packet.user, packet.id, packet.players)
-    }
-
-    // console.log('type: ' + type)
-    // console.log('packet: ' + packet)
-  }
-
   findGame (gameID) {
     for (let i in this.games) {
       if (this.games[i].gameID === gameID) { return this.games[i] }
+    }
+
+    for (let i in this.queuedGames) {
+      if (this.queuedGames[i].gameID === gameID) { return this.queuedGames[i] }
     }
 
     return null
@@ -89,24 +78,19 @@ class GameManager extends Object {
     }
   }
 
-  queue (sm, sock, name, playerCount) {
+  queue (sock) {
     // When queuing a player begin looking for existing queued games
     for (let i in this.queuedGames) {
       let game = this.queuedGames[i]
-
-      // If the game has the player count being looked for
-      let playerCountSatisfied = game.maxPlayers === playerCount
-
-      // If the player count is good and the player can be added to the game
-      if (playerCountSatisfied && game.canAddPlayer()) {
-        sm.checkName(game, sock, name)
+      if (game.canAddPlayer()) {
+        game.addPlayer(sock)
         return
       }
     }
 
     // If no game in the queue satisfied the requirements...
-    let game = this.createGame(playerCount)
-    sm.startSession(game, sock, name)
+    let game = this.createGame()
+    game.addPlayer(sock)
     this.queuedGames.push(game)
     console.log('Queueing Game: ' + game.gameID)
   }
@@ -120,7 +104,7 @@ class GameManager extends Object {
         id += ID_CHARACTERS.charAt(Math.floor(Math.random() * ID_CHARACTERS.length))
       }
       // Makes sure it is safe
-      if (this.findGame(id) === null) return id
+      if (!exists(this.findGame(id))) return id
     }
   }
 }

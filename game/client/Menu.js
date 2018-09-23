@@ -372,8 +372,8 @@ class Menu extends Object {
     let formPacket = {
       type: Pack.FORM_SEND,
       host: this.createGame,
-      user: getInput(Elem.Input.USERNAME),
-      id: sendID ? getInput(Elem.Input.ID) : '',
+      name: getInput(Elem.Input.USERNAME),
+      gameID: sendID ? getInput(Elem.Input.ID) : '',
       players: this.players
     }
 

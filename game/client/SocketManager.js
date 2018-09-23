@@ -11,6 +11,7 @@ class SocketManager extends Object {
 
   connect (secure) {
     setVisible(Elem.Text.CONNECTION_MESSAGE)
+    setText(Elem.Text.CONNECTION_MESSAGE, 'Connecting to Server')
 
     let ip
     if (LOCAL_DEBUG) {
@@ -60,9 +61,24 @@ class SocketManager extends Object {
 
       me.connectionAttempts = -1
       me.connected = true
-      setHidden(Elem.Text.CONNECTION_MESSAGE)
+
+      setText(Elem.Text.CONNECTION_MESSAGE, 'Setting up Session')
       menu.formSent = false
-      menu.updateStartButton()
+
+      // Start the session on the server
+      let sessID = localStorage.getItem(SESSION_STORAGE)
+      if (exists(sessID)) {
+        me.send({
+          type: Pack.SESSION,
+          sessID: sessID
+        })
+      } else {
+        me.send({
+          type: Pack.SESSION
+        })
+      }
+
+      // TODO menu.updateStartButton() when session is initialized
     }
 
     this.ws.onmessage = function (evt) {
@@ -82,119 +98,36 @@ class SocketManager extends Object {
 
   parse (type, pack) {
     switch (type) {
-      case Pack.PING_PROBE:
+      case Pack.PING_PROBE: {
         let pPack = {
           type: Pack.PING_PROBE
         }
         socket.send(pPack)
+      }
         break
-
-      case Pack.PING_SET:
+      case Pack.PING_SET: {
         this.ping = pack.ping
         setText(Elem.Text.PING, 'Ping: ' + this.ping + 'ms')
+      }
         break
-
-      case Pack.FORM_FAIL:
+      case Pack.FORM_FAIL: {
         menu.failSendForm(pack.reason)
+      }
         break
-
-      case Pack.JOIN_GAME:
+      case Pack.JOIN_GAME: {
         game = new ClientGame(pack.gameID, pack.maxPlayers)
         menu.gotoTeamSelection()
+      }
         break
-
-      case Pack.CREATE_SYSTEM:
-        game.system = System.load(pack.sys, game)
-
-        viewport.addChild(game.system)
-        menu.hide()
-        setVisible(Elem.Text.PING)
-        setVisible(Elem.Text.PIXELS)
-        setVisible(Elem.Text.SHIPS)
-
-        // A little hack to get planets to go to their correct positions when the game starts
-        game.play() // This lets us update the planets
-        game.update(0) // this updates them from their default pos
-        game.pause() // This reverts the game state to being paused
-
-        setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
-        setVisible(Elem.Text.COUNTDOWN)
-
-        // TODO may not need to resume these?
-        // they may not be paused
-        viewport.resumePlugin('drag')
-        viewport.resumePlugin('pinch')
-        viewport.resumePlugin('wheel')
-        viewport.moveCenter(0, 0)
+      case Pack.SESSION: {
+        setHidden(Elem.Text.CONNECTION_MESSAGE)
+        this.sessID = pack.sessID
+        console.log('Session: ' + pack.sessID)
+        localStorage.setItem(SESSION_STORAGE, pack.sessID)
+      }
         break
-
-      case Pack.CREATE_TEAMS:
-        game.teams = []
-        for (let i in pack.teams) {
-          let id = pack.teams[i].id
-          let colour = pack.teams[i].colour
-          game.teams.push(new Team(colour, id))
-        }
-        break
-
-      case Pack.UPDATE_TEAMS:
-        // Clear the GUI
-        document.getElementById(Elem.List.TEAM_RED).innerHTML = ''
-        document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = ''
-        document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = ''
-        document.getElementById(Elem.List.TEAM_GREEN).innerHTML = ''
-        document.getElementById(Elem.List.TEAM_BLUE).innerHTML = ''
-        document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = ''
-
-        for (let i in game.teams) {
-          game.teams[i].players = []
-        }
-
-        for (let i in pack.teams) {
-          // Team Object and teamID
-          let team = pack.teams[i]
-          let teamID = team.id
-          let teamObj = game.getTeam(teamID)
-          for (let j in team.players) {
-            // player name
-            let name = team.players[j]
-
-            // Adds new player object to the team object
-            teamObj.addPlayer(new Player(name))
-
-            let list
-            // Chooses a list to add the player to based on ID
-            switch (teamID) {
-              case 0:
-                list = document.getElementById(Elem.List.TEAM_RED)
-                break
-              case 1:
-                list = document.getElementById(Elem.List.TEAM_ORANGE)
-                break
-              case 2:
-                list = document.getElementById(Elem.List.TEAM_YELLOW)
-                break
-              case 3:
-                list = document.getElementById(Elem.List.TEAM_GREEN)
-                break
-              case 4:
-                list = document.getElementById(Elem.List.TEAM_BLUE)
-                break
-              case 5:
-                list = document.getElementById(Elem.List.TEAM_PURPLE)
-                break
-            }
-
-            // Creates the HTML list entry for the GUI
-            let entry = document.createElement('li')
-            entry.appendChild(document.createTextNode(name))
-            list.appendChild(entry)
-          }
-        }
-
-        break
-
-      case Pack.UPDATE_MESSAGE:
+      case Pack.UPDATE_MESSAGE: {
+        // TODO change this??
         if (!(game && game.system)) {
           enableButton(Elem.Button.START, pack.startEnabled)
 
@@ -207,9 +140,11 @@ class SocketManager extends Object {
 
         // TODO put this in the UPDATE_TEAMS section??
         game.myTeam = game.getTeam(pack.team)
+      }
         break
-      default:
-        game.parse(type, pack)
+      default: {
+        if (game) game.parse(type, pack)
+      }
     }
   }
 }

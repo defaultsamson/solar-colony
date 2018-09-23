@@ -8,8 +8,8 @@ class ClientGame extends Game {
   }
 
   removeSystem () {
-    viewport.removeChild(game.system)
-    game.system = null
+    viewport.removeChild(this.system)
+    this.system = null
   }
 
   update (delta) {
@@ -57,7 +57,7 @@ class ClientGame extends Game {
       }
       */
 
-      let planet = game.system.getPlanet(e.world.x, e.world.y)
+      let planet = this.system.getPlanet(e.world.x, e.world.y)
       if (planet) {
         // If the viewport is already following the planet that was clicked on, then don't do anything
 
@@ -167,6 +167,99 @@ class ClientGame extends Game {
 
       case Pack.CREATE_SHIPS: { // buy ships
         this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+      }
+        break
+
+      case Pack.CREATE_SYSTEM: {
+        this.system = System.load(pack.sys, this)
+
+        viewport.addChild(this.system)
+        menu.hide()
+        setVisible(Elem.Text.PING)
+        setVisible(Elem.Text.PIXELS)
+        setVisible(Elem.Text.SHIPS)
+
+        // A little hack to get planets to go to their correct positions when the game starts
+        this.play() // This lets us update the planets
+        this.update(0) // this updates them from their default pos
+        this.pause() // This reverts the game state to being paused
+
+        setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
+        setVisible(Elem.Text.COUNTDOWN)
+
+        // TODO may not need to resume these?
+        // they may not be paused
+        viewport.resumePlugin('drag')
+        viewport.resumePlugin('pinch')
+        viewport.resumePlugin('wheel')
+        viewport.moveCenter(0, 0)
+      }
+        break
+
+      case Pack.CREATE_TEAMS: {
+        this.teams = []
+        for (let i in pack.teams) {
+          let id = pack.teams[i].id
+          let colour = pack.teams[i].colour
+          this.teams.push(new Team(colour, id))
+        }
+      }
+        break
+
+      case Pack.UPDATE_TEAMS: {
+        // Clear the GUI
+        document.getElementById(Elem.List.TEAM_RED).innerHTML = ''
+        document.getElementById(Elem.List.TEAM_ORANGE).innerHTML = ''
+        document.getElementById(Elem.List.TEAM_YELLOW).innerHTML = ''
+        document.getElementById(Elem.List.TEAM_GREEN).innerHTML = ''
+        document.getElementById(Elem.List.TEAM_BLUE).innerHTML = ''
+        document.getElementById(Elem.List.TEAM_PURPLE).innerHTML = ''
+
+        for (let i in this.teams) {
+          this.teams[i].players = []
+        }
+
+        for (let i in pack.teams) {
+          // Team Object and teamID
+          let team = pack.teams[i]
+          let teamID = team.id
+          let teamObj = this.getTeam(teamID)
+          for (let j in team.players) {
+            // player name
+            let name = team.players[j]
+
+            // Adds new player object to the team object
+            teamObj.addPlayer(new Player(name))
+
+            let list
+            // Chooses a list to add the player to based on ID
+            switch (teamID) {
+              case 0:
+                list = document.getElementById(Elem.List.TEAM_RED)
+                break
+              case 1:
+                list = document.getElementById(Elem.List.TEAM_ORANGE)
+                break
+              case 2:
+                list = document.getElementById(Elem.List.TEAM_YELLOW)
+                break
+              case 3:
+                list = document.getElementById(Elem.List.TEAM_GREEN)
+                break
+              case 4:
+                list = document.getElementById(Elem.List.TEAM_BLUE)
+                break
+              case 5:
+                list = document.getElementById(Elem.List.TEAM_PURPLE)
+                break
+            }
+
+            // Creates the HTML list entry for the GUI
+            let entry = document.createElement('li')
+            entry.appendChild(document.createTextNode(name))
+            list.appendChild(entry)
+          }
+        }
       }
         break
     }

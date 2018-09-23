@@ -9,7 +9,7 @@
     "node-gameloop": "^0.1.4",
     "pixi-keyboard": "^0.9.4",
     "pixi-particles": "^3.1.0",
-    "pixi-viewport": "^3.7.0",
+    "pixi-viewport": "^3.7.1",
     "pixi.js": "^4.8.2",
     "uuid": "^3.3.2",
     "ws": "^6.0.0"

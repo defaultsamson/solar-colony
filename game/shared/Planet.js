@@ -10,6 +10,8 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
 
     this.radius = radius
 
+    let gring
+
     if (IS_SERVER) {
       this.infantry = {}
     } else {
@@ -31,7 +33,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       this.outline = this.addChild(ring)
 
       // Ghost selection ring
-      let gring = new PIXI.Graphics()
+      gring = new PIXI.Graphics()
       gring.lineStyle(scale * DASH_THICKNESS * 46, Colour.DARK8)
       gring.arc(scale * this.pixelRadius, scale * this.pixelRadius, scale * this.pixelRadius * 3, 0, 7)
       gring.visible = false

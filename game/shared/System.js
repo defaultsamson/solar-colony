@@ -34,7 +34,7 @@ class System extends (IS_SERVER ? Object : PIXI.Container) {
   getPlanet (x, y) {
     let planet
     for (let i in this.orbits) {
-      if ((planet = this.orbits[i].getPlanet(x, y)) != null) { return planet }
+      if (exists(planet = this.orbits[i].getPlanet(x, y))) { return planet }
     }
 
     return null
@@ -64,7 +64,7 @@ class System extends (IS_SERVER ? Object : PIXI.Container) {
   getPlanetByID (id) {
     let planet
     for (let i in this.orbits) {
-      if ((planet = this.orbits[i].getPlanetByID(id)) != null) { return planet }
+      if (exists(planet = this.orbits[i].getPlanetByID(id))) { return planet }
     }
 
     return null

@@ -9,9 +9,9 @@ class SocketManager extends Object {
   constructor (gameManager) {
     super()
 
-    this.server = gameManager
+    this.gm = gameManager
     // this.connections = []
-    this.sessions = []
+    this.abandonedSessions = []
   }
 
   connect () {
@@ -47,7 +47,7 @@ class SocketManager extends Object {
       ws.on('close', function close () {
         // Remove the connection
         try {
-          sm.removeConnection(ws)
+          sm.removeSession(ws)
         } catch (err) {
           console.log(err)
         }
@@ -57,7 +57,7 @@ class SocketManager extends Object {
         // Remove the connection
         try {
           console.log('Error: ' + e.code)
-          sm.removeConnection(ws)
+          sm.removeSession(ws)
         } catch (err) {
           console.log(err)
         }
@@ -66,7 +66,7 @@ class SocketManager extends Object {
       ws.on('message', function incoming (msg) {
         try {
           let pack = JSON.parse(msg)
-          sm.server.parse(ws, pack.type, pack)
+          sm.parse(ws, pack.type, pack)
         } catch (err) {
           console.log(err)
         }
@@ -74,104 +74,126 @@ class SocketManager extends Object {
     })
   }
 
-  removeConnection (sock) {
+  parse (sock, type, pack) {
+    switch (type) {
+      case Pack.PING_PROBE:
+        if (sock.pinger) {
+          sock.pinger.recieve()
+        }
+        break
+      case Pack.SESSION: {
+        if (exists(pack.sessID)) {
+          // Try to resume previous session
+          for (let i in this.abandonedSessions) {
+            if (this.abandonedSessions[i].sessID === pack.sessID) {
+              // The player and this abandoned session have the same UUID. Hook 'em up again
+              let sess = this.abandonedSessions[i]
+              this.abandonedSessions.splice(i, 1) // Remove the session
+              this.startSession(sock, sess)
+              return
+            }
+          }
+        }
+
+        // Create new session if nothing could be done earlier
+        let sess = {
+          sessID: uuidv4()
+        }
+
+        this.startSession(sock, sess)
+      }
+        break
+      case Pack.FORM_SEND: {
+        let name = pack.name
+        let host = pack.host
+        let gameID = pack.gameID ? pack.gameID.toUpperCase() : ''
+
+        sock.sess.name = name
+        sock.sess.host = host
+
+        if (USERNAME_REGEX.test(name)) {
+        // Test if no ID was given
+          if (gameID === '') {
+            if (host) {
+              // Create new game and add a player to it
+              let game = this.gm.createGame()
+              game.addPlayer(sock)
+            } else {
+              // Join a random game
+              this.gm.queue(sock)
+            }
+
+            // If ID was given make sure it's proper
+          } else if (ID_REGEX.test(gameID)) {
+            let game = this.gm.findGame(gameID)
+
+            if (game) {
+              game.addPlayer(sock)
+            } else {
+              // No game found with given ID
+              let formPacket = {
+                type: Pack.FORM_FAIL,
+                reason: 'No existing game with ID ' + gameID
+              }
+              sock.send(JSON.stringify(formPacket))
+            }
+          } else {
+            // Improper ID
+            let formPacket = {
+              type: Pack.FORM_FAIL,
+              reason: 'Improper game ID provided'
+            }
+            sock.send(JSON.stringify(formPacket))
+          }
+        } else {
+          sock.send(JSON.stringify({
+            type: Pack.FORM_FAIL,
+            reason: 'Improper username provided'
+          }))
+        }
+        break
+      }
+      default:
+        if (this.approved(sock) && sock.game) {
+          sock.game.parse(sock, type, pack)
+        }
+        break
+    }
+  }
+
+  removeSession (sock) {
     /*
     let i = this.connections.indexOf(sock)
     if (i != -1) {
       this.connections.splice(i, 1)
-    } */
+    }
+    */
+
+    this.abandonedSessions.push(sock.sess)
 
     if (sock.game) {
       sock.game.removePlayer(sock)
     }
   }
 
-  addConnection (sock, host, name, id, playerCount) {
-    if (!this.approved(sock)) {
-      id = id ? id.toUpperCase() : ''
+  startSession (sock, sess) {
+    sock.sess = sess
 
-      // Test if the name is proper
-      if (USERNAME_REGEX.test(name)) {
-        // Test if no ID was given
-        if (id === '') {
-          if (host) {
-            // Create new game and add a player to it
-            let game = this.server.createGame(playerCount)
-            startSession(game, sock, name)
-          } else {
-            // Join a random game
-            this.server.queue(this, sock, name, playerCount)
-          }
+    let game = this.gm.findGame(sess.gameID)
 
-          // If ID was given make sure it's proper
-        } else if (ID_REGEX.test(id)) {
-          let game = this.server.findGame(id)
+    sock.send(JSON.stringify({
+      type: Pack.SESSION,
+      sessID: sess.sessID,
+      hasGame: exists(game)
+    }))
 
-          if (game) {
-            this.checkName(game, sock, name)
-          } else {
-            // No game found with given ID
-            let formPacket = {
-              type: Pack.FORM_FAIL,
-              reason: 'No existing game with ID ' + id
-            }
-            sock.send(JSON.stringify(formPacket))
-          }
-        } else {
-          // Improper ID
-          let formPacket = {
-            type: Pack.FORM_FAIL,
-            reason: 'Improper game ID provided'
-          }
-          sock.send(JSON.stringify(formPacket))
-        }
-      } else {
-        // Improper name
-        let formPacket = {
-          type: Pack.FORM_FAIL,
-          reason: 'Improper username provided'
-        }
-        sock.send(JSON.stringify(formPacket))
-      }
-    }
-  }
-
-  startSession (game, sock, name) {
-    // this.connections.push(sock)
-
-    game.addPlayer(sock, name)
-  }
-
-  checkName (game, sock, name) {
-    let allowName = true
-    for (let i in game.players) {
-      // console.log('name: ' + )
-      if (game.players[i].name === name) {
-        allowName = false
-        break
-      }
-    }
-
-    if (allowName) {
-      this.startSession(game, sock, name)
-    } else {
-      // name already exists
-      let formPacket = {
-        type: Pack.FORM_FAIL,
-        reason: 'A player with username ' + name + ' already exists'
-      }
-      sock.send(JSON.stringify(formPacket))
+    if (exists(game)) {
+      game.addPlayer(sock)
     }
   }
 
   approved (sock) {
     return sock.approved === true
-
-    // Check if con is in this.connections
-    /* for (let i in this.connections) {
-      if (this.connections[i] === con) return true
-    }
-  return false */
   }
 }
 

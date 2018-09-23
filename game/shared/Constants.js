@@ -44,7 +44,8 @@ const Pack = {
   UPDATE_MESSAGE: 17,
   CREATE_SPAWN: 18,
   PAUSE: 19,
-  PLAY: 20
+  PLAY: 20,
+  SESSION: 21
 }
 
 const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)
@@ -167,6 +168,8 @@ const INPUT_HEIGHT = 500
 const DESKTOP_SCALE = 0.75
 
 const ACCEPTABLE_REGEX = /^([A-Za-z0-9])$/
+
+const SESSION_STORAGE = 'sess'
 
 const INPUT_DIV = 'input'
 const TOP_DIV = 'top_display'
