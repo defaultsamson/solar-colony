@@ -45,7 +45,8 @@ const Pack = {
   CREATE_SPAWN: 18,
   PAUSE: 19,
   PLAY: 20,
-  SESSION: 21
+  SESSION: 21,
+  RESUME: 22
 }
 
 const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)
@@ -181,15 +182,9 @@ const Elem = {
     RANDOM: 'b_random',
     WITH_FRIENDS: 'b_friends',
 
-    PLAYERS_2: 'b_p2',
-    PLAYERS_3: 'b_p3',
-    PLAYERS_4: 'b_p4',
-    PLAYERS_8: 'b_p8',
-    PLAYERS_16: 'b_p16',
-    ANY_PLAYERS: 'b_pRnd',
-
     START: 'b_start',
     QUIT: 'b_quit',
+    RESUME: 'b_resume',
 
     TEAM_RED: 'b_team_red',
     TEAM_ORANGE: 'b_team_orange',
@@ -216,7 +211,6 @@ const Elem = {
 
     USERNAME: 't_user',
     ID: 't_id',
-    PLAYERS: 't_players',
 
     CONNECTION_MESSAGE: 't_connecting',
     MESSAGE: 't_message',

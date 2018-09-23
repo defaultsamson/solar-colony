@@ -5,6 +5,8 @@ class ClientGame extends Game {
     this.myTeam = null
 
     this.diff = 0
+
+    setText(Elem.Text.ID_DISPLAY2, gameID)
   }
 
   removeSystem () {
@@ -112,7 +114,7 @@ class ClientGame extends Game {
         } else if (this.diff > 0) {
           // Client is now behind by diff
           // Catch up!
-          this.update(this.diff * 0.001)
+          this.update(this.diff)
           this.diff = 0
         }
 
@@ -132,6 +134,14 @@ class ClientGame extends Game {
         setHidden(Elem.Text.ID_DISPLAY2)
         setHidden(Elem.Text.PAUSE)
         setHidden(Elem.Text.PAUSE_MESSAGE)
+        setHidden(Elem.Button.RESUME)
+        setHidden(Elem.Button.QUIT)
+        setHidden(Elem.Text.MESSAGE)
+      }
+        break
+
+      case Pack.RESUME: {
+        setText(Elem.Text.MESSAGE, 'Resumed players (' + pack.p + '/' + pack.m + ')')
       }
         break
 
@@ -175,17 +185,18 @@ class ClientGame extends Game {
 
         viewport.addChild(this.system)
         menu.hide()
-        setVisible(Elem.Text.PING)
-        setVisible(Elem.Text.PIXELS)
-        setVisible(Elem.Text.SHIPS)
+        menu.showInGameGUI()
+        if (this.started) {
+          menu.gotoPauseMenu()
+        } else {
+          setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
+          setVisible(Elem.Text.COUNTDOWN)
+        }
 
         // A little hack to get planets to go to their correct positions when the game starts
         this.play() // This lets us update the planets
         this.update(0) // this updates them from their default pos
         this.pause() // This reverts the game state to being paused
-
-        setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
-        setVisible(Elem.Text.COUNTDOWN)
 
         // TODO may not need to resume these?
         // they may not be paused

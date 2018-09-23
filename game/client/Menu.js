@@ -103,19 +103,6 @@ class Menu extends Object {
       }
     }
 
-    function playerCount (p) {
-      console.log('playerCounr: ' + p)
-      me.players = p
-      me.updateGuiClick()
-    }
-
-    document.getElementById(Elem.Button.PLAYERS_2).onmousedown = () => playerCount(2)
-    document.getElementById(Elem.Button.PLAYERS_3).onmousedown = () => playerCount(3)
-    document.getElementById(Elem.Button.PLAYERS_4).onmousedown = () => playerCount(4)
-    document.getElementById(Elem.Button.PLAYERS_8).onmousedown = () => playerCount(8)
-    document.getElementById(Elem.Button.PLAYERS_16).onmousedown = () => playerCount(16)
-    document.getElementById(Elem.Button.ANY_PLAYERS).onmousedown = () => playerCount(-1)
-
     function joinTeam (i) {
       let pack = {
         type: Pack.JOIN_TEAM,
@@ -147,6 +134,14 @@ class Menu extends Object {
       me.gotoTitle()
       let pack = {
         type: Pack.QUIT
+      }
+      socket.send(pack)
+    }
+
+    document.getElementById(Elem.Button.RESUME).onmousedown = function () {
+      disableButton(Elem.Button.RESUME)
+      let pack = {
+        type: Pack.RESUME
       }
       socket.send(pack)
     }
@@ -258,43 +253,6 @@ class Menu extends Object {
       setVisible(Elem.Text.ID, this.joinGame && this.withFriends)
       setVisible(Elem.Input.ID, this.joinGame && this.withFriends)
 
-      setVisible(Elem.Text.PLAYERS, this.randomGame)
-      setVisible(Elem.Button.PLAYERS_2, this.randomGame)
-      setVisible(Elem.Button.PLAYERS_3, this.randomGame)
-      setVisible(Elem.Button.PLAYERS_4, this.randomGame)
-      setVisible(Elem.Button.PLAYERS_8, this.randomGame)
-      setVisible(Elem.Button.PLAYERS_16, this.randomGame)
-      setVisible(Elem.Button.ANY_PLAYERS, this.randomGame)
-
-      if (this.randomGame) {
-        deselectButton(Elem.Button.PLAYERS_2)
-        deselectButton(Elem.Button.PLAYERS_3)
-        deselectButton(Elem.Button.PLAYERS_4)
-        deselectButton(Elem.Button.PLAYERS_8)
-        deselectButton(Elem.Button.PLAYERS_16)
-        deselectButton(Elem.Button.ANY_PLAYERS)
-
-        switch (this.players) {
-          default: selectButton(Elem.Button.ANY_PLAYERS)
-            break
-          case 2:
-            selectButton(Elem.Button.PLAYERS_2)
-            break
-          case 3:
-            selectButton(Elem.Button.PLAYERS_3)
-            break
-          case 4:
-            selectButton(Elem.Button.PLAYERS_4)
-            break
-          case 8:
-            selectButton(Elem.Button.PLAYERS_8)
-            break
-          case 16:
-            selectButton(Elem.Button.PLAYERS_16)
-            break
-        }
-      }
-
       setVisible(Elem.Button.START)
       this.updateStartButton()
     } else {
@@ -302,13 +260,6 @@ class Menu extends Object {
       setHidden(Elem.Input.USERNAME)
       setHidden(Elem.Text.ID)
       setHidden(Elem.Input.ID)
-
-      setHidden(Elem.Button.PLAYERS_2)
-      setHidden(Elem.Button.PLAYERS_3)
-      setHidden(Elem.Button.PLAYERS_4)
-      setHidden(Elem.Button.PLAYERS_8)
-      setHidden(Elem.Button.PLAYERS_16)
-      setHidden(Elem.Button.ANY_PLAYERS)
 
       setHidden(Elem.Button.START)
     }
@@ -486,7 +437,6 @@ class Menu extends Object {
 
     setVisible(Elem.Text.ID_DISPLAY1)
     setVisible(Elem.Text.ID_DISPLAY2)
-    setText(Elem.Text.ID_DISPLAY2, game.gameID)
 
     setVisible(Elem.Button.TEAM_RED)
     setVisible(Elem.Button.TEAM_ORANGE)
@@ -512,5 +462,16 @@ class Menu extends Object {
     setVisible(Elem.Text.PAUSE)
     setVisible(Elem.Text.PAUSE_MESSAGE)
     setText(Elem.Text.PAUSE_MESSAGE, 'A player has left and the game has paused')
+    setVisible(Elem.Button.RESUME)
+    enableButton(Elem.Button.RESUME)
+    setVisible(Elem.Button.QUIT)
+    setVisible(Elem.Text.MESSAGE)
+    setText(Elem.Text.MESSAGE, 'Resumed players (...)')
+  }
+
+  showInGameGUI () {
+    setVisible(Elem.Text.PING)
+    setVisible(Elem.Text.PIXELS)
+    setVisible(Elem.Text.SHIPS)
   }
 }

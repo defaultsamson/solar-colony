@@ -189,6 +189,9 @@ class SocketManager extends Object {
 
     if (exists(game)) {
       game.addPlayer(sock)
+    } else {
+      sock.sess.gameID = null
+      sock.sess.teamID = null
     }
   }
 

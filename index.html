@@ -134,17 +134,7 @@
 		padding-top: 10px;
 	}
 
-	#t_players {
-		top: 60%;
-		right: calc(50% + 5px);
-		text-align: right;
-		/* padding-right aligns the colon with above button text */
-		padding-right: 6px;
-		/* padding-top compensates for the 'top' property, lining it up with the buttons properly */
-		padding-top: 10px;
-	}
 	/* id_display displays in the team selection*/
-
 	#t_id_display1 {
 		top: 15%;
 		text-align: left;
@@ -169,41 +159,18 @@
 		/* Standard */
 	}
 
-	#b_p2 {
-		top: 60%;
-		left: calc(50% - 11px);
-	}
-
-	#b_p3 {
-		top: 60%;
-		left: calc(50% + 22px);
-	}
-
-	#b_p4 {
-		top: 60%;
-		left: calc(50% + 55px);
-	}
-
-	#b_p8 {
-		top: 60%;
-		left: calc(50% + 88px);
-	}
-
-	#b_p16 {
-		top: 60%;
-		left: calc(50% + 121px);
-	}
-
-	#b_pRnd {
-		top: 60%;
-		left: calc(50% + 172px);
-	}
-
 	#b_start {
 		top: 78%;
 		text-align: left;
 		/* The below calc is a hardcoding to center the button */
-		left: calc(50% - 79px);
+		left: calc(50% - 64px);
+	}
+
+	#b_resume {
+		top: 78%;
+		text-align: left;
+		/* The below calc is a hardcoding to center the button */
+		left: calc(50% - 104px);
 	}
 
 	#i_user {
@@ -449,15 +416,9 @@
 		</form>
 		<img id='p_idG' alt="acceptable" src='game/assets/check.png' class='idSymbol' />
 		<img id='p_idB' alt="failed" src='game/assets/cross.png' class='idSymbol' />
-		<p id='t_players' class='txt med'>Player Limit:</p>
-		<p id='b_p2' class='btn txt med'>2</p>
-		<p id='b_p3' class='btn txt med'>3</p>
-		<p id='b_p4' class='btn txt med'>4</p>
-		<p id='b_p8' class='btn txt med'>8</p>
-		<p id='b_p16' class='btn txt med'>16</p>
-		<p id='b_pRnd' class='btn txt med'>None</p>
-		<p id='b_start' class='btn txt big'>Start!</p>
+		<p id='b_start' class='btn txt big'>Start</p>
 		<p id='b_quit' class='btn txt sml'>Quit</p>
+		<p id='b_resume' class='btn txt big'>Resume</p>
 		<p id='t_id_display1' class='txt med'>Game ID:</p>
 		<p id='t_id_display2' class='txt med'>DEF4LT</p>
 		<p id='b_team_red' class='btn txt sml'>Red</p>
@@ -475,7 +436,7 @@
 		<p id='t_players_display' class='txt sml'>Players: None</p>
 		<p id='t_message' class='txt sml'>This sentence is dynamic!</p>
 		<p id='t_pause' class='txt big'>PAUSED</p>
-		<p id='t_pausemess' class='txt med'>A player has left and the game has paused</p>
+		<p id='t_pausemess' class='txt med'>A player has left and the game has paused. If they return, you may resume the game</p>
 		<p id='b_buy_spawn' class='btn txt sml'>1 Spawn (200P)</p>
 		<p id='b_buy_1000ships' class='btn txt sml'>1000 Ships (800P)</p>
 		<p id='b_buy_100ships' class='btn txt sml'>100 Ships (90P)</p>

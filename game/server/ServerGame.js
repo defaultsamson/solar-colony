@@ -35,6 +35,12 @@ class ServerGame extends Game {
       type: Pack.PAUSE,
       time: this.time
     })
+
+    // Reset the starts for resuming the game
+    for (let i in this.players) {
+      this.players[i].resume = false
+    }
+    this.updateResumeMessage()
   }
 
   play () {
@@ -105,6 +111,14 @@ class ServerGame extends Game {
         }
       }
         break
+      case Pack.RESUME: {
+        if (!sock.resume) {
+          sock.resume = true
+
+          this.updateResumeMessage()
+        }
+      }
+        break
       case Pack.QUIT: {
         this.removePlayer(sock)
         sock.approved = false
@@ -112,6 +126,25 @@ class ServerGame extends Game {
         sock.sess.teamID = null
       }
         break
+    }
+  }
+
+  updateResumeMessage () {
+    let chosen = 0
+    for (let i in this.players) {
+      if (this.players[i].resume) {
+        chosen++
+      }
+    }
+
+    if (chosen === this.maxPlayers) {
+      this.play()
+    } else {
+      this.sendPlayers({
+        type: Pack.RESUME,
+        p: chosen,
+        m: this.maxPlayers
+      })
     }
   }
 
@@ -239,7 +272,8 @@ class ServerGame extends Game {
     let packet = {
       type: Pack.JOIN_GAME,
       gameID: this.gameID,
-      maxPlayers: this.maxPlayers
+      maxPlayers: this.maxPlayers,
+      started: this.started
     }
     sock.send(JSON.stringify(packet))
 
@@ -255,6 +289,17 @@ class ServerGame extends Game {
 
     if (this.started) {
       // TODO send the system and resume the game
+      sock.send(JSON.stringify({
+        type: Pack.CREATE_SYSTEM,
+        sys: this.system.save(true)
+      }))
+      /*
+      this.sendPlayers({
+        type: Pack.PAUSE,
+        time: this.time
+      })
+      */
+      this.updateResumeMessage()
     } else {
       this.updateSelectionMessages()
     }

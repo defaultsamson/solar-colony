@@ -116,7 +116,10 @@ class SocketManager extends Object {
         break
       case Pack.JOIN_GAME: {
         game = new ClientGame(pack.gameID, pack.maxPlayers)
-        menu.gotoTeamSelection()
+        game.started = pack.started
+        if (!pack.started) {
+          menu.gotoTeamSelection()
+        }
       }
         break
       case Pack.SESSION: {
