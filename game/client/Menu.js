@@ -321,7 +321,7 @@ class Menu extends Object {
     let sendID = this.joinGame && this.withFriends
 
     let formPacket = {
-      type: Pack.FORM_SEND,
+      type: Pack.FORM,
       host: this.createGame,
       name: getInput(Elem.Input.USERNAME),
       gameID: sendID ? getInput(Elem.Input.ID) : '',
@@ -377,7 +377,7 @@ class Menu extends Object {
       }
 
       // TODO this can be done in parse() when the server sends new pixels
-      if (game.myTeam.pixels !== this.lastPixels) {
+      if (exists(game.myTeam.pixels) && game.myTeam.pixels !== this.lastPixels) {
         this.lastPixels = game.myTeam.pixels
         setText(Elem.Text.PIXELS, 'Pixels: ' + game.myTeam.pixels)
 
@@ -455,13 +455,16 @@ class Menu extends Object {
     setVisible(Elem.Text.PING)
   }
 
-  gotoPauseMenu () {
+  gotoPauseMenu (showPauseMess) {
+    showPauseMess = exists(showPauseMess) ? showPauseMess : true
     setHidden(Elem.Text.COUNTDOWN)
     setVisible(Elem.Text.ID_DISPLAY1)
     setVisible(Elem.Text.ID_DISPLAY2)
     setVisible(Elem.Text.PAUSE)
-    setVisible(Elem.Text.PAUSE_MESSAGE)
-    setText(Elem.Text.PAUSE_MESSAGE, 'A player has left and the game has paused')
+    if (showPauseMess) {
+      setVisible(Elem.Text.PAUSE_MESSAGE)
+      setText(Elem.Text.PAUSE_MESSAGE, 'A player has left and the game has paused')
+    }
     setVisible(Elem.Button.RESUME)
     enableButton(Elem.Button.RESUME)
     setVisible(Elem.Button.QUIT)

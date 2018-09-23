@@ -110,7 +110,7 @@ class SocketManager extends Object {
         setText(Elem.Text.PING, 'Ping: ' + this.ping + 'ms')
       }
         break
-      case Pack.FORM_FAIL: {
+      case Pack.FORM: {
         menu.failSendForm(pack.reason)
       }
         break
@@ -130,19 +130,13 @@ class SocketManager extends Object {
       }
         break
       case Pack.UPDATE_MESSAGE: {
-        // TODO change this??
-        if (!(game && game.system)) {
-          enableButton(Elem.Button.START, pack.startEnabled)
+        enableButton(Elem.Button.START, pack.startEnabled)
 
-          setVisible(Elem.Text.MESSAGE)
-          setText(Elem.Text.MESSAGE, pack.message)
+        setVisible(Elem.Text.MESSAGE)
+        setText(Elem.Text.MESSAGE, pack.message)
 
-          setVisible(Elem.Text.PLAYER_COUNT)
-          setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
-        }
-
-        // TODO put this in the UPDATE_TEAMS section??
-        game.myTeam = game.getTeam(pack.team)
+        setVisible(Elem.Text.PLAYER_COUNT)
+        setText(Elem.Text.PLAYER_COUNT, 'Players: (' + pack.playerCount + '/' + pack.maxPlayers + ')')
       }
         break
       default: {

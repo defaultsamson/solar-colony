@@ -214,12 +214,15 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     socket.send(pack)
   }
 
-  createShips (n, cost) {
+  createShips (n, force, cost) {
     if (n <= 0) return
+    force = exists(force) ? force : false
     if (IS_SERVER) {
-      // Validate to make sure the client isn't lying about the packet
-      if (this.team.pixels >= cost && n > 0) {
-        let good = false
+      let good = false
+      if (force) {
+        good = true
+      } else if (this.team.pixels >= cost && n > 0) {
+        // Validate to make sure the client isn't lying about the packet
         if (n <= 10 && cost >= 10) {
           good = true
         } else if (n <= 100 && cost >= 90) {
@@ -227,16 +230,17 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
         } else if (n <= 1000 && cost >= 800) {
           good = true
         }
-        if (good) {
-          this.shipCount += n
-          this.team.addPixels(-cost)
-          this.system.game.sendPlayers({
-            type: Pack.CREATE_SHIPS,
-            pl: this.id,
-            n: n,
-            c: cost
-          })
-        }
+      }
+
+      if (good) {
+        this.shipCount += n
+        if (!force) this.team.addPixels(-cost)
+        this.system.game.sendPlayers({
+          type: Pack.CREATE_SHIPS,
+          pl: this.id,
+          n: n,
+          c: force ? 0 : cost
+        })
       }
     } else {
       for (let i = 0; i < n; i++) {
@@ -267,7 +271,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       // Must keep these after the above for loop ^ otherwise the incorrect number of whips will display due to the if statement
       this.shipCount += n
       this.team.shipCount += n
-      this.team.addPixels(-cost)
+      if (!force) this.team.addPixels(-cost)
     }
   }
 
@@ -424,7 +428,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     let pla = new Planet(json.radius, json.rotationConstant, json.startAngle, json.opm, system)
     if (exists(json.id)) pla.id = json.id
     if (exists(json.team)) pla.setTeam(game.getTeam(json.team))
-    if (exists(json.shipCount)) pla.createShips(json.shipCount)
+    if (exists(json.shipCount)) pla.createShips(json.shipCount, true)
     if (exists(json.spawnCount)) {
       for (let i = 0; i < json.spawnCount; i++) { pla.createSpawn(true) }
     }

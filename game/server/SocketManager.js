@@ -103,7 +103,7 @@ class SocketManager extends Object {
         this.startSession(sock, sess)
       }
         break
-      case Pack.FORM_SEND: {
+      case Pack.FORM: {
         let name = pack.name
         let host = pack.host
         let gameID = pack.gameID ? pack.gameID.toUpperCase() : ''
@@ -132,7 +132,7 @@ class SocketManager extends Object {
             } else {
               // No game found with given ID
               let formPacket = {
-                type: Pack.FORM_FAIL,
+                type: Pack.FORM,
                 reason: 'No existing game with ID ' + gameID
               }
               sock.send(JSON.stringify(formPacket))
@@ -140,14 +140,14 @@ class SocketManager extends Object {
           } else {
             // Improper ID
             let formPacket = {
-              type: Pack.FORM_FAIL,
+              type: Pack.FORM,
               reason: 'Improper game ID provided'
             }
             sock.send(JSON.stringify(formPacket))
           }
         } else {
           sock.send(JSON.stringify({
-            type: Pack.FORM_FAIL,
+            type: Pack.FORM,
             reason: 'Improper username provided'
           }))
         }

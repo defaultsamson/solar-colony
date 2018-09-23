@@ -68,7 +68,7 @@ class ServerGame extends Game {
   parse (sock, type, pack) {
     switch (type) {
       case Pack.CREATE_SHIPS: {
-        this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+        this.system.getPlanetByID(pack.pl).createShips(pack.n, false, pack.c)
       }
         break
       case Pack.CREATE_SPAWN: { // create spawn
@@ -200,6 +200,7 @@ class ServerGame extends Game {
     }
 
     for (let i in socks) {
+      pack.myTeam = exists(socks[i].team) ? socks[i].team.id : -1
       let mess = JSON.stringify(pack)
       socks[i].send(mess)
     }
@@ -208,57 +209,57 @@ class ServerGame extends Game {
   }
 
   updateSelectionMessages (sock) {
-    let socks = exists(sock) ? [sock] : this.players
+    if (!this.started) {
+      let socks = exists(sock) ? [sock] : this.players
 
-    const total = this.players.length
-    let started = 0
-    for (let i in this.players) {
-      if (this.players[i].start) {
-        started++
+      const total = this.players.length
+      let started = 0
+      for (let i in this.players) {
+        if (this.players[i].start) {
+          started++
+        }
       }
-    }
 
-    let pack = {
-      type: Pack.UPDATE_MESSAGE,
-      maxPlayers: this.maxPlayers,
-      playerCount: this.players.length
-    }
+      let pack = {
+        type: Pack.UPDATE_MESSAGE,
+        maxPlayers: this.maxPlayers,
+        playerCount: this.players.length
+      }
 
-    // Customizes start text and button text
-    for (let i in socks) {
-      let team = socks[i].team
-      pack.startEnabled = false
-      pack.team = -1
-      if (team) {
-        pack.team = team.id
-        if (total < MIN_PLAYERS) {
-          let need = MIN_PLAYERS - total
-          pack.message = need + ' more player' + (need !== 1 ? 's' : '') + ' required to start game...'
-        } else if (this.players[i].start) {
-          if (total === started) {
-            // Double checks to make sure that more than one team is populated populated
-            let populatedTeams = 0
-            for (let i in this.teams) {
-              if (this.teams[i].players.length > 0) {
-                populatedTeams++
+      // Customizes start text and button text
+      for (let i in socks) {
+        let team = socks[i].team
+        pack.startEnabled = false
+        if (exists(team)) {
+          if (total < MIN_PLAYERS) {
+            let need = MIN_PLAYERS - total
+            pack.message = need + ' more player' + (need !== 1 ? 's' : '') + ' required to start game...'
+          } else if (this.players[i].start) {
+            if (total === started) {
+              // Double checks to make sure that more than one team is populated populated
+              let populatedTeams = 0
+              for (let i in this.teams) {
+                if (this.teams[i].players.length > 0) {
+                  populatedTeams++
+                }
               }
-            }
-            if (populatedTeams < 2) {
-              pack.message = 'More than one team must be populated'
+              if (populatedTeams < 2) {
+                pack.message = 'More than one team must be populated'
+              }
+            } else {
+              let starting = total - started
+              pack.message = 'Waiting for ' + starting + ' player' + (starting !== 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')'
             }
           } else {
-            let starting = total - started
-            pack.message = 'Waiting for ' + starting + ' player' + (starting !== 1 ? 's' : '') + ' to confirm teams (' + started + '/' + total + ')'
+            pack.message = 'Press start to begin with these teams'
+            pack.startEnabled = true
           }
         } else {
-          pack.message = 'Press start to begin with these teams'
-          pack.startEnabled = true
+          pack.message = 'Click a colour to choose a team'
         }
-      } else {
-        pack.message = 'Click a colour to choose a team'
-      }
 
-      socks[i].send(JSON.stringify(pack))
+        socks[i].send(JSON.stringify(pack))
+      }
     }
   }
 
@@ -284,6 +285,8 @@ class ServerGame extends Game {
       if (team) {
         team.addPlayer(sock)
         this.updateTeams()
+        team.updateShips()
+        team.updateClientPixels()
       }
     }
 
@@ -417,6 +420,18 @@ class ServerGame extends Game {
     this.play()
 
     // console.log(System.load(this.system.save(), this))
+  }
+
+  sendSystem (sock) {
+    let pack = JSON.stringify({
+      type: Pack.CREATE_SYSTEM,
+      sys: this.system.save(true)
+    })
+    if (exists(sock)) {
+
+    } else {
+
+    }
   }
 
   sendPlayers (obj) {

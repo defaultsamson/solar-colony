@@ -176,7 +176,7 @@ class ClientGame extends Game {
         break
 
       case Pack.CREATE_SHIPS: { // buy ships
-        this.system.getPlanetByID(pack.pl).createShips(pack.n, pack.c)
+        this.system.getPlanetByID(pack.pl).createShips(pack.n, false, pack.c)
       }
         break
 
@@ -187,7 +187,7 @@ class ClientGame extends Game {
         menu.hide()
         menu.showInGameGUI()
         if (this.started) {
-          menu.gotoPauseMenu()
+          menu.gotoPauseMenu(false)
         } else {
           setText(Elem.Text.COUNTDOWN, 'Starting Game soon...')
           setVisible(Elem.Text.COUNTDOWN)
@@ -214,6 +214,11 @@ class ClientGame extends Game {
           let colour = pack.teams[i].colour
           this.teams.push(new Team(colour, id))
         }
+      }
+        break
+
+      case Pack.UPDATE_SHIPS: {
+        this.myTeam.updateShips(pack.n)
       }
         break
 
@@ -271,6 +276,8 @@ class ClientGame extends Game {
             list.appendChild(entry)
           }
         }
+
+        this.myTeam = this.getTeam(pack.myTeam)
       }
         break
     }

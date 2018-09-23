@@ -29,24 +29,22 @@ const Pack = {
   PING_PROBE: 2, // Tells the client to respond with this packet
   PING_SET: 3, // Tells the client what their ping is
   UPDATE_PIXELS: 4,
-  FORM_FAIL: 5,
+  FORM: 5,
   CREATE_SYSTEM: 6,
   CREATE_TEAMS: 7,
   SET_PLANET_TEAM: 8,
-  SET_CLIENT_TEAM: 9,
-  START_GAME: 10,
-  START_BUTTON: 11,
-  JOIN_GAME: 12,
-  JOIN_TEAM: 13,
-  QUIT: 14,
-  FORM_SEND: 15,
-  UPDATE_TEAMS: 16,
-  UPDATE_MESSAGE: 17,
-  CREATE_SPAWN: 18,
-  PAUSE: 19,
-  PLAY: 20,
-  SESSION: 21,
-  RESUME: 22
+  START_BUTTON: 9,
+  JOIN_GAME: 10,
+  JOIN_TEAM: 11,
+  QUIT: 12,
+  UPDATE_TEAMS: 13,
+  UPDATE_MESSAGE: 14,
+  CREATE_SPAWN: 15,
+  PAUSE: 16,
+  PLAY: 17,
+  SESSION: 18,
+  RESUME: 19,
+  UPDATE_SHIPS: 20
 }
 
 const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)

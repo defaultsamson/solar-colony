@@ -44,6 +44,18 @@ class Team extends Object {
     }
   }
 
+  updateShips (n) {
+    if (IS_SERVER) {
+      let pack = {
+        type: Pack.UPDATE_SHIPS,
+        n: this.shipCount
+      }
+      this.sendTeam(pack)
+    } else {
+      this.shipCount = n
+    }
+  }
+
   // Server-side only
   sendTeam (obj) {
     let toSend = JSON.stringify(obj)
