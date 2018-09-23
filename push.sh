@@ -7,7 +7,9 @@ fi
 
 if [ $1 = "web" ]; then
 	echo "Pushing to main website"
-	scp -r ./game ./index.html samson@samsonclose.me:/var/www/html/prototypes/solar
+	# TODO need to push the audio and assets too!
+	#scp -r ./game ./index.html ./compiled.js samson@samsonclose.me:/var/www/html/prototypes/solar
+	scp -r ./index.html ./compiled.js samson@samsonclose.me:/var/www/html/prototypes/solar
 	scp -r ./game/server ./game/shared samson@samsonclose.me:/home/samson/servers/solar
 	ssh root@samsonclose.me 'systemctl restart solar'
 elif [ $1 = "live" ]; then
