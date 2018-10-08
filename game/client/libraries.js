@@ -5437,25 +5437,33 @@ module.exports = function (_Plugin) {
             var width = this.parent.worldScreenWidth;
             var height = this.parent.worldScreenHeight;
             if (this.minWidth && width < this.minWidth) {
-                this.parent.fitWidth(this.minWidth);
+                var original = this.parent.scale.x;
+                this.parent.fitWidth(this.minWidth, false, false);
+                this.parent.scale.y *= this.parent.scale.x / original;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.maxWidth && width > this.maxWidth) {
-                this.parent.fitWidth(this.maxWidth);
+                var _original = this.parent.scale.x;
+                this.parent.fitWidth(this.maxWidth, false, false);
+                this.parent.scale.y *= this.parent.scale.x / _original;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.minHeight && height < this.minHeight) {
-                this.parent.fitHeight(this.minHeight);
+                var _original2 = this.parent.scale.y;
+                this.parent.fitHeight(this.minHeight, false, false);
+                this.parent.scale.x *= this.parent.scale.y / _original2;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.maxHeight && height > this.maxHeight) {
-                this.parent.fitHeight(this.maxHeight);
+                var _original3 = this.parent.scale.y;
+                this.parent.fitHeight(this.maxHeight, false, false);
+                this.parent.scale.x *= this.parent.scale.y / _original3;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
         }
@@ -5931,7 +5939,9 @@ module.exports = function (_Plugin) {
                     }
                     this.parent.emit('wheel-scroll', this.parent);
                     this.parent.emit('moved', this.parent);
-                    e.preventDefault();
+                    if (!this.parent.passiveWheel) {
+                        e.preventDefault();
+                    }
                     return true;
                 }
             }
@@ -6851,6 +6861,7 @@ var Viewport = function (_PIXI$Container) {
      * @fires mouse-edge-end
      * @fires mouse-edge-remove
      * @fires moved
+     * @fires zoomed
      */
     function Viewport(options) {
         _classCallCheck(this, Viewport);
@@ -7419,7 +7430,7 @@ var Viewport = function (_PIXI$Container) {
          * change zoom so the height fits in the viewport
          * @param {number} [height=this._worldHeight] in world coordinates
          * @param {boolean} [center] maintain the same center of the screen after zoom
-         * @param { boolean } [scaleX=true] whether to set scaleX = scaleY
+         * @param {boolean} [scaleX=true] whether to set scaleX = scaleY
          * @return {Viewport} this
          */
 
@@ -7858,7 +7869,7 @@ var Viewport = function (_PIXI$Container) {
          * @param {boolean} [options.removeOnComplete] removes this plugin after snapping is complete
          * @param {boolean} [options.removeOnInterrupt] removes this plugin if interrupted by any user input
          * @param {boolean} [options.forceStart] starts the snap immediately regardless of whether the viewport is at the desired location
-        * @return {Viewport} this
+         * @return {Viewport} this
          */
 
     }, {
@@ -8311,7 +8322,9 @@ var Viewport = function (_PIXI$Container) {
  * @property {string} type (drag-zoom, pinch, wheel, clamp-zoom)
  */
 
-PIXI.extras.Viewport = Viewport;
+if (typeof PIXI !== 'undefined') {
+    PIXI.extras.Viewport = Viewport;
+}
 
 module.exports = Viewport;
 
@@ -8361,7 +8374,7 @@ module.exports = function (_Plugin) {
         key: 'down',
         value: function down() {
             if (this.interrupt) {
-                this.smoothing = false;
+                this.smoothing = null;
             }
         }
     }, {
@@ -8374,8 +8387,8 @@ module.exports = function (_Plugin) {
                 if (!this.center) {
                     oldPoint = this.parent.toLocal(point);
                 }
-                this.parent.scale.x += change;
-                this.parent.scale.y += change;
+                this.parent.scale.x += change.x;
+                this.parent.scale.y += change.y;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'wheel' });
                 var clamp = this.parent.plugins['clamp-zoom'];
                 if (clamp) {
@@ -8411,8 +8424,14 @@ module.exports = function (_Plugin) {
             }
             var change = 1 + this.percent * sign;
             if (this.smooth) {
-                var original = this.smoothing ? this.smoothing * (this.smooth - this.smoothingCount) : 0;
-                this.smoothing = ((this.parent.scale.x + original) * change - this.parent.scale.x) / this.smooth;
+                var original = {
+                    x: this.smoothing ? this.smoothing.x * (this.smooth - this.smoothingCount) : 0,
+                    y: this.smoothing ? this.smoothing.y * (this.smooth - this.smoothingCount) : 0
+                };
+                this.smoothing = {
+                    x: ((this.parent.scale.x + original.x) * change - this.parent.scale.x) / this.smooth,
+                    y: ((this.parent.scale.y + original.y) * change - this.parent.scale.y) / this.smooth
+                };
                 this.smoothingCount = 0;
                 this.smoothingCenter = point;
             } else {
@@ -8426,7 +8445,7 @@ module.exports = function (_Plugin) {
                 var clamp = this.parent.plugins['clamp-zoom'];
                 if (clamp) {
                     clamp.clamp();
-                    this.smoothing = false;
+                    this.smoothing = null;
                 }
                 if (this.center) {
                     this.parent.moveCenter(this.center);
@@ -8438,7 +8457,9 @@ module.exports = function (_Plugin) {
             }
             this.parent.emit('moved', { viewport: this.parent, type: 'wheel' });
             this.parent.emit('wheel', { wheel: { dx: e.deltaX, dy: e.deltaY, dz: e.deltaZ }, event: e, viewport: this.parent });
-            e.preventDefault();
+            if (!this.parent.passiveWheel) {
+                e.preventDefault();
+            }
         }
     }]);
 

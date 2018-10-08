@@ -353,17 +353,12 @@ class ServerGame extends Game {
         'x': 0,
         'y': 0,
         'radius': 220,
-        'planets': [{
+        'teamOrbit': {
+          'teams': [0, 1, 2, 3, 4, 5],
           'radius': 13,
           'rotationConstant': -1 / 6,
-          'startAngle': 0,
           'opm': 1
-        }, {
-          'radius': 13,
-          'rotationConstant': -1 / 6,
-          'startAngle': Math.PI,
-          'opm': 1
-        }]
+        }
       }, {
         'x': 0,
         'y': 0,
@@ -387,27 +382,7 @@ class ServerGame extends Game {
       }]
     }
 
-    this.system = new System(this)
-
-    const orbit1 = this.system.addOrbit(new Orbit(0, 0, 150))
-    const orbit2 = this.system.addOrbit(new Orbit(0, 0, 220))
-    const orbit3 = this.system.addOrbit(new Orbit(0, 0, 270))
-    const orbit4 = this.system.addOrbit(new Orbit(0, 0, 360))
-
-    const planet1 = orbit1.addPlanet(new Planet(12, -1 / 4, Math.PI / 2, 2))
-
-    // builds the player planets
-    const planetCount = this.teams.length
-    const rotation = 2 * Math.PI / planetCount
-    for (let i = 0; i < planetCount; i++) {
-      let planet = orbit2.addPlanet(new Planet(12, -1 / 6, rotation * i, 1))
-
-      planet.setTeam(this.teams[i])
-      planet.createSpawn(true)
-    }
-
-    const planet3 = orbit3.addPlanet(new Planet(12, 1 / 3, Math.PI / 4, 1 / 2))
-    const planet4 = orbit4.addPlanet(new Planet(12, -0.5, 3 * Math.PI / 4, 1 / 4))
+    this.system = System.load(sys, this)
 
     this.sendPlayers({
       type: Pack.CREATE_SYSTEM,

@@ -85,7 +85,7 @@ class SocketManager extends Object {
         if (exists(pack.sessID)) {
           // Try to resume previous session
           for (let i in this.abandonedSessions) {
-            if (this.abandonedSessions[i].sessID === pack.sessID) {
+            if (exists(this.abandonedSessions[i]) && this.abandonedSessions[i].sessID === pack.sessID) {
               // The player and this abandoned session have the same UUID. Hook 'em up again
               let sess = this.abandonedSessions[i]
               this.abandonedSessions.splice(i, 1) // Remove the session

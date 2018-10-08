@@ -102,6 +102,7 @@ class Orbit extends (IS_SERVER ? Object : PIXI.Graphics) {
   static load (json, game, system) {
     let orb = new Orbit(json.x, json.y, json.radius)
     if (exists(json.id)) orb.id = json.id
+    if (!exists(json.planets)) json.planets = []
 
     // TODO make orbits independant of the system, and
     // make planets independant of the game and system.
@@ -109,6 +110,39 @@ class Orbit extends (IS_SERVER ? Object : PIXI.Graphics) {
     // in the same fashion as the addPlanet call is in the
     // loop below
     system.addOrbit(orb)
+
+    if (exists(json.teamOrbit)) {
+      let teamorb = json.teamOrbit
+      // builds the player planets
+      // const teamCount = this.teams.length
+      let teamIDs = []
+      for (let i in game.teams) {
+        for (let j in teamorb.teams) {
+          // If the team is in the planet's list of eligible teams
+          /* eslint-disable */
+          if (i == teamorb.teams[j]) {
+            /* eslint-enable */
+            teamIDs.push(game.teams[i].id)
+            break
+          }
+        }
+      }
+
+      // Creates all the team planets
+      let teamCount = teamIDs.length
+      const rotation = 2 * Math.PI / teamCount
+      for (let i = 0; i < teamCount; i++) {
+        // The starting state for the team planets
+        json.planets.push({
+          radius: teamorb.radius,
+          rotationConstant: teamorb.rotationConstant,
+          startAngle: rotation * i,
+          opm: teamorb.opm,
+          team: teamIDs[i],
+          spawnCount: 1
+        })
+      }
+    }
 
     for (let i in json.planets) { orb.addPlanet(Planet.load(json.planets[i], game, system)) }
 

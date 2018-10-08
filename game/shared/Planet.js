@@ -315,7 +315,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     socket.send(pack)
   }
 
-  createSpawn (force) {
+  createSpawn (force, loading) {
     let good = false
     let nextSpawn = true // TODO
     if (!IS_SERVER) {
@@ -356,12 +356,14 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       }
 
       if (good) {
-        let pack = {
-          type: Pack.CREATE_SPAWN,
-          planet: this.id,
-          force: force
+        if (exists(loading) && !loading) {
+          let pack = {
+            type: Pack.CREATE_SPAWN,
+            planet: this.id,
+            force: force
+          }
+          this.system.game.sendPlayers(pack)
         }
-        this.system.game.sendPlayers(pack)
         this.spawns++
       }
     }
@@ -430,7 +432,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     if (exists(json.team)) pla.setTeam(game.getTeam(json.team))
     if (exists(json.shipCount)) pla.createShips(json.shipCount, true)
     if (exists(json.spawnCount)) {
-      for (let i = 0; i < json.spawnCount; i++) { pla.createSpawn(true) }
+      for (let i = 0; i < json.spawnCount; i++) { pla.createSpawn(true, true) }
     }
     if (exists(json.pixelCounter)) pla.pixelCounter = json.pixelCounter
     if (exists(json.age)) pla.age = json.age

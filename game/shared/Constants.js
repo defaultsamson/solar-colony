@@ -19,7 +19,7 @@ try {
 } */
 
 const LOCAL_DEBUG = true
-const PORT = 3141
+const PORT = 7438
 
 const USERNAME_REGEX = /^([A-Za-z0-9]{3,20})$/
 const ID_REGEX = /^([A-Za-z0-9]{6})$/
@@ -194,7 +194,9 @@ const Elem = {
     BUY_SPAWN: 'b_buy_spawn',
     BUY_SHIPS_1000: 'b_buy_1000ships',
     BUY_SHIPS_100: 'b_buy_100ships',
-    BUY_SHIPS_10: 'b_buy_10ships'
+    BUY_SHIPS_10: 'b_buy_10ships',
+    SEND_SHIPS_1000: 'b_send_1000ships',
+    SEND_SHIPS_100: 'b_send_100ships'
   },
 
   Text: {
@@ -216,7 +218,10 @@ const Elem = {
     COUNTDOWN: 't_countdown',
 
     PAUSE: 't_pause',
-    PAUSE_MESSAGE: 't_pausemess'
+    PAUSE_MESSAGE: 't_pausemess',
+
+    BUY: 't_buy',
+    SEND: 't_send'
   },
 
   List: {

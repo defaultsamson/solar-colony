@@ -391,10 +391,14 @@ class Menu extends Object {
         setVisible(Elem.Text.PLANET_SHIPS, focussed)
         this.lastPlanetShips = -1
 
+        setVisible(Elem.Text.BUY, focussed)
         setVisible(Elem.Button.BUY_SPAWN, focussed)
         setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
         setVisible(Elem.Button.BUY_SHIPS_100, focussed)
         setVisible(Elem.Button.BUY_SHIPS_10, focussed)
+        setVisible(Elem.Text.SEND, focussed)
+        setVisible(Elem.Button.SEND_SHIPS_1000, focussed)
+        setVisible(Elem.Button.SEND_SHIPS_100, focussed)
         this.updatePlanetGui(focussed, true, true)
       }
 
@@ -424,7 +428,23 @@ class Menu extends Object {
     }
 
     if (shipsUpdate) {
-      // TODO send ships buttons
+      if (focussed) {
+        let count = focusPlanet.shipCount
+        // TODO send ships buttons
+        if (count > 100) {
+          enableButton(Elem.Button.SEND_SHIPS_1000)
+          setText(Elem.Button.SEND_SHIPS_1000, count + ' Ships')
+        } else {
+          disableButton(Elem.Button.SEND_SHIPS_1000)
+          setText(Elem.Button.SEND_SHIPS_1000, '100 Ships')
+        }
+
+        setText(Elem.Button.SEND_SHIPS_1000, Math.min(Math.max(count, 100), 1000) + ' Ships')
+        enableButton(Elem.Button.SEND_SHIPS_1000, count > 100)
+
+        setText(Elem.Button.SEND_SHIPS_100, Math.min(Math.max(count, 10), 100) + ' Ships')
+        enableButton(Elem.Button.SEND_SHIPS_100, count >= 10)
+      }
     }
   }
 
