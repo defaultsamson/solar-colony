@@ -21,7 +21,9 @@ class System extends (IS_SERVER ? Object : PIXI.Container) {
 
       if (!IS_SERVER) {
         // If drawing the ship travel lines
-        if (isChoosingShipSend()) { updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global)) }
+        if (isChoosingShipSend()) { 
+          updateSelectedPlanet(viewport.toWorld(pixigame.renderer.plugins.interaction.mouse.global))
+        }
 
         // Update all travelling ships
         for (let i in this.sendingShips) { this.sendingShips[i].update(delta) }

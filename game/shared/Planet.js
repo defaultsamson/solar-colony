@@ -11,11 +11,12 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.radius = radius
 
     let gring
+    let scale
 
     if (IS_SERVER) {
       this.infantry = {}
     } else {
-      let scale = radius / this.width
+      scale = radius / this.width
       this.pixelRadius = this.width / 2
 
       this.pivot.set(this.pixelRadius, this.pixelRadius)
@@ -53,9 +54,9 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       // Ghosting ring
       let ghost = new PIXI.Graphics()
       ghost.lineStyle(DASH_THICKNESS * 2, Colour.DARK8)
-      ghost.arc(this.pixelRadius, this.pixelRadius, this.pixelRadius, 0, 7)
+      ghost.arc(this.pixelRadius * scale, this.pixelRadius * scale, this.pixelRadius * scale, 0, 7)
       ghost.visible = false
-      ghost.pivot.set(this.pixelRadius, this.pixelRadius)
+      ghost.pivot.set(this.pixelRadius * scale, this.pixelRadius * scale)
       ghost.outline = ghost.addChild(gring)
       this.ghost = system.addChild(ghost)
 
@@ -299,7 +300,8 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     let duration = this.timeToFastestIntersect(selectedPlanet)
     let pos = selectedPlanet.calcPosition(duration)
 
-    let ship = this.system.sendingShips.push(system.addChild(new Ship(this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
+    let sys = this.game.system
+    let ship = sys.sendingShips.push(sys.addChild(new Ship(sys, this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
   }
 
   spawnCount () {

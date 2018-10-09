@@ -1,5 +1,5 @@
 class Ship extends (IS_SERVER ? Object : PIXI.Sprite) {
-  constructor (fromX, fromY, toX, toY, speed, amount, tint, planet, duration) {
+  constructor (system, fromX, fromY, toX, toY, speed, amount, tint, planet, duration) {
     if (IS_SERVER) {
       super()
 
@@ -13,6 +13,8 @@ class Ship extends (IS_SERVER ? Object : PIXI.Sprite) {
       this.position.set(fromX, fromY)
       this.tint = tint
     }
+
+    this.system = system
 
     this.amount = amount
     this.planet = planet
@@ -45,9 +47,17 @@ class Ship extends (IS_SERVER ? Object : PIXI.Sprite) {
 
   arrive () {
     if (!IS_SERVER) {
-      system.removeChild(this)
+      this.system.removeChild(this)
+
+      // Removes this from the sendingShips list
+      let i = this.system.sendingShips
+      if (i >= 0) {
+        this.system.sendingShips.indexOf(this)
+        this.system.sendingShips.splice(i, 1)
+      }
+
+      // TODO colonize the planet!
     }
-    // TODO remove the ship from the array
   }
 }
 

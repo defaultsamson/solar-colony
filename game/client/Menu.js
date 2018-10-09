@@ -158,6 +158,21 @@ class Menu extends Object {
     document.getElementById(Elem.Button.BUY_SHIPS_100).onmousedown = () => buyShips(100, 90)
     document.getElementById(Elem.Button.BUY_SHIPS_10).onmousedown = () => buyShips(10, 10)
 
+    function sendShips (num) {
+      if (focusPlanet) {
+        num = Math.min(Math.max(focusPlanet.shipCount, num), num * 10)
+        updateLines = TICKS_PER_COLLISION_UPDATE
+        sendShipsFrom = focusPlanet
+        sendShipsAmount = num
+        viewport.pausePlugin('drag')
+        viewport.pausePlugin('wheel')
+        centerView()
+      }
+    }
+
+    document.getElementById(Elem.Button.SEND_SHIPS_1000).onmousedown = () => sendShips(1000)
+    document.getElementById(Elem.Button.SEND_SHIPS_100).onmousedown = () => sendShips(100)
+
     document.getElementById(Elem.Input.USERNAME).onkeyup = () => { me.updateStartButton() }
     document.getElementById(Elem.Input.ID).onkeyup = () => { me.updateStartButton() }
 
