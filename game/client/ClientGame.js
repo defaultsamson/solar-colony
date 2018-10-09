@@ -124,6 +124,11 @@ class ClientGame extends Game {
       }
         break
 
+      case Pack.SET_TIME:
+        this.time = pack.time
+        console.log('Setting Time: ' + this.time)
+        break
+
       case Pack.PLAY: {
         this.countdown = true
         this.targetTime = Date.now() + COUNTDOWN_TIME + pack.maxPing + this.diff - socket.ping

@@ -296,12 +296,10 @@ class ServerGame extends Game {
         type: Pack.CREATE_SYSTEM,
         sys: this.system.save(true)
       }))
-      /*
       this.sendPlayers({
-        type: Pack.PAUSE,
+        type: Pack.SET_TIME,
         time: this.time
       })
-      */
       this.updateResumeMessage()
     } else {
       this.updateSelectionMessages()

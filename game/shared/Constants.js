@@ -44,7 +44,8 @@ const Pack = {
   PLAY: 17,
   SESSION: 18,
   RESUME: 19,
-  UPDATE_SHIPS: 20
+  UPDATE_SHIPS: 20,
+  SET_TIME: 21
 }
 
 const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)
