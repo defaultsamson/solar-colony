@@ -384,7 +384,8 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       }
 
       if (good) {
-        if (exists(loading) && !loading) {
+        // Only don't send the packet if this method is being called from Planet.load()
+        if (!exists(loading) || !loading) {
           let pack = {
             type: Pack.CREATE_SPAWN,
             planet: this.id,

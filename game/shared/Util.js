@@ -249,7 +249,7 @@ function enableButton (elemID, visible) {
 
 function isButtonEnabled (elemID) {
   let elem = document.getElementById(elemID)
-  return elem.hasAttribute('enable_click') ? elem.getAttribute('enable_click') === 'true' : true
+  return elem.getAttribute('enable_click') === 'true'
 }
 
 // Draws a box around the button
@@ -258,7 +258,6 @@ function selectButton (elemID) {
   // by default elems don't have the enable_click attribute, so treat elems without it as enabled by default
   if (isButtonEnabled(elemID)) {
     elem.style.boxShadow = '0 0 0 3px white'
-    elem.setAttribute('button_selected', true)
     setZIndex(elemID, 2)
   }
 }
@@ -269,13 +268,7 @@ function selectButton (elemID) {
 function deselectButton (elemID) {
   let elem = document.getElementById(elemID)
   elem.style.boxShadow = 'none'
-  elem.setAttribute('button_selected', false)
   setZIndex(elemID, 1)
-}
-
-function isSelected (elemID) {
-  let elem = document.getElementById(elemID)
-  return elem.hasAttribute('button_selected') && elem.getAttribute('button_selected') === 'true'
 }
 
 function setZIndex (elemID, z) {
