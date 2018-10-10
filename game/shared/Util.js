@@ -80,7 +80,6 @@ function updateSelectedPlanet (mouse) {
       if (planet !== sendShipsFrom) {
         // Only draw lines every update cycle
         if (updateLines === 0) {
-          console.log('drawing')
           planet.outline.visible = false
           planet.ghost.outline.visible = false
 
@@ -186,19 +185,6 @@ function updateSelectedPlanet (mouse) {
     }
   }
 }
-
-/*
-function goToSendShipsScreen (fromPlanet, amount) {
-  if (fromPlanet.shipCount >= amount) {
-    updateLines = TICKS_PER_COLLISION_UPDATE
-    sendShipsFrom = fromPlanet
-    sendShipsAmount = amount
-    viewport.pausePlugin('drag')
-    viewport.pausePlugin('wheel')
-    centerView()
-  }
-}
-*/
 
 function cancelSendShips () {
   for (let o in game.system.orbits) {

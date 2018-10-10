@@ -42,22 +42,12 @@ class ClientGame extends Game {
   onMouseClick (e) {
     if (this.system) {
       if (isChoosingShipSend()) {
-        // updateSelectedPlanet(e.world.x, e.world.y)
-
         if (selectedPlanet) {
-          sendShipsFrom.sendShipsTo(selectedPlanet, sendShipsAmount)
+          sendShipsFrom.sendShipsToClick(selectedPlanet, sendShipsAmount)
         }
         cancelSendShips()
-
         return
       }
-
-      /*
-      if (sendShipText.clicked(point)) {
-        goToSendShipsScreen(focusPlanet, 100)
-        return
-      }
-      */
 
       let planet = this.system.getPlanet(e.world.x, e.world.y)
       if (planet) {
@@ -84,7 +74,6 @@ class ClientGame extends Game {
             ease: 'easeInOutSine'
           })
         }
-
         return
       }
 
@@ -147,6 +136,16 @@ class ClientGame extends Game {
 
       case Pack.RESUME: {
         setText(Elem.Text.MESSAGE, 'Resumed players (' + pack.p + '/' + pack.m + ')')
+      }
+        break
+
+      case Pack.SEND_SHIPS: {
+        let fromPlanet = this.system.getPlanetByID(pack.pl)
+        let toPlanet = this.system.getPlanetByID(pack.to)
+        let ship = new Ship(this.system, pack.x1, pack.y1, pack.x2, pack.y2, pack.shipSpeed, pack.amount, fromPlanet.team.colour, toPlanet, pack.duration)
+        this.system.sendingShips.push(this.system.addChild(ship))
+        fromPlanet.removeShips(pack.amount)
+        ship.update(socket.ping * 0.001)
       }
         break
 

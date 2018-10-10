@@ -294,14 +294,41 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.team.shipCount -= n
   }
 
+  // A client-side function for ease of use
+  sendShipsToClick (toPlanet, amount) {
+    socket.send({
+      type: Pack.SEND_SHIPS,
+      pl: this.id,
+      to: toPlanet.id,
+      amount: amount
+    })
+  }
+
   sendShipsTo (toPlanet, amount) {
-    this.removeShips(amount)
+    if (IS_SERVER && exists(toPlanet)) {
+      amount = Math.min(Math.max(amount, 0), this.shipCount)
+      this.removeShips(amount)
 
-    let duration = this.timeToFastestIntersect(selectedPlanet)
-    let pos = selectedPlanet.calcPosition(duration)
+      let duration = this.timeToFastestIntersect(toPlanet)
+      let pos = toPlanet.calcPosition(duration)
 
-    let sys = this.game.system
-    let ship = sys.sendingShips.push(sys.addChild(new Ship(sys, this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
+      let sys = this.game.system
+      let ship = new Ship(sys, this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)
+      sys.sendingShips.push(ship)
+
+      this.system.game.sendPlayers({
+        type: Pack.SEND_SHIPS,
+        pl: this.id,
+        to: toPlanet.id,
+        amount: amount,
+        x1: this.position.x,
+        y1: this.position.y,
+        x2: pos.x,
+        y2: pos.y,
+        shipSpeed: shipSpeed,
+        duration: duration
+      })
+    }
   }
 
   spawnCount () {
@@ -310,11 +337,10 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
 
   // A client-side function for ease of use
   createSpawnClick () {
-    let pack = {
+    socket.send({
       type: Pack.CREATE_SPAWN,
       pl: this.id // planet
-    }
-    socket.send(pack)
+    })
   }
 
   createSpawn (force, loading) {

@@ -170,8 +170,8 @@ class Menu extends Object {
       }
     }
 
-    document.getElementById(Elem.Button.SEND_SHIPS_1000).onmousedown = () => sendShips(1000)
-    document.getElementById(Elem.Button.SEND_SHIPS_100).onmousedown = () => sendShips(100)
+    document.getElementById(Elem.Button.SEND_SHIPS_1000).onmousedown = () => sendShips(100)
+    document.getElementById(Elem.Button.SEND_SHIPS_100).onmousedown = () => sendShips(10)
 
     document.getElementById(Elem.Input.USERNAME).onkeyup = () => { me.updateStartButton() }
     document.getElementById(Elem.Input.ID).onkeyup = () => { me.updateStartButton() }

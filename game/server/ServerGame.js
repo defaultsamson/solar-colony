@@ -75,6 +75,11 @@ class ServerGame extends Game {
         this.system.getPlanetByID(pack.pl).createSpawn()
       }
         break
+      case Pack.SEND_SHIPS: {
+        let to = this.system.getPlanetByID(pack.to)
+        this.system.getPlanetByID(pack.pl).sendShipsTo(to, pack.amount)
+      }
+        break
       case Pack.JOIN_TEAM: {
         // Reset the start status
         for (let i in this.players) {

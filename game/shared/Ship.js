@@ -48,16 +48,16 @@ class Ship extends (IS_SERVER ? Object : PIXI.Sprite) {
   arrive () {
     if (!IS_SERVER) {
       this.system.removeChild(this)
-
-      // Removes this from the sendingShips list
-      let i = this.system.sendingShips
-      if (i >= 0) {
-        this.system.sendingShips.indexOf(this)
-        this.system.sendingShips.splice(i, 1)
-      }
-
-      // TODO colonize the planet!
     }
+
+    // Removes this from the sendingShips list
+    let i = this.system.sendingShips
+    if (i >= 0) {
+      this.system.sendingShips.indexOf(this)
+      this.system.sendingShips.splice(i, 1)
+    }
+
+    // TODO colonize the planet!
   }
 }
 
