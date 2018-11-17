@@ -22,8 +22,8 @@ class SocketManager extends Object {
     } else {
       // This line is from the Node.js HTTPS documentation.
       let options = {
-        key: fs.readFileSync('/ssl/www_samsonclose_me.key'),
-        cert: fs.readFileSync('/ssl/www_samsonclose_me.crt')
+        key: fs.readFileSync('/ssl/private.key'),
+        cert: fs.readFileSync('/ssl/public.crt')
       }
 
       // Create a service (the app object is just a callback).
