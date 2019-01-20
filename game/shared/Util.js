@@ -71,9 +71,11 @@ function updateSelectedPlanet (mouse) {
     selectedPlanet = null
   }
 
+  let sys = game.system
+
   // For each planet, draw a line from the sendShipsFrom planet to it
-  for (let o in game.system.orbits) {
-    let orbit = game.system.orbits[o]
+  for (let o in sys.orbits) {
+    let orbit = sys.orbits[o]
     for (let i in orbit.planets) {
       let planet = orbit.planets[i]
       // Don't draw a line from the sendShipsFrom planet to itself
@@ -112,8 +114,8 @@ function updateSelectedPlanet (mouse) {
 
           // If it doesn't collide with the sun, test if it collides with a planet
           if (!collides) {
-            for (let p in game.system.orbits) {
-              let currentOrbit = game.system.orbits[p]
+            for (let p in sys.orbits) {
+              let currentOrbit = sys.orbits[p]
               for (let j in currentOrbit.planets) {
                 let current = currentOrbit.planets[j]
                 if (current !== sendShipsFrom && current !== planet) {
@@ -136,6 +138,7 @@ function updateSelectedPlanet (mouse) {
                   }
                 }
               }
+              if (collides) break
             }
           }
 
@@ -187,8 +190,9 @@ function updateSelectedPlanet (mouse) {
 }
 
 function cancelSendShips () {
-  for (let o in game.system.orbits) {
-    let orbit = game.system.orbits[o]
+  let sys = game.system
+  for (let o in sys.orbits) {
+    let orbit = sys.orbits[o]
     for (let i in orbit.planets) {
       let planet = orbit.planets[i]
       planet.outline.visible = false

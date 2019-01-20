@@ -81,6 +81,8 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.team = null
     this.ships = []
     this.shipCount = 0
+    this.fighters = []
+    if (!IS_SERVER) this.displayFighters = []
   }
 
   update (delta) {
@@ -106,7 +108,57 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     }
   }
 
+  // Some team's ships arriving
+  arrive (team, amount) {
+    if (exists(this.team)) {
+      // Battle existing team
+      // Note: there could be multiple teams fighting at once
+      createFighters(team, amount)
+    } else {
+      // Colonize
+      setTeam(team)
+    }
+  }
+
+  createFighters (team, n) {
+    for (let i = 0; i < n; i++) {
+      // Add the teams to a list of fighters
+      this.fighters.push(team)
+    }
+    updateDisplayFighters()
+  }
+
+  updateDisplayFighters () {
+    // Adds all existing fighters (so long as it's below the max display ships count)
+    for (let i = 0; i < MAX_DISPLAY_SHIPS && i < this.fighters.length; i++) {
+      let ship = new PIXI.Sprite(resources.ship.texture)
+
+      // The position on the planet's surface to place the ship (the angle)
+      // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+      let angle = Math.PI * 2 * Math.random()
+
+      let distFromPlanet = 60
+
+      // hypotenuse, opposite, adjacent
+      let h = this.pixelRadius + distFromPlanet
+      let o = h * Math.sin(angle)
+      let a = h * Math.cos(angle)
+      let x = a + this.pixelRadius
+      let y = o + this.pixelRadius
+
+      ship.tint = this.tint
+      ship.pivot.set(ship.width * 0.5, ship.height * 0.5)
+      ship.position.set(x, y)
+      ship.rotation = angle - (Math.PI / 2)
+      this.addChild(ship)
+      this.displayShips.push(ship)
+    }
+  }
+
   // to = target planet
+  // This function determines the time to the nearest intercept of the ships
+  // Being send from this planet to "to". This is useful because we can then
+  // determine the position that "to" will be in for the nearest intercept
   timeToFastestIntersect (to) {
     // Can be ound on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
 
@@ -127,14 +179,14 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
 
       let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
 
-      let epsilon = d - time
+      let diff = d - time
 
-      // The smaller the right side of the < is, the more accurate, but also the more
-      if (epsilon < 0.5) {
+      // The smaller the right side of the < is, the more accurate, but also the more prone to errors
+      if (diff < 0.5) {
         return time
-      } else if (epsilon < 2) {
+      } else if (diff < 2) {
         time += 0.1
-      } else if (epsilon < 4) {
+      } else if (diff < 4) {
         time += 0.5
       } else {
         time += 1
@@ -214,7 +266,6 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     }
     socket.send(pack)
   }
-
   createShips (n, force, cost) {
     if (n <= 0) return
     force = exists(force) ? force : false

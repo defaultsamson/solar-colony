@@ -142,7 +142,7 @@ class ClientGame extends Game {
       case Pack.SEND_SHIPS: {
         let fromPlanet = this.system.getPlanetByID(pack.pl)
         let toPlanet = this.system.getPlanetByID(pack.to)
-        let ship = new Ship(this.system, pack.x1, pack.y1, pack.x2, pack.y2, pack.shipSpeed, pack.amount, fromPlanet.team.colour, toPlanet, pack.duration)
+        let ship = new Ship(this.system, pack.x1, pack.y1, pack.x2, pack.y2, pack.shipSpeed, pack.amount, fromPlanet.team, toPlanet, pack.duration)
         this.system.sendingShips.push(this.system.addChild(ship))
         fromPlanet.removeShips(pack.amount)
         ship.update(socket.ping * 0.001)
