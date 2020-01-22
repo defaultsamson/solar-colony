@@ -77,8 +77,6 @@ class SocketManager extends Object {
           type: Pack.SESSION
         })
       }
-
-      // TODO menu.updateStartButton() when session is initialized
     }
 
     this.ws.onmessage = function (evt) {
@@ -127,6 +125,7 @@ class SocketManager extends Object {
         this.sessID = pack.sessID
         console.log('Session: ' + pack.sessID)
         localStorage.setItem(SESSION_STORAGE, pack.sessID)
+        menu.updateStartButton()
       }
         break
       case Pack.UPDATE_MESSAGE: {

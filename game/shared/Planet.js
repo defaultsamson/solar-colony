@@ -11,11 +11,12 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.radius = radius
 
     let gring
+    let scale
 
     if (IS_SERVER) {
       this.infantry = {}
     } else {
-      let scale = radius / this.width
+      scale = radius / this.width
       this.pixelRadius = this.width / 2
 
       this.pivot.set(this.pixelRadius, this.pixelRadius)
@@ -53,9 +54,9 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       // Ghosting ring
       let ghost = new PIXI.Graphics()
       ghost.lineStyle(DASH_THICKNESS * 2, Colour.DARK8)
-      ghost.arc(this.pixelRadius, this.pixelRadius, this.pixelRadius, 0, 7)
+      ghost.arc(this.pixelRadius * scale, this.pixelRadius * scale, this.pixelRadius * scale, 0, 7)
       ghost.visible = false
-      ghost.pivot.set(this.pixelRadius, this.pixelRadius)
+      ghost.pivot.set(this.pixelRadius * scale, this.pixelRadius * scale)
       ghost.outline = ghost.addChild(gring)
       this.ghost = system.addChild(ghost)
 
@@ -80,6 +81,8 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.team = null
     this.ships = []
     this.shipCount = 0
+    this.fighters = []
+    if (!IS_SERVER) this.displayFighters = []
   }
 
   update (delta) {
@@ -105,7 +108,57 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     }
   }
 
+  // Some team's ships arriving
+  arrive (team, amount) {
+    if (exists(this.team)) {
+      // Battle existing team
+      // Note: there could be multiple teams fighting at once
+      createFighters(team, amount)
+    } else {
+      // Colonize
+      setTeam(team)
+    }
+  }
+
+  createFighters (team, n) {
+    for (let i = 0; i < n; i++) {
+      // Add the teams to a list of fighters
+      this.fighters.push(team)
+    }
+    updateDisplayFighters()
+  }
+
+  updateDisplayFighters () {
+    // Adds all existing fighters (so long as it's below the max display ships count)
+    for (let i = 0; i < MAX_DISPLAY_SHIPS && i < this.fighters.length; i++) {
+      let ship = new PIXI.Sprite(resources.ship.texture)
+
+      // The position on the planet's surface to place the ship (the angle)
+      // (in radians: imagine that there's a spinner in the planet and this will point outwards somewhere)
+      let angle = Math.PI * 2 * Math.random()
+
+      let distFromPlanet = 60
+
+      // hypotenuse, opposite, adjacent
+      let h = this.pixelRadius + distFromPlanet
+      let o = h * Math.sin(angle)
+      let a = h * Math.cos(angle)
+      let x = a + this.pixelRadius
+      let y = o + this.pixelRadius
+
+      ship.tint = this.tint
+      ship.pivot.set(ship.width * 0.5, ship.height * 0.5)
+      ship.position.set(x, y)
+      ship.rotation = angle - (Math.PI / 2)
+      this.addChild(ship)
+      this.displayShips.push(ship)
+    }
+  }
+
   // to = target planet
+  // This function determines the time to the nearest intercept of the ships
+  // Being send from this planet to "to". This is useful because we can then
+  // determine the position that "to" will be in for the nearest intercept
   timeToFastestIntersect (to) {
     // Can be ound on Desmos here https://www.desmos.com/calculator/ksdkwjxmdx
 
@@ -126,14 +179,14 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
 
       let d = Math.sqrt((frst - 2 * (x1 * pos.x + y1 * pos.y)) / s1Sqr)
 
-      let epsilon = d - time
+      let diff = d - time
 
-      // The smaller the right side of the < is, the more accurate, but also the more
-      if (epsilon < 0.5) {
+      // The smaller the right side of the < is, the more accurate, but also the more prone to errors
+      if (diff < 0.5) {
         return time
-      } else if (epsilon < 2) {
+      } else if (diff < 2) {
         time += 0.1
-      } else if (epsilon < 4) {
+      } else if (diff < 4) {
         time += 0.5
       } else {
         time += 1
@@ -213,7 +266,6 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     }
     socket.send(pack)
   }
-
   createShips (n, force, cost) {
     if (n <= 0) return
     force = exists(force) ? force : false
@@ -293,13 +345,41 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     this.team.shipCount -= n
   }
 
+  // A client-side function for ease of use
+  sendShipsToClick (toPlanet, amount) {
+    socket.send({
+      type: Pack.SEND_SHIPS,
+      pl: this.id,
+      to: toPlanet.id,
+      amount: amount
+    })
+  }
+
   sendShipsTo (toPlanet, amount) {
-    this.removeShips(amount)
+    if (IS_SERVER && exists(toPlanet)) {
+      amount = Math.min(Math.max(amount, 0), this.shipCount)
+      this.removeShips(amount)
 
-    let duration = this.timeToFastestIntersect(selectedPlanet)
-    let pos = selectedPlanet.calcPosition(duration)
+      let duration = this.timeToFastestIntersect(toPlanet)
+      let pos = toPlanet.calcPosition(duration)
 
-    let ship = this.system.sendingShips.push(system.addChild(new Ship(this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)))
+      let sys = this.game.system
+      let ship = new Ship(sys, this.position.x, this.position.y, pos.x, pos.y, shipSpeed, amount, this.tint, toPlanet, duration)
+      sys.sendingShips.push(ship)
+
+      this.system.game.sendPlayers({
+        type: Pack.SEND_SHIPS,
+        pl: this.id,
+        to: toPlanet.id,
+        amount: amount,
+        x1: this.position.x,
+        y1: this.position.y,
+        x2: pos.x,
+        y2: pos.y,
+        shipSpeed: shipSpeed,
+        duration: duration
+      })
+    }
   }
 
   spawnCount () {
@@ -308,14 +388,13 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
 
   // A client-side function for ease of use
   createSpawnClick () {
-    let pack = {
+    socket.send({
       type: Pack.CREATE_SPAWN,
       pl: this.id // planet
-    }
-    socket.send(pack)
+    })
   }
 
-  createSpawn (force) {
+  createSpawn (force, loading) {
     let good = false
     let nextSpawn = true // TODO
     if (!IS_SERVER) {
@@ -356,12 +435,15 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
       }
 
       if (good) {
-        let pack = {
-          type: Pack.CREATE_SPAWN,
-          planet: this.id,
-          force: force
+        // Only don't send the packet if this method is being called from Planet.load()
+        if (!exists(loading) || !loading) {
+          let pack = {
+            type: Pack.CREATE_SPAWN,
+            planet: this.id,
+            force: force
+          }
+          this.system.game.sendPlayers(pack)
         }
-        this.system.game.sendPlayers(pack)
         this.spawns++
       }
     }
@@ -430,7 +512,7 @@ class Planet extends (IS_SERVER ? Object : PIXI.Sprite) {
     if (exists(json.team)) pla.setTeam(game.getTeam(json.team))
     if (exists(json.shipCount)) pla.createShips(json.shipCount, true)
     if (exists(json.spawnCount)) {
-      for (let i = 0; i < json.spawnCount; i++) { pla.createSpawn(true) }
+      for (let i = 0; i < json.spawnCount; i++) { pla.createSpawn(true, true) }
     }
     if (exists(json.pixelCounter)) pla.pixelCounter = json.pixelCounter
     if (exists(json.age)) pla.age = json.age

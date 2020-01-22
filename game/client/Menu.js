@@ -22,6 +22,14 @@ class Menu extends Object {
 
     let me = this
 
+    function clickable (elem) {
+      return elem.getAttribute('enable_click') !== 'false'
+    }
+
+    function touchable (elem) {
+      return elem.getAttribute('touch') !== 'false'
+    }
+
     function hoverButton (elem) {
       elem.style.background = 'rgba(200, 200, 200, 0.5)'
     }
@@ -34,6 +42,8 @@ class Menu extends Object {
     for (let i in Elem.Button) {
       let elem = document.getElementById(Elem.Button[i])
       elem.setAttribute('touch', false)
+      elem.setAttribute('button_selected', false)
+      elem.setAttribute('enable_click', true)
 
       // Usual hover behaviour for mouse.
       // the 'touch' attribute is a little bit hacky, it's used to detect
@@ -41,7 +51,7 @@ class Menu extends Object {
       // stop hovering at the end of a finger tap, but should continue
       // to hover at the end of a mouse click
       elem.addEventListener('mouseover', function (e) {
-        if (e.target.getAttribute('touch') === 'false') {
+        if (!touchable(e.target)) {
           hoverButton(e.target)
         }
       }, false)
@@ -50,7 +60,7 @@ class Menu extends Object {
         // e.target.setAttribute('touch', false)
       }, false)
       elem.addEventListener('touchstart', function (e) {
-        if (e.target.getAttribute('enable_click') !== 'false') {
+        if (clickable(e.target)) {
           hoverButton(e.target)
         }
       }, false)
@@ -63,10 +73,10 @@ class Menu extends Object {
         }, 10)
       }, false)
       elem.addEventListener('mousedown', function (e) {
-        if (e.target.getAttribute('enable_click') !== 'false') {
+        if (clickable(e.target)) {
           hoverButton(e.target)
           // if it was a touch tap, unhover it after 50ms
-          if (e.target.getAttribute('touch') === 'true') {
+          if (touchable(e.target)) {
             setTimeout(function () {
               unhoverButton(e.target)
             }, 50)
@@ -75,19 +85,25 @@ class Menu extends Object {
       }, false)
     }
 
-    document.getElementById(Elem.Button.JOIN).onmousedown = function () {
+    document.getElementById(Elem.Button.JOIN).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       me.joinGame = true
       me.reateGame = false
       me.updateGuiClick()
     }
 
-    document.getElementById(Elem.Button.CREATE).onmousedown = function () {
+    document.getElementById(Elem.Button.CREATE).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       me.joinGame = false
       me.createGame = true
       me.updateGuiClick()
     }
 
-    document.getElementById(Elem.Button.RANDOM).onmousedown = function () {
+    document.getElementById(Elem.Button.RANDOM).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       if (me.joinGame) {
         me.randomGame = true
         me.withFriends = false
@@ -95,7 +111,9 @@ class Menu extends Object {
       }
     }
 
-    document.getElementById(Elem.Button.WITH_FRIENDS).onmousedown = function () {
+    document.getElementById(Elem.Button.WITH_FRIENDS).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       if (me.joinGame || me.createGame) {
         me.randomGame = false
         me.withFriends = true
@@ -103,7 +121,9 @@ class Menu extends Object {
       }
     }
 
-    function joinTeam (i) {
+    function joinTeam (e, i) {
+      if (!clickable(e.target)) return
+
       let pack = {
         type: Pack.JOIN_TEAM,
         team: i
@@ -111,14 +131,16 @@ class Menu extends Object {
       socket.send(pack)
     }
 
-    document.getElementById(Elem.Button.TEAM_RED).onmousedown = () => joinTeam(0)
-    document.getElementById(Elem.Button.TEAM_ORANGE).onmousedown = () => joinTeam(1)
-    document.getElementById(Elem.Button.TEAM_YELLOW).onmousedown = () => joinTeam(2)
-    document.getElementById(Elem.Button.TEAM_GREEN).onmousedown = () => joinTeam(3)
-    document.getElementById(Elem.Button.TEAM_BLUE).onmousedown = () => joinTeam(4)
-    document.getElementById(Elem.Button.TEAM_PURPLE).onmousedown = () => joinTeam(5)
+    document.getElementById(Elem.Button.TEAM_RED).onmousedown = (e) => joinTeam(e, 0)
+    document.getElementById(Elem.Button.TEAM_ORANGE).onmousedown = (e) => joinTeam(e, 1)
+    document.getElementById(Elem.Button.TEAM_YELLOW).onmousedown = (e) => joinTeam(e, 2)
+    document.getElementById(Elem.Button.TEAM_GREEN).onmousedown = (e) => joinTeam(e, 3)
+    document.getElementById(Elem.Button.TEAM_BLUE).onmousedown = (e) => joinTeam(e, 4)
+    document.getElementById(Elem.Button.TEAM_PURPLE).onmousedown = (e) => joinTeam(e, 5)
 
-    document.getElementById(Elem.Button.START).onmousedown = function () {
+    document.getElementById(Elem.Button.START).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       if (me.inTeamSelection) {
         let pack = {
           type: Pack.START_BUTTON
@@ -130,7 +152,9 @@ class Menu extends Object {
       }
     }
 
-    document.getElementById(Elem.Button.QUIT).onmousedown = function () {
+    document.getElementById(Elem.Button.QUIT).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       me.gotoTitle()
       let pack = {
         type: Pack.QUIT
@@ -138,7 +162,9 @@ class Menu extends Object {
       socket.send(pack)
     }
 
-    document.getElementById(Elem.Button.RESUME).onmousedown = function () {
+    document.getElementById(Elem.Button.RESUME).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       disableButton(Elem.Button.RESUME)
       let pack = {
         type: Pack.RESUME
@@ -146,17 +172,38 @@ class Menu extends Object {
       socket.send(pack)
     }
 
-    document.getElementById(Elem.Button.BUY_SPAWN).onmousedown = function () {
+    document.getElementById(Elem.Button.BUY_SPAWN).onmousedown = function (e) {
+      if (!clickable(e.target)) return
+
       if (exists(focusPlanet)) { focusPlanet.createSpawnClick() }
     }
 
-    function buyShips (num, price) {
+    function buyShips (e, num, price) {
+      if (!clickable(e.target)) return
+
       if (exists(focusPlanet)) { focusPlanet.createShipsClick(num, price) }
     }
 
-    document.getElementById(Elem.Button.BUY_SHIPS_1000).onmousedown = () => buyShips(1000, 800)
-    document.getElementById(Elem.Button.BUY_SHIPS_100).onmousedown = () => buyShips(100, 90)
-    document.getElementById(Elem.Button.BUY_SHIPS_10).onmousedown = () => buyShips(10, 10)
+    document.getElementById(Elem.Button.BUY_SHIPS_1000).onmousedown = (e) => buyShips(e, 1000, 800)
+    document.getElementById(Elem.Button.BUY_SHIPS_100).onmousedown = (e) => buyShips(e, 100, 90)
+    document.getElementById(Elem.Button.BUY_SHIPS_10).onmousedown = (e) => buyShips(e, 10, 10)
+
+    function sendShips (e, num) {
+      if (!clickable(e.target)) return
+
+      if (focusPlanet) {
+        num = Math.min(Math.max(focusPlanet.shipCount, num), num * 10)
+        updateLines = TICKS_PER_COLLISION_UPDATE
+        sendShipsFrom = focusPlanet
+        sendShipsAmount = num
+        viewport.pausePlugin('drag')
+        viewport.pausePlugin('wheel')
+        centerView()
+      }
+    }
+
+    document.getElementById(Elem.Button.SEND_SHIPS_1000).onmousedown = (e) => sendShips(e, 100)
+    document.getElementById(Elem.Button.SEND_SHIPS_100).onmousedown = (e) => sendShips(e, 10)
 
     document.getElementById(Elem.Input.USERNAME).onkeyup = () => { me.updateStartButton() }
     document.getElementById(Elem.Input.ID).onkeyup = () => { me.updateStartButton() }
@@ -391,10 +438,14 @@ class Menu extends Object {
         setVisible(Elem.Text.PLANET_SHIPS, focussed)
         this.lastPlanetShips = -1
 
+        setVisible(Elem.Text.BUY, focussed)
         setVisible(Elem.Button.BUY_SPAWN, focussed)
         setVisible(Elem.Button.BUY_SHIPS_1000, focussed)
         setVisible(Elem.Button.BUY_SHIPS_100, focussed)
         setVisible(Elem.Button.BUY_SHIPS_10, focussed)
+        setVisible(Elem.Text.SEND, focussed)
+        setVisible(Elem.Button.SEND_SHIPS_1000, focussed)
+        setVisible(Elem.Button.SEND_SHIPS_100, focussed)
         this.updatePlanetGui(focussed, true, true)
       }
 
@@ -424,7 +475,23 @@ class Menu extends Object {
     }
 
     if (shipsUpdate) {
-      // TODO send ships buttons
+      if (focussed) {
+        let count = focusPlanet.shipCount
+        // TODO send ships buttons
+        if (count > 100) {
+          enableButton(Elem.Button.SEND_SHIPS_1000)
+          setText(Elem.Button.SEND_SHIPS_1000, count + ' Ships')
+        } else {
+          disableButton(Elem.Button.SEND_SHIPS_1000)
+          setText(Elem.Button.SEND_SHIPS_1000, '100 Ships')
+        }
+
+        setText(Elem.Button.SEND_SHIPS_1000, Math.min(Math.max(count, 100), 1000) + ' Ships')
+        enableButton(Elem.Button.SEND_SHIPS_1000, count > 100)
+
+        setText(Elem.Button.SEND_SHIPS_100, Math.min(Math.max(count, 10), 100) + ' Ships')
+        enableButton(Elem.Button.SEND_SHIPS_100, count >= 10)
+      }
     }
   }
 

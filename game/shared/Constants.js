@@ -44,7 +44,8 @@ const Pack = {
   PLAY: 17,
   SESSION: 18,
   RESUME: 19,
-  UPDATE_SHIPS: 20
+  UPDATE_SHIPS: 20,
+  SET_TIME: 21
 }
 
 const COUNTDOWN_BUFFER = 1000 // 2 second buffer (Allows for people to have max ping of 2000)
@@ -194,7 +195,9 @@ const Elem = {
     BUY_SPAWN: 'b_buy_spawn',
     BUY_SHIPS_1000: 'b_buy_1000ships',
     BUY_SHIPS_100: 'b_buy_100ships',
-    BUY_SHIPS_10: 'b_buy_10ships'
+    BUY_SHIPS_10: 'b_buy_10ships',
+    SEND_SHIPS_1000: 'b_send_1000ships',
+    SEND_SHIPS_100: 'b_send_100ships'
   },
 
   Text: {
@@ -216,7 +219,10 @@ const Elem = {
     COUNTDOWN: 't_countdown',
 
     PAUSE: 't_pause',
-    PAUSE_MESSAGE: 't_pausemess'
+    PAUSE_MESSAGE: 't_pausemess',
+
+    BUY: 't_buy',
+    SEND: 't_send'
   },
 
   List: {

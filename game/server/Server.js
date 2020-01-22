@@ -5,6 +5,7 @@ require('../shared/Util.js')
 
 global.Planet = require('../shared/Planet.js')
 global.Orbit = require('../shared/Orbit.js')
+global.Ship = require('../shared/Ship.js')
 
 const GameManager = require('./GameManager.js')
 

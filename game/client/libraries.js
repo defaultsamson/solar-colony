@@ -2187,7 +2187,7 @@ function earcut(data, holeIndices, dim) {
         outerNode = linkedList(data, 0, outerLen, dim, true),
         triangles = [];
 
-    if (!outerNode) return triangles;
+    if (!outerNode || outerNode.next === outerNode.prev) return triangles;
 
     var minX, minY, maxX, maxY, x, y, invSize;
 
@@ -2282,7 +2282,7 @@ function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
 
             removeNode(ear);
 
-            // skipping the next vertice leads to less sliver triangles
+            // skipping the next vertex leads to less sliver triangles
             ear = next.next;
             stop = next.next;
 
@@ -2746,14 +2746,14 @@ function removeNode(p) {
 }
 
 function Node(i, x, y) {
-    // vertice index in coordinates array
+    // vertex index in coordinates array
     this.i = i;
 
     // vertex coordinates
     this.x = x;
     this.y = y;
 
-    // previous and next vertice nodes in a polygon ring
+    // previous and next vertex nodes in a polygon ring
     this.prev = null;
     this.next = null;
 
@@ -5419,6 +5419,7 @@ module.exports = function (_Plugin) {
         _this.minHeight = options.minHeight;
         _this.maxWidth = options.maxWidth;
         _this.maxHeight = options.maxHeight;
+        _this.clamp();
         return _this;
     }
 
@@ -5437,25 +5438,33 @@ module.exports = function (_Plugin) {
             var width = this.parent.worldScreenWidth;
             var height = this.parent.worldScreenHeight;
             if (this.minWidth && width < this.minWidth) {
-                this.parent.fitWidth(this.minWidth);
+                var original = this.parent.scale.x;
+                this.parent.fitWidth(this.minWidth, false, false, true);
+                this.parent.scale.y *= this.parent.scale.x / original;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.maxWidth && width > this.maxWidth) {
-                this.parent.fitWidth(this.maxWidth);
+                var _original = this.parent.scale.x;
+                this.parent.fitWidth(this.maxWidth, false, false, true);
+                this.parent.scale.y *= this.parent.scale.x / _original;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.minHeight && height < this.minHeight) {
-                this.parent.fitHeight(this.minHeight);
+                var _original2 = this.parent.scale.y;
+                this.parent.fitHeight(this.minHeight, false, false, true);
+                this.parent.scale.x *= this.parent.scale.y / _original2;
                 width = this.parent.worldScreenWidth;
                 height = this.parent.worldScreenHeight;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
             if (this.maxHeight && height > this.maxHeight) {
-                this.parent.fitHeight(this.maxHeight);
+                var _original3 = this.parent.scale.y;
+                this.parent.fitHeight(this.maxHeight, false, false, true);
+                this.parent.scale.x *= this.parent.scale.y / _original3;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'clamp-zoom' });
             }
         }
@@ -5489,7 +5498,7 @@ module.exports = function (_Plugin) {
      * @param {(number|boolean)} [options.top] clamp top; true=0
      * @param {(number|boolean)} [options.bottom] clamp bottom; true=viewport.worldHeight
      * @param {string} [options.direction] (all, x, or y) using clamps of [0, viewport.worldWidth/viewport.worldHeight]; replaces left/right/top/bottom if set
-     * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
+     * @param {string} [options.underflow=center] (none OR (top/bottom/center and left/right/center) OR center) where to place world if too small for screen (e.g., top-right, center, none, bottomleft)
      */
     function clamp(parent, options) {
         _classCallCheck(this, clamp);
@@ -5504,10 +5513,10 @@ module.exports = function (_Plugin) {
             _this.top = utils.defaults(options.top, null);
             _this.bottom = utils.defaults(options.bottom, null);
         } else {
-            _this.left = options.direction === 'x' || options.direction === 'all';
-            _this.right = options.direction === 'x' || options.direction === 'all';
-            _this.top = options.direction === 'y' || options.direction === 'all';
-            _this.bottom = options.direction === 'y' || options.direction === 'all';
+            _this.left = options.direction === 'x' || options.direction === 'all' ? true : null;
+            _this.right = options.direction === 'x' || options.direction === 'all' ? true : null;
+            _this.top = options.direction === 'y' || options.direction === 'all' ? true : null;
+            _this.bottom = options.direction === 'y' || options.direction === 'all' ? true : null;
         }
         _this.parseUnderflow(options.underflow || 'center');
         _this.move();
@@ -5518,12 +5527,15 @@ module.exports = function (_Plugin) {
         key: 'parseUnderflow',
         value: function parseUnderflow(clamp) {
             clamp = clamp.toLowerCase();
-            if (clamp === 'center') {
-                this.underflowX = 0;
-                this.underflowY = 0;
+            if (clamp === 'none') {
+                this.noUnderflow = true;
+            } else if (clamp === 'center') {
+                this.underflowX = this.underflowY = 0;
+                this.noUnderflow = false;
             } else {
                 this.underflowX = clamp.indexOf('left') !== -1 ? -1 : clamp.indexOf('right') !== -1 ? 1 : 0;
                 this.underflowY = clamp.indexOf('top') !== -1 ? -1 : clamp.indexOf('bottom') !== -1 ? 1 : 0;
+                this.noUnderflow = false;
             }
         }
     }, {
@@ -5542,24 +5554,26 @@ module.exports = function (_Plugin) {
             if (this.left !== null || this.right !== null) {
                 var moved = void 0;
                 if (this.parent.screenWorldWidth < this.parent.screenWidth) {
-                    switch (this.underflowX) {
-                        case -1:
-                            if (this.parent.x !== 0) {
-                                this.parent.x = 0;
-                                moved = true;
-                            }
-                            break;
-                        case 1:
-                            if (this.parent.x !== this.parent.screenWidth - this.parent.screenWorldWidth) {
-                                this.parent.x = this.parent.screenWidth - this.parent.screenWorldWidth;
-                                moved = true;
-                            }
-                            break;
-                        default:
-                            if (this.parent.x !== (this.parent.screenWidth - this.parent.screenWorldWidth) / 2) {
-                                this.parent.x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2;
-                                moved = true;
-                            }
+                    if (!!this.noUnderflow) {
+                        switch (this.underflowX) {
+                            case -1:
+                                if (this.parent.x !== 0) {
+                                    this.parent.x = 0;
+                                    moved = true;
+                                }
+                                break;
+                            case 1:
+                                if (this.parent.x !== this.parent.screenWidth - this.parent.screenWorldWidth) {
+                                    this.parent.x = this.parent.screenWidth - this.parent.screenWorldWidth;
+                                    moved = true;
+                                }
+                                break;
+                            default:
+                                if (this.parent.x !== (this.parent.screenWidth - this.parent.screenWorldWidth) / 2) {
+                                    this.parent.x = (this.parent.screenWidth - this.parent.screenWorldWidth) / 2;
+                                    moved = true;
+                                }
+                        }
                     }
                 } else {
                     if (this.left !== null) {
@@ -5584,24 +5598,26 @@ module.exports = function (_Plugin) {
             if (this.top !== null || this.bottom !== null) {
                 var _moved = void 0;
                 if (this.parent.screenWorldHeight < this.parent.screenHeight) {
-                    switch (this.underflowY) {
-                        case -1:
-                            if (this.parent.y !== 0) {
-                                this.parent.y = 0;
-                                _moved = true;
-                            }
-                            break;
-                        case 1:
-                            if (this.parent.y !== this.parent.screenHeight - this.parent.screenWorldHeight) {
-                                this.parent.y = this.parent.screenHeight - this.parent.screenWorldHeight;
-                                _moved = true;
-                            }
-                            break;
-                        default:
-                            if (this.parent.y !== (this.parent.screenHeight - this.parent.screenWorldHeight) / 2) {
-                                this.parent.y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2;
-                                _moved = true;
-                            }
+                    if (!this.noUnderflow) {
+                        switch (this.underflowY) {
+                            case -1:
+                                if (this.parent.y !== 0) {
+                                    this.parent.y = 0;
+                                    _moved = true;
+                                }
+                                break;
+                            case 1:
+                                if (this.parent.y !== this.parent.screenHeight - this.parent.screenWorldHeight) {
+                                    this.parent.y = this.parent.screenHeight - this.parent.screenWorldHeight;
+                                    _moved = true;
+                                }
+                                break;
+                            default:
+                                if (this.parent.y !== (this.parent.screenHeight - this.parent.screenWorldHeight) / 2) {
+                                    this.parent.y = (this.parent.screenHeight - this.parent.screenWorldHeight) / 2;
+                                    _moved = true;
+                                }
+                        }
                     }
                 } else {
                     if (this.top !== null) {
@@ -5640,7 +5656,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var utils = require('./utils');
 var Plugin = require('./plugin');
 
 module.exports = function (_Plugin) {
@@ -5784,7 +5799,7 @@ module.exports = function (_Plugin) {
     return Decelerate;
 }(Plugin);
 
-},{"./plugin":43,"./utils":46}],39:[function(require,module,exports){
+},{"./plugin":43}],39:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -5854,6 +5869,7 @@ module.exports = function (_Plugin) {
                 var parent = this.parent.parent.toLocal(e.data.global);
                 this.last = { x: e.data.global.x, y: e.data.global.y, parent: parent };
                 this.current = e.data.pointerId;
+                return true;
             } else {
                 this.last = null;
             }
@@ -5885,6 +5901,7 @@ module.exports = function (_Plugin) {
                         }
                         this.moved = true;
                         this.parent.emit('moved', { viewport: this.parent, type: 'drag' });
+                        return true;
                     }
                 } else {
                     this.moved = false;
@@ -5903,10 +5920,12 @@ module.exports = function (_Plugin) {
                     this.current = pointer.last.data.pointerId;
                 }
                 this.moved = false;
+                return true;
             } else if (this.last) {
                 if (this.moved) {
                     this.parent.emit('drag-end', { screen: this.last, world: this.parent.toWorld(this.last), viewport: this.parent });
                     this.last = this.moved = false;
+                    return true;
                 }
             }
         }
@@ -5931,7 +5950,9 @@ module.exports = function (_Plugin) {
                     }
                     this.parent.emit('wheel-scroll', this.parent);
                     this.parent.emit('moved', this.parent);
-                    e.preventDefault();
+                    if (!this.parent.passiveWheel) {
+                        e.preventDefault();
+                    }
                     return true;
                 }
             }
@@ -6295,6 +6316,7 @@ module.exports = function (_Plugin) {
         value: function down() {
             if (this.parent.countDownPointers() >= 2) {
                 this.active = true;
+                return true;
             }
         }
     }, {
@@ -6353,6 +6375,7 @@ module.exports = function (_Plugin) {
                         this.pinching = true;
                     }
                 }
+                return true;
             }
         }
     }, {
@@ -6365,6 +6388,7 @@ module.exports = function (_Plugin) {
                     this.pinching = false;
                     this.moved = false;
                     this.parent.emit('pinch-end', this.parent);
+                    return true;
                 }
             }
         }
@@ -6388,32 +6412,81 @@ module.exports = function () {
         this.paused = false;
     }
 
+    /**
+     * handler for pointerdown PIXI event
+     * @param {PIXI.interaction.InteractionEvent} event
+     */
+
+
     _createClass(Plugin, [{
         key: "down",
-        value: function down() {}
+        value: function down(event) {}
+
+        /**
+         * handler for pointermove PIXI event
+         * @param {PIXI.interaction.InteractionEvent} event
+         */
+
     }, {
         key: "move",
-        value: function move() {}
+        value: function move(event) {}
+
+        /**
+         * handler for pointerup PIXI event
+         * @param {PIXI.interaction.InteractionEvent} event
+         */
+
     }, {
         key: "up",
-        value: function up() {}
+        value: function up(event) {}
+
+        /**
+         * handler for wheel event on div
+         * @param {WheelEvent} event
+         */
+
     }, {
         key: "wheel",
-        value: function wheel() {}
+        value: function wheel(event) {}
+
+        /**
+         * called on each tick
+         */
+
     }, {
         key: "update",
         value: function update() {}
+
+        /**
+         * called when the viewport is resized
+         */
+
     }, {
         key: "resize",
         value: function resize() {}
+
+        /**
+         * called when the viewport is manually moved
+         */
+
     }, {
         key: "reset",
         value: function reset() {}
+
+        /**
+         * called when viewport is paused
+         */
+
     }, {
         key: "pause",
         value: function pause() {
             this.paused = true;
         }
+
+        /**
+         * called when viewport is resumed
+         */
+
     }, {
         key: "resume",
         value: function resume() {
@@ -6821,7 +6894,9 @@ var Viewport = function (_PIXI$Container) {
      * @param {number} [options.worldHeight=this.height]
      * @param {number} [options.threshold=5] number of pixels to move to trigger an input event (e.g., drag, pinch) or disable a clicked event
      * @param {boolean} [options.passiveWheel=true] whether the 'wheel' event is set to passive
+     * @param {boolean} [options.stopPropagation=false] whether to stopPropagation of events that impact the viewport
      * @param {(PIXI.Rectangle|PIXI.Circle|PIXI.Ellipse|PIXI.Polygon|PIXI.RoundedRectangle)} [options.forceHitArea] change the default hitArea from world size to a new value
+     * @param {boolean} [options.noTicker] set this if you want to manually call update() function on each frame
      * @param {PIXI.ticker.Ticker} [options.ticker=PIXI.ticker.shared] use this PIXI.ticker for updates
      * @param {PIXI.InteractionManager} [options.interaction=null] InteractionManager, available from instantiated WebGLRenderer/CanvasRenderer.plugins.interaction - used to calculate pointer postion relative to canvas location on screen
      * @param {HTMLElement} [options.divWheel=document.body] div to attach the wheel event
@@ -6851,6 +6926,9 @@ var Viewport = function (_PIXI$Container) {
      * @fires mouse-edge-end
      * @fires mouse-edge-remove
      * @fires moved
+     * @fires moved-end
+     * @fires zoomed
+     * @fires zoomed-end
      */
     function Viewport(options) {
         _classCallCheck(this, Viewport);
@@ -6868,6 +6946,7 @@ var Viewport = function (_PIXI$Container) {
         _this.hitAreaFullScreen = utils.defaults(options.hitAreaFullScreen, true);
         _this.forceHitArea = options.forceHitArea;
         _this.passiveWheel = utils.defaults(options.passiveWheel, true);
+        _this.stopEvent = options.stopPropagation;
         _this.threshold = utils.defaults(options.threshold, 5);
         _this.interaction = options.interaction || null;
         _this.div = options.divWheel || document.body;
@@ -6880,11 +6959,13 @@ var Viewport = function (_PIXI$Container) {
          */
         _this.touches = [];
 
-        _this.ticker = options.ticker || PIXI.ticker.shared;
-        _this.tickerFunction = function () {
-            return _this.update();
-        };
-        _this.ticker.add(_this.tickerFunction);
+        if (!options.noTicker) {
+            _this.ticker = options.ticker || PIXI.ticker.shared;
+            _this.tickerFunction = function () {
+                return _this.update(_this.ticker.elapsedMS);
+            };
+            _this.ticker.add(_this.tickerFunction);
+        }
         return _this;
     }
 
@@ -6913,13 +6994,13 @@ var Viewport = function (_PIXI$Container) {
         }
 
         /**
-         * update animations
-         * @private
+         * update viewport on each frame
+         * by default, you do not need to call this unless you set options.noTicker=true
          */
 
     }, {
         key: 'update',
-        value: function update() {
+        value: function update(elapsed) {
             if (!this.pause) {
                 var _iteratorNormalCompletion = true;
                 var _didIteratorError = false;
@@ -6929,7 +7010,7 @@ var Viewport = function (_PIXI$Container) {
                     for (var _iterator = this.pluginsList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
                         var plugin = _step.value;
 
-                        plugin.update(this.ticker.elapsedMS);
+                        plugin.update(elapsed);
                     }
                 } catch (err) {
                     _didIteratorError = true;
@@ -6942,6 +7023,27 @@ var Viewport = function (_PIXI$Container) {
                     } finally {
                         if (_didIteratorError) {
                             throw _iteratorError;
+                        }
+                    }
+                }
+
+                if (this.lastViewport) {
+                    // check for moved-end event
+                    if (this.lastViewport.x !== this.x || this.lastViewport.y !== this.y) {
+                        this.moving = true;
+                    } else {
+                        if (this.moving) {
+                            this.emit('moved-end', this);
+                            this.moving = false;
+                        }
+                    }
+                    // check for zoomed-end event
+                    if (this.lastViewport.scaleX !== this.scale.x || this.lastViewport.scaleY !== this.scale.y) {
+                        this.zooming = true;
+                    } else {
+                        if (this.zooming) {
+                            this.emit('zoomed-end', this);
+                            this.zooming = false;
                         }
                     }
                 }
@@ -6964,8 +7066,8 @@ var Viewport = function (_PIXI$Container) {
 
         /**
          * use this to set screen and world sizes--needed for pinch/wheel/clamp/bounce
-         * @param {number} screenWidth
-         * @param {number} screenHeight
+         * @param {number} [screenWidth=window.innerWidth]
+         * @param {number} [screenHeight=window.innerHeight]
          * @param {number} [worldWidth]
          * @param {number} [worldHeight]
          */
@@ -7020,13 +7122,24 @@ var Viewport = function (_PIXI$Container) {
          */
 
     }, {
-        key: 'listeners',
+        key: 'getVisibleBounds',
 
+
+        /**
+         * get visible bounds of viewport
+         * @return {object} bounds { x, y, width, height }
+         */
+        value: function getVisibleBounds() {
+            return { x: this.left, y: this.top, width: this.worldScreenWidth, height: this.worldScreenHeight };
+        }
 
         /**
          * add input listeners
          * @private
          */
+
+    }, {
+        key: 'listeners',
         value: function listeners(div) {
             var _this2 = this;
 
@@ -7081,6 +7194,7 @@ var Viewport = function (_PIXI$Container) {
                 this.clickedAvailable = false;
             }
 
+            var stop = void 0;
             var _iteratorNormalCompletion3 = true;
             var _didIteratorError3 = false;
             var _iteratorError3 = undefined;
@@ -7089,7 +7203,9 @@ var Viewport = function (_PIXI$Container) {
                 for (var _iterator3 = this.pluginsList[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
                     var plugin = _step3.value;
 
-                    plugin.down(e);
+                    if (plugin.down(e)) {
+                        stop = true;
+                    }
                 }
             } catch (err) {
                 _didIteratorError3 = true;
@@ -7104,6 +7220,10 @@ var Viewport = function (_PIXI$Container) {
                         throw _iteratorError3;
                     }
                 }
+            }
+
+            if (stop && this.stopEvent) {
+                e.stopPropagation();
             }
         }
 
@@ -7134,6 +7254,7 @@ var Viewport = function (_PIXI$Container) {
                 return;
             }
 
+            var stop = void 0;
             var _iteratorNormalCompletion4 = true;
             var _didIteratorError4 = false;
             var _iteratorError4 = undefined;
@@ -7142,7 +7263,9 @@ var Viewport = function (_PIXI$Container) {
                 for (var _iterator4 = this.pluginsList[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
                     var plugin = _step4.value;
 
-                    plugin.move(e);
+                    if (plugin.move(e)) {
+                        stop = true;
+                    }
                 }
             } catch (err) {
                 _didIteratorError4 = true;
@@ -7165,6 +7288,10 @@ var Viewport = function (_PIXI$Container) {
                 if (this.checkThreshold(distX) || this.checkThreshold(distY)) {
                     this.clickedAvailable = false;
                 }
+            }
+
+            if (stop && this.stopEvent) {
+                e.stopPropagation();
             }
         }
 
@@ -7193,6 +7320,7 @@ var Viewport = function (_PIXI$Container) {
                 }
             }
 
+            var stop = void 0;
             var _iteratorNormalCompletion5 = true;
             var _didIteratorError5 = false;
             var _iteratorError5 = undefined;
@@ -7201,7 +7329,9 @@ var Viewport = function (_PIXI$Container) {
                 for (var _iterator5 = this.pluginsList[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
                     var plugin = _step5.value;
 
-                    plugin.up(e);
+                    if (plugin.up(e)) {
+                        stop = true;
+                    }
                 }
             } catch (err) {
                 _didIteratorError5 = true;
@@ -7221,6 +7351,10 @@ var Viewport = function (_PIXI$Container) {
             if (this.clickedAvailable && this.countDownPointers() === 0) {
                 this.emit('clicked', { screen: this.last, world: this.toWorld(this.last), viewport: this });
                 this.clickedAvailable = false;
+            }
+
+            if (stop && this.stopEvent) {
+                e.stopPropagation();
             }
         }
 
@@ -7390,6 +7524,7 @@ var Viewport = function (_PIXI$Container) {
          * @param {number} [width=this._worldWidth] in world coordinates
          * @param {boolean} [center] maintain the same center
          * @param {boolean} [scaleY=true] whether to set scaleY=scaleX
+         * @param {boolean} [noClamp=false] whether to disable clamp-zoom
          * @return {Viewport} this
          */
 
@@ -7397,6 +7532,7 @@ var Viewport = function (_PIXI$Container) {
         key: 'fitWidth',
         value: function fitWidth(width, center) {
             var scaleY = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+            var noClamp = arguments[3];
 
             var save = void 0;
             if (center) {
@@ -7409,6 +7545,11 @@ var Viewport = function (_PIXI$Container) {
                 this.scale.y = this.scale.x;
             }
 
+            var clampZoom = this.plugins['clamp-zoom'];
+            if (!noClamp && clampZoom) {
+                clampZoom.clamp();
+            }
+
             if (center) {
                 this.moveCenter(save);
             }
@@ -7419,7 +7560,8 @@ var Viewport = function (_PIXI$Container) {
          * change zoom so the height fits in the viewport
          * @param {number} [height=this._worldHeight] in world coordinates
          * @param {boolean} [center] maintain the same center of the screen after zoom
-         * @param { boolean } [scaleX=true] whether to set scaleX = scaleY
+         * @param {boolean} [scaleX=true] whether to set scaleX = scaleY
+         * @param {boolean} [noClamp=false] whether to disable clamp-zoom
          * @return {Viewport} this
          */
 
@@ -7427,6 +7569,7 @@ var Viewport = function (_PIXI$Container) {
         key: 'fitHeight',
         value: function fitHeight(height, center) {
             var scaleX = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+            var noClamp = arguments[3];
 
             var save = void 0;
             if (center) {
@@ -7437,6 +7580,11 @@ var Viewport = function (_PIXI$Container) {
 
             if (scaleX) {
                 this.scale.x = this.scale.y;
+            }
+
+            var clampZoom = this.plugins['clamp-zoom'];
+            if (!noClamp && clampZoom) {
+                clampZoom.clamp();
             }
 
             if (center) {
@@ -7465,6 +7613,12 @@ var Viewport = function (_PIXI$Container) {
             } else {
                 this.scale.x = this.scale.y;
             }
+
+            var clampZoom = this.plugins['clamp-zoom'];
+            if (clampZoom) {
+                clampZoom.clamp();
+            }
+
             if (center) {
                 this.moveCenter(save);
             }
@@ -7495,6 +7649,10 @@ var Viewport = function (_PIXI$Container) {
             } else {
                 this.scale.x = this.scale.y;
             }
+            var clampZoom = this.plugins['clamp-zoom'];
+            if (clampZoom) {
+                clampZoom.clamp();
+            }
             if (center) {
                 this.moveCenter(save);
             }
@@ -7517,6 +7675,10 @@ var Viewport = function (_PIXI$Container) {
             }
             var scale = this.scale.x + this.scale.x * percent;
             this.scale.set(scale);
+            var clampZoom = this.plugins['clamp-zoom'];
+            if (clampZoom) {
+                clampZoom.clamp();
+            }
             if (center) {
                 this.moveCenter(save);
             }
@@ -7548,6 +7710,7 @@ var Viewport = function (_PIXI$Container) {
          * @param {boolean} [options.removeOnComplete] removes this plugin after snapping is complete
          * @param {boolean} [options.removeOnInterrupt] removes this plugin if interrupted by any user input
          * @param {boolean} [options.forceStart] starts the snap immediately regardless of whether the viewport is at the desired zoom
+         * @param {boolean} [options.noMove] zoom but do not move
          */
 
     }, {
@@ -7673,6 +7836,27 @@ var Viewport = function (_PIXI$Container) {
         // PLUGINS
 
         /**
+         * Inserts a user plugin into the viewport
+         * @param {string} name of plugin
+         * @param {Plugin} plugin - instantiated Plugin class
+         * @param {number} [index=last element] plugin is called current order: 'drag', 'pinch', 'wheel', 'follow', 'mouse-edges', 'decelerate', 'bounce', 'snap-zoom', 'clamp-zoom', 'snap', 'clamp'
+         */
+
+    }, {
+        key: 'userPlugin',
+        value: function userPlugin(name, plugin) {
+            var index = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : PLUGIN_ORDER.length;
+
+            this.plugins[name] = plugin;
+            var current = PLUGIN_ORDER.indexOf(name);
+            if (current !== -1) {
+                PLUGIN_ORDER.splice(current, 1);
+            }
+            PLUGIN_ORDER.splice(index, 0, name);
+            this.pluginsSort();
+        }
+
+        /**
          * removes installed plugin
          * @param {string} type of plugin (e.g., 'drag', 'pinch')
          */
@@ -7779,7 +7963,7 @@ var Viewport = function (_PIXI$Container) {
          * @param {(number|boolean)} [options.top] clamp top; true=0
          * @param {(number|boolean)} [options.bottom] clamp bottom; true=viewport.worldHeight
          * @param {string} [options.direction] (all, x, or y) using clamps of [0, viewport.worldWidth/viewport.worldHeight]; replaces left/right/top/bottom if set
-         * @param {string} [options.underflow=center] (top/bottom/center and left/right/center, or center) where to place world if too small for screen
+         * @param {string} [options.underflow=center] (none OR (top/bottom/center and left/right/center) OR center) where to place world if too small for screen (e.g., top-right, center, none, bottomleft)
          * @return {Viewport} this
          */
 
@@ -7858,7 +8042,7 @@ var Viewport = function (_PIXI$Container) {
          * @param {boolean} [options.removeOnComplete] removes this plugin after snapping is complete
          * @param {boolean} [options.removeOnInterrupt] removes this plugin if interrupted by any user input
          * @param {boolean} [options.forceStart] starts the snap immediately regardless of whether the viewport is at the desired location
-        * @return {Viewport} this
+         * @return {Viewport} this
          */
 
     }, {
@@ -7871,6 +8055,7 @@ var Viewport = function (_PIXI$Container) {
 
         /**
          * follow a target
+         * NOTE: uses the (x, y) as the center to follow; for PIXI.Sprite to work properly, use sprite.anchor.set(0.5)
          * @param {PIXI.DisplayObject} target to follow (object must include {x: x-coordinate, y: y-coordinate})
          * @param {object} [options]
          * @param {number} [options.speed=0] to follow in pixels/frame (0=teleport to location)
@@ -7952,6 +8137,29 @@ var Viewport = function (_PIXI$Container) {
          */
 
     }, {
+        key: 'ensureVisible',
+
+
+        /**
+         * move the viewport so the bounding box is visible
+         * @param {number} x
+         * @param {number} y
+         * @param {number} width
+         * @param {number} height
+         */
+        value: function ensureVisible(x, y, width, height) {
+            if (x < this.left) {
+                this.left = x;
+            } else if (x + width > this.right) {
+                this.right = x + width;
+            }
+            if (y < this.top) {
+                this.top = y;
+            } else if (y + height > this.bottom) {
+                this.bottom = y + height;
+            }
+        }
+    }, {
         key: 'screenWidth',
         get: function get() {
             return this._screenWidth;
@@ -8014,7 +8222,7 @@ var Viewport = function (_PIXI$Container) {
     }, {
         key: 'worldScreenWidth',
         get: function get() {
-            return this._screenWidth / this.scale.x;
+            return this.screenWidth / this.scale.x;
         }
 
         /**
@@ -8026,7 +8234,7 @@ var Viewport = function (_PIXI$Container) {
     }, {
         key: 'worldScreenHeight',
         get: function get() {
-            return this._screenHeight / this.scale.y;
+            return this.screenHeight / this.scale.y;
         }
 
         /**
@@ -8038,7 +8246,7 @@ var Viewport = function (_PIXI$Container) {
     }, {
         key: 'screenWorldWidth',
         get: function get() {
-            return this._worldWidth * this.scale.x;
+            return this.worldWidth * this.scale.x;
         }
 
         /**
@@ -8050,7 +8258,7 @@ var Viewport = function (_PIXI$Container) {
     }, {
         key: 'screenWorldHeight',
         get: function get() {
-            return this._worldHeight * this.scale.y;
+            return this.worldHeight * this.scale.y;
         }
 
         /**
@@ -8144,7 +8352,7 @@ var Viewport = function (_PIXI$Container) {
 
         /**
          * permanently changes the Viewport's hitArea
-         * <p>NOTE: normally the hitArea = PIXI.Rectangle(Viewport.left, Viewport.top, Viewport.worldScreenWidth, Viewport.worldScreenHeight)</p>
+         * NOTE: normally the hitArea = PIXI.Rectangle(Viewport.left, Viewport.top, Viewport.worldScreenWidth, Viewport.worldScreenHeight)
          * @type {(PIXI.Rectangle|PIXI.Circle|PIXI.Ellipse|PIXI.Polygon|PIXI.RoundedRectangle)}
          */
 
@@ -8169,6 +8377,9 @@ var Viewport = function (_PIXI$Container) {
         },
         set: function set(value) {
             this._pause = value;
+            this.lastViewport = null;
+            this.moving = false;
+            this.zooming = false;
             if (value) {
                 this.touches = [];
                 this.leftDown = false;
@@ -8311,7 +8522,21 @@ var Viewport = function (_PIXI$Container) {
  * @property {string} type (drag-zoom, pinch, wheel, clamp-zoom)
  */
 
-PIXI.extras.Viewport = Viewport;
+/**
+ * fires when viewport stops moving for any reason
+ * @event Viewport#moved-end
+ * @type {Viewport}
+ */
+
+/**
+ * fires when viewport stops zooming for any rason
+ * @event Viewport#zoomed-end
+ * @type {Viewport}
+ */
+
+if (typeof PIXI !== 'undefined') {
+    PIXI.extras.Viewport = Viewport;
+}
 
 module.exports = Viewport;
 
@@ -8361,7 +8586,7 @@ module.exports = function (_Plugin) {
         key: 'down',
         value: function down() {
             if (this.interrupt) {
-                this.smoothing = false;
+                this.smoothing = null;
             }
         }
     }, {
@@ -8374,8 +8599,8 @@ module.exports = function (_Plugin) {
                 if (!this.center) {
                     oldPoint = this.parent.toLocal(point);
                 }
-                this.parent.scale.x += change;
-                this.parent.scale.y += change;
+                this.parent.scale.x += change.x;
+                this.parent.scale.y += change.y;
                 this.parent.emit('zoomed', { viewport: this.parent, type: 'wheel' });
                 var clamp = this.parent.plugins['clamp-zoom'];
                 if (clamp) {
@@ -8411,8 +8636,14 @@ module.exports = function (_Plugin) {
             }
             var change = 1 + this.percent * sign;
             if (this.smooth) {
-                var original = this.smoothing ? this.smoothing * (this.smooth - this.smoothingCount) : 0;
-                this.smoothing = ((this.parent.scale.x + original) * change - this.parent.scale.x) / this.smooth;
+                var original = {
+                    x: this.smoothing ? this.smoothing.x * (this.smooth - this.smoothingCount) : 0,
+                    y: this.smoothing ? this.smoothing.y * (this.smooth - this.smoothingCount) : 0
+                };
+                this.smoothing = {
+                    x: ((this.parent.scale.x + original.x) * change - this.parent.scale.x) / this.smooth,
+                    y: ((this.parent.scale.y + original.y) * change - this.parent.scale.y) / this.smooth
+                };
                 this.smoothingCount = 0;
                 this.smoothingCenter = point;
             } else {
@@ -8426,7 +8657,7 @@ module.exports = function (_Plugin) {
                 var clamp = this.parent.plugins['clamp-zoom'];
                 if (clamp) {
                     clamp.clamp();
-                    this.smoothing = false;
+                    this.smoothing = null;
                 }
                 if (this.center) {
                     this.parent.moveCenter(this.center);
@@ -8438,7 +8669,9 @@ module.exports = function (_Plugin) {
             }
             this.parent.emit('moved', { viewport: this.parent, type: 'wheel' });
             this.parent.emit('wheel', { wheel: { dx: e.deltaX, dy: e.deltaY, dz: e.deltaZ }, event: e, viewport: this.parent });
-            e.preventDefault();
+            if (!this.parent.passiveWheel) {
+                e.preventDefault();
+            }
         }
     }]);
 
@@ -9438,7 +9671,7 @@ exports.__esModule = true;
  * @name VERSION
  * @type {string}
  */
-var VERSION = exports.VERSION = '4.8.2';
+var VERSION = exports.VERSION = '4.8.3';
 
 /**
  * Two Pi.
@@ -11891,8 +12124,10 @@ var TransformStatic = function (_TransformBase) {
         },
         set: function set(value) // eslint-disable-line require-jsdoc
         {
-            this._rotation = value;
-            this.updateSkew();
+            if (this._rotation !== value) {
+                this._rotation = value;
+                this.updateSkew();
+            }
         }
     }]);
 
@@ -12016,7 +12251,7 @@ var Graphics = function (_Container) {
          * The alignment of any lines drawn (0.5 = middle, 1 = outter, 0 = inner).
          *
          * @member {number}
-         * @default 0
+         * @default 0.5
          */
         _this.lineAlignment = 0.5;
 
@@ -13010,14 +13245,17 @@ var Graphics = function (_Container) {
                 var data = this.graphicsData[i];
                 var type = data.type;
                 var lineWidth = data.lineWidth;
+                var lineAlignment = data.lineAlignment;
+
+                var lineOffset = lineWidth * lineAlignment;
 
                 shape = data.shape;
 
                 if (type === _const.SHAPES.RECT || type === _const.SHAPES.RREC) {
-                    x = shape.x - lineWidth / 2;
-                    y = shape.y - lineWidth / 2;
-                    w = shape.width + lineWidth;
-                    h = shape.height + lineWidth;
+                    x = shape.x - lineOffset;
+                    y = shape.y - lineOffset;
+                    w = shape.width + lineOffset * 2;
+                    h = shape.height + lineOffset * 2;
 
                     minX = x < minX ? x : minX;
                     maxX = x + w > maxX ? x + w : maxX;
@@ -13027,8 +13265,8 @@ var Graphics = function (_Container) {
                 } else if (type === _const.SHAPES.CIRC) {
                     x = shape.x;
                     y = shape.y;
-                    w = shape.radius + lineWidth / 2;
-                    h = shape.radius + lineWidth / 2;
+                    w = shape.radius + lineOffset;
+                    h = shape.radius + lineOffset;
 
                     minX = x - w < minX ? x - w : minX;
                     maxX = x + w > maxX ? x + w : maxX;
@@ -13038,8 +13276,8 @@ var Graphics = function (_Container) {
                 } else if (type === _const.SHAPES.ELIP) {
                     x = shape.x;
                     y = shape.y;
-                    w = shape.width + lineWidth / 2;
-                    h = shape.height + lineWidth / 2;
+                    w = shape.width + lineOffset;
+                    h = shape.height + lineOffset;
 
                     minX = x - w < minX ? x - w : minX;
                     maxX = x + w > maxX ? x + w : maxX;
@@ -13065,7 +13303,7 @@ var Graphics = function (_Container) {
                         y2 = points[j + 3];
                         dx = Math.abs(x2 - x);
                         dy = Math.abs(y2 - y);
-                        h = lineWidth;
+                        h = lineOffset * 2;
                         w = Math.sqrt(dx * dx + dy * dy);
 
                         if (w < 1e-9) {
@@ -13502,10 +13740,52 @@ var CanvasGraphicsRenderer = function () {
             if (data.type === _const.SHAPES.POLY) {
                 context.beginPath();
 
-                this.renderPolygon(shape.points, shape.closed, context);
+                var points = shape.points;
+                var holes = data.holes;
+                var outerArea = void 0;
+                var innerArea = void 0;
 
-                for (var j = 0; j < data.holes.length; j++) {
-                    this.renderPolygon(data.holes[j].points, true, context);
+                context.moveTo(points[0], points[1]);
+
+                for (var j = 2; j < points.length; j += 2) {
+                    context.lineTo(points[j], points[j + 1]);
+                }
+
+                // if the first and last point are the same close the path - much neater :)
+                if (shape.closed) {
+                    context.closePath();
+                }
+
+                if (holes.length > 0) {
+                    outerArea = 0;
+                    for (var _j = 0; _j < points.length; _j += 2) {
+                        outerArea += points[_j] * points[_j + 3] - points[_j + 1] * points[_j + 2];
+                    }
+
+                    for (var k = 0; k < holes.length; k++) {
+                        points = holes[k].points;
+
+                        innerArea = 0;
+                        for (var _j2 = 0; _j2 < points.length; _j2 += 2) {
+                            innerArea += points[_j2] * points[_j2 + 3] - points[_j2 + 1] * points[_j2 + 2];
+                        }
+
+                        context.moveTo(points[0], points[1]);
+
+                        if (innerArea * outerArea < 0) {
+                            for (var _j3 = 2; _j3 < points.length; _j3 += 2) {
+                                context.lineTo(points[_j3], points[_j3 + 1]);
+                            }
+                        } else {
+                            for (var _j4 = points.length - 2; _j4 >= 2; _j4 -= 2) {
+                                context.lineTo(points[_j4], points[_j4 + 1]);
+                            }
+                        }
+
+                        if (holes[k].closed) {
+                            context.closePath();
+                        }
+                    }
                 }
 
                 if (data.fill) {
@@ -14762,11 +15042,11 @@ function buildRoundedRectangle(graphicsData, webGLData, webGLDataNativeLines) {
 
     var recPoints = [];
 
-    recPoints.push(x, y + radius);
-    quadraticBezierCurve(x, y + height - radius, x, y + height, x + radius, y + height, recPoints);
-    quadraticBezierCurve(x + width - radius, y + height, x + width, y + height, x + width, y + height - radius, recPoints);
-    quadraticBezierCurve(x + width, y + radius, x + width, y, x + width - radius, y, recPoints);
-    quadraticBezierCurve(x + radius, y, x, y, x, y + radius + 0.0000000001, recPoints);
+    recPoints.push(x + radius, y);
+    quadraticBezierCurve(x + width - radius, y, x + width, y, x + width, y + radius, recPoints);
+    quadraticBezierCurve(x + width, y + height - radius, x + width, y + height, x + width - radius, y + height, recPoints);
+    quadraticBezierCurve(x + radius, y + height, x, y + height, x, y + height - radius, recPoints);
+    quadraticBezierCurve(x, y + radius, x, y, x + radius + 0.0000000001, y, recPoints);
 
     // this tiny number deals with the issue that occurs when points overlap and earcut fails to triangulate the item.
     // TODO - fix this properly, this is not very elegant.. but it works for now.
@@ -17878,16 +18158,47 @@ var CanvasMaskManager = function () {
 
             if (data.type === _const.SHAPES.POLY) {
                 var points = shape.points;
+                var holes = data.holes;
+                var outerArea = void 0;
+                var innerArea = void 0;
 
                 context.moveTo(points[0], points[1]);
 
-                for (var j = 1; j < points.length / 2; j++) {
-                    context.lineTo(points[j * 2], points[j * 2 + 1]);
+                for (var j = 2; j < points.length; j += 2) {
+                    context.lineTo(points[j], points[j + 1]);
                 }
 
                 // if the first and last point are the same close the path - much neater :)
                 if (points[0] === points[points.length - 2] && points[1] === points[points.length - 1]) {
                     context.closePath();
+                }
+
+                if (holes.length > 0) {
+                    outerArea = 0;
+                    for (var _j = 0; _j < points.length; _j += 2) {
+                        outerArea += points[_j] * points[_j + 3] - points[_j + 1] * points[_j + 2];
+                    }
+
+                    for (var k = 0; k < holes.length; k++) {
+                        points = holes[k].points;
+
+                        innerArea = 0;
+                        for (var _j2 = 0; _j2 < points.length; _j2 += 2) {
+                            innerArea += points[_j2] * points[_j2 + 3] - points[_j2 + 1] * points[_j2 + 2];
+                        }
+
+                        context.moveTo(points[0], points[1]);
+
+                        if (innerArea * outerArea < 0) {
+                            for (var _j3 = 2; _j3 < points.length; _j3 += 2) {
+                                context.lineTo(points[_j3], points[_j3 + 1]);
+                            }
+                        } else {
+                            for (var _j4 = points.length - 2; _j4 >= 2; _j4 -= 2) {
+                                context.lineTo(points[_j4], points[_j4 + 1]);
+                            }
+                        }
+                    }
                 }
             } else if (data.type === _const.SHAPES.RECT) {
                 context.rect(shape.x, shape.y, shape.width, shape.height);
@@ -18475,6 +18786,11 @@ var TextureManager = function () {
                 renderTarget.resize(texture.width, texture.height);
                 texture._glRenderTargets[this.renderer.CONTEXT_UID] = renderTarget;
                 glTexture = renderTarget.texture;
+
+                // framebuffer constructor disactivates current framebuffer
+                if (!this.renderer._activeRenderTarget.root) {
+                    this.renderer._activeRenderTarget.frameBuffer.bind();
+                }
             } else {
                 glTexture = new _pixiGlCore.GLTexture(this.gl, null, null, null, null);
                 glTexture.bind(location);
@@ -18536,12 +18852,13 @@ var TextureManager = function () {
             return;
         }
 
-        var uid = this.renderer.CONTEXT_UID;
+        var renderer = this.renderer;
+        var uid = renderer.CONTEXT_UID;
         var glTextures = texture._glTextures;
         var glRenderTargets = texture._glRenderTargets;
 
         if (glTextures[uid]) {
-            this.renderer.unbindTexture(texture);
+            renderer.unbindTexture(texture);
 
             glTextures[uid].destroy();
             texture.off('update', this.updateTexture, this);
@@ -18559,6 +18876,10 @@ var TextureManager = function () {
         }
 
         if (glRenderTargets && glRenderTargets[uid]) {
+            if (renderer._activeRenderTarget === glRenderTargets[uid]) {
+                renderer.bindRenderTarget(renderer.rootRenderTarget);
+            }
+
             glRenderTargets[uid].destroy();
             delete glRenderTargets[uid];
         }
@@ -19737,9 +20058,9 @@ var Filter = function () {
   /**
    * @param {string} [vertexSrc] - The source of the vertex shader.
    * @param {string} [fragmentSrc] - The source of the fragment shader.
-   * @param {object} [uniforms] - Custom uniforms to use to augment the built-in ones.
+   * @param {object} [uniformData] - Custom uniforms to use to augment the built-in ones.
    */
-  function Filter(vertexSrc, fragmentSrc, uniforms) {
+  function Filter(vertexSrc, fragmentSrc, uniformData) {
     _classCallCheck(this, Filter);
 
     /**
@@ -19758,7 +20079,7 @@ var Filter = function () {
 
     this._blendMode = _const.BLEND_MODES.NORMAL;
 
-    this.uniformData = uniforms || (0, _extractUniformsFromSrc2.default)(this.vertexSrc, this.fragmentSrc, 'projectionMatrix|uSampler');
+    this.uniformData = uniformData || (0, _extractUniformsFromSrc2.default)(this.vertexSrc, this.fragmentSrc, 'projectionMatrix|uSampler');
 
     /**
      * An object containing the current values of custom uniforms.
@@ -20485,6 +20806,10 @@ var FilterManager = function (_WebGLManager) {
 
         // TODO Caching layer..
         for (var i in uniformData) {
+            if (!shader.uniforms.data[i]) {
+                continue;
+            }
+
             var type = uniformData[i].type;
 
             if (type === 'sampler2d' && uniforms[i] !== 0) {
@@ -21587,8 +21912,9 @@ var RenderTarget = function () {
      * Whether this object is the root element or not
      *
      * @member {boolean}
+     * @default false
      */
-    this.root = root;
+    this.root = root || false;
 
     if (!this.root) {
       this.frameBuffer = _pixiGlCore.GLFramebuffer.createRGBA(gl, 100, 100);
@@ -26122,8 +26448,9 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
  * and rotation of the given Display Objects is ignored. For example:
  *
  * ```js
- * let renderer = PIXI.autoDetectRenderer(1024, 1024, { view: canvas, ratio: 1 });
- * let baseRenderTexture = new PIXI.BaseRenderTexture(renderer, 800, 600);
+ * let renderer = PIXI.autoDetectRenderer(1024, 1024);
+ * let baseRenderTexture = new PIXI.BaseRenderTexture(800, 600);
+ * let renderTexture = new PIXI.RenderTexture(baseRenderTexture);
  * let sprite = PIXI.Sprite.fromImage("spinObj_01.png");
  *
  * sprite.position.x = 800/2;
@@ -26131,7 +26458,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
  * sprite.anchor.x = 0.5;
  * sprite.anchor.y = 0.5;
  *
- * baseRenderTexture.render(sprite);
+ * renderer.render(sprite, renderTexture);
  * ```
  *
  * The Sprite in this case will be rendered using its local transform. To render this sprite at 0,0
@@ -27129,7 +27456,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
  * A RenderTexture takes a snapshot of any Display Object given to its render method. For example:
  *
  * ```js
- * let renderer = PIXI.autoDetectRenderer(1024, 1024, { view: canvas, ratio: 1 });
+ * let renderer = PIXI.autoDetectRenderer(1024, 1024);
  * let renderTexture = PIXI.RenderTexture.create(800, 600);
  * let sprite = PIXI.Sprite.fromImage("spinObj_01.png");
  *
@@ -27882,7 +28209,7 @@ var Texture = function (_EventEmitter) {
 
 
     Texture.prototype.clone = function clone() {
-        return new Texture(this.baseTexture, this.frame, this.orig, this.trim, this.rotate);
+        return new Texture(this.baseTexture, this.frame, this.orig, this.trim, this.rotate, this.defaultAnchor);
     };
 
     /**
@@ -27967,16 +28294,18 @@ var Texture = function (_EventEmitter) {
      * @static
      * @param {HTMLVideoElement|string} video - The URL or actual element of the video
      * @param {number} [scaleMode=PIXI.settings.SCALE_MODE] - See {@link PIXI.SCALE_MODES} for possible values
+     * @param {boolean} [crossorigin=(auto)] - Should use anonymous CORS? Defaults to true if the URL is not a data-URI.
+     * @param {boolean} [autoPlay=true] - Start playing video as soon as it is loaded
      * @return {PIXI.Texture} The newly created texture
      */
 
 
-    Texture.fromVideo = function fromVideo(video, scaleMode) {
+    Texture.fromVideo = function fromVideo(video, scaleMode, crossorigin, autoPlay) {
         if (typeof video === 'string') {
-            return Texture.fromVideoUrl(video, scaleMode);
+            return Texture.fromVideoUrl(video, scaleMode, crossorigin, autoPlay);
         }
 
-        return new Texture(_VideoBaseTexture2.default.fromVideo(video, scaleMode));
+        return new Texture(_VideoBaseTexture2.default.fromVideo(video, scaleMode, autoPlay));
     };
 
     /**
@@ -27985,12 +28314,14 @@ var Texture = function (_EventEmitter) {
      * @static
      * @param {string} videoUrl - URL of the video
      * @param {number} [scaleMode=PIXI.settings.SCALE_MODE] - See {@link PIXI.SCALE_MODES} for possible values
+     * @param {boolean} [crossorigin=(auto)] - Should use anonymous CORS? Defaults to true if the URL is not a data-URI.
+     * @param {boolean} [autoPlay=true] - Start playing video as soon as it is loaded
      * @return {PIXI.Texture} The newly created texture
      */
 
 
-    Texture.fromVideoUrl = function fromVideoUrl(videoUrl, scaleMode) {
-        return new Texture(_VideoBaseTexture2.default.fromUrl(videoUrl, scaleMode));
+    Texture.fromVideoUrl = function fromVideoUrl(videoUrl, scaleMode, crossorigin, autoPlay) {
+        return new Texture(_VideoBaseTexture2.default.fromUrl(videoUrl, scaleMode, crossorigin, autoPlay));
     };
 
     /**
@@ -28541,10 +28872,10 @@ var TextureUvs = function () {
             this.y3 = (frame.y + frame.height) / th;
         }
 
-        this.uvsUint32[0] = (this.y0 * 65535 & 0xFFFF) << 16 | this.x0 * 65535 & 0xFFFF;
-        this.uvsUint32[1] = (this.y1 * 65535 & 0xFFFF) << 16 | this.x1 * 65535 & 0xFFFF;
-        this.uvsUint32[2] = (this.y2 * 65535 & 0xFFFF) << 16 | this.x2 * 65535 & 0xFFFF;
-        this.uvsUint32[3] = (this.y3 * 65535 & 0xFFFF) << 16 | this.x3 * 65535 & 0xFFFF;
+        this.uvsUint32[0] = (Math.round(this.y0 * 65535) & 0xFFFF) << 16 | Math.round(this.x0 * 65535) & 0xFFFF;
+        this.uvsUint32[1] = (Math.round(this.y1 * 65535) & 0xFFFF) << 16 | Math.round(this.x1 * 65535) & 0xFFFF;
+        this.uvsUint32[2] = (Math.round(this.y2 * 65535) & 0xFFFF) << 16 | Math.round(this.x2 * 65535) & 0xFFFF;
+        this.uvsUint32[3] = (Math.round(this.y3 * 65535) & 0xFFFF) << 16 | Math.round(this.x3 * 65535) & 0xFFFF;
     };
 
     return TextureUvs;
@@ -28613,8 +28944,11 @@ var VideoBaseTexture = function (_BaseTexture) {
     /**
      * @param {HTMLVideoElement} source - Video source
      * @param {number} [scaleMode=PIXI.settings.SCALE_MODE] - See {@link PIXI.SCALE_MODES} for possible values
+     * @param {boolean} [autoPlay=true] - Start playing video as soon as it is loaded
      */
     function VideoBaseTexture(source, scaleMode) {
+        var autoPlay = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
+
         _classCallCheck(this, VideoBaseTexture);
 
         if (!source) {
@@ -28643,7 +28977,7 @@ var VideoBaseTexture = function (_BaseTexture) {
          * @member {boolean}
          * @default true
          */
-        _this.autoPlay = true;
+        _this.autoPlay = autoPlay;
 
         _this.update = _this.update.bind(_this);
         _this._onCanPlay = _this._onCanPlay.bind(_this);
@@ -28781,11 +29115,12 @@ var VideoBaseTexture = function (_BaseTexture) {
      * @static
      * @param {HTMLVideoElement} video - Video to create texture from
      * @param {number} [scaleMode=PIXI.settings.SCALE_MODE] - See {@link PIXI.SCALE_MODES} for possible values
+     * @param {boolean} [autoPlay=true] - Start playing video as soon as it is loaded
      * @return {PIXI.VideoBaseTexture} Newly created VideoBaseTexture
      */
 
 
-    VideoBaseTexture.fromVideo = function fromVideo(video, scaleMode) {
+    VideoBaseTexture.fromVideo = function fromVideo(video, scaleMode, autoPlay) {
         if (!video._pixiId) {
             video._pixiId = 'video_' + (0, _utils.uid)();
         }
@@ -28793,7 +29128,7 @@ var VideoBaseTexture = function (_BaseTexture) {
         var baseTexture = _utils.BaseTextureCache[video._pixiId];
 
         if (!baseTexture) {
-            baseTexture = new VideoBaseTexture(video, scaleMode);
+            baseTexture = new VideoBaseTexture(video, scaleMode, autoPlay);
             _BaseTexture3.default.addToCache(baseTexture, video._pixiId);
         }
 
@@ -28811,11 +29146,12 @@ var VideoBaseTexture = function (_BaseTexture) {
      *  the url's extension will be used as the second part of the mime type.
      * @param {number} scaleMode - See {@link PIXI.SCALE_MODES} for possible values
      * @param {boolean} [crossorigin=(auto)] - Should use anonymous CORS? Defaults to true if the URL is not a data-URI.
+     * @param {boolean} [autoPlay=true] - Start playing video as soon as it is loaded
      * @return {PIXI.VideoBaseTexture} Newly created VideoBaseTexture
      */
 
 
-    VideoBaseTexture.fromUrl = function fromUrl(videoSrc, scaleMode, crossorigin) {
+    VideoBaseTexture.fromUrl = function fromUrl(videoSrc, scaleMode, crossorigin, autoPlay) {
         var video = document.createElement('video');
 
         video.setAttribute('webkit-playsinline', '');
@@ -28842,7 +29178,7 @@ var VideoBaseTexture = function (_BaseTexture) {
 
         video.load();
 
-        return VideoBaseTexture.fromVideo(video, scaleMode);
+        return VideoBaseTexture.fromVideo(video, scaleMode, autoPlay);
     };
 
     /**
@@ -28883,8 +29219,9 @@ VideoBaseTexture.fromUrls = VideoBaseTexture.fromUrl;
 
 function createSource(path, type) {
     if (!type) {
-        path = path.split('?').shift().toLowerCase();
-        type = 'video/' + path.substr(path.lastIndexOf('.') + 1);
+        var purePath = path.split('?').shift().toLowerCase();
+
+        type = 'video/' + purePath.substr(purePath.lastIndexOf('.') + 1);
     }
 
     var source = document.createElement('source');
@@ -33312,24 +33649,42 @@ var TilingSprite = function (_core$Sprite) {
         var context = renderer.context;
         var transform = this.worldTransform;
         var resolution = renderer.resolution;
+        var isTextureRotated = texture.rotate === 2;
         var baseTexture = texture.baseTexture;
         var baseTextureResolution = baseTexture.resolution;
-        var modX = this.tilePosition.x / this.tileScale.x % texture._frame.width * baseTextureResolution;
-        var modY = this.tilePosition.y / this.tileScale.y % texture._frame.height * baseTextureResolution;
+        var modX = this.tilePosition.x / this.tileScale.x % texture.orig.width * baseTextureResolution;
+        var modY = this.tilePosition.y / this.tileScale.y % texture.orig.height * baseTextureResolution;
 
         // create a nice shiny pattern!
         if (this._textureID !== this._texture._updateID || this.cachedTint !== this.tint) {
             this._textureID = this._texture._updateID;
             // cut an object from a spritesheet..
-            var tempCanvas = new core.CanvasRenderTarget(texture._frame.width, texture._frame.height, baseTextureResolution);
+            var tempCanvas = new core.CanvasRenderTarget(texture.orig.width, texture.orig.height, baseTextureResolution);
 
             // Tint the tiling sprite
             if (this.tint !== 0xFFFFFF) {
                 this.tintedTexture = _CanvasTinter2.default.getTintedTexture(this, this.tint);
                 tempCanvas.context.drawImage(this.tintedTexture, 0, 0);
             } else {
-                tempCanvas.context.drawImage(baseTexture.source, -texture._frame.x * baseTextureResolution, -texture._frame.y * baseTextureResolution);
+                var sx = texture._frame.x * baseTextureResolution;
+                var sy = texture._frame.y * baseTextureResolution;
+                var sWidth = texture._frame.width * baseTextureResolution;
+                var sHeight = texture._frame.height * baseTextureResolution;
+                var dWidth = (texture.trim ? texture.trim.width : texture.orig.width) * baseTextureResolution;
+                var dHeight = (texture.trim ? texture.trim.height : texture.orig.height) * baseTextureResolution;
+                var dx = (texture.trim ? texture.trim.x : 0) * baseTextureResolution;
+                var dy = (texture.trim ? texture.trim.y : 0) * baseTextureResolution;
+
+                if (isTextureRotated) {
+                    // Apply rotation and transform
+                    tempCanvas.context.rotate(-Math.PI / 2);
+                    tempCanvas.context.translate(-dHeight, 0);
+                    tempCanvas.context.drawImage(baseTexture.source, sx, sy, sWidth, sHeight, -dy, dx, dHeight, dWidth);
+                } else {
+                    tempCanvas.context.drawImage(baseTexture.source, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+                }
             }
+
             this.cachedTint = this.tint;
             this._canvasPattern = tempCanvas.context.createPattern(tempCanvas.canvas, 'repeat');
         }
@@ -33346,8 +33701,8 @@ var TilingSprite = function (_core$Sprite) {
         // TODO - this should be rolled into the setTransform above..
         context.scale(this.tileScale.x / baseTextureResolution, this.tileScale.y / baseTextureResolution);
 
-        var anchorX = this.anchor.x * -this._width;
-        var anchorY = this.anchor.y * -this._height;
+        var anchorX = this.anchor.x * -this._width * baseTextureResolution;
+        var anchorY = this.anchor.y * -this._height * baseTextureResolution;
 
         if (this.uvRespectAnchor) {
             context.translate(modX, modY);
@@ -33770,7 +34125,7 @@ DisplayObject.prototype._initCachedDisplayObject = function _initCachedDisplayOb
     var bounds = this.getLocalBounds().clone();
 
     // add some padding!
-    if (this._filters) {
+    if (this._filters && this._filters.length) {
         var padding = this._filters[0].padding;
 
         bounds.pad(padding);
@@ -43176,8 +43531,7 @@ if ('undefined' !== typeof module) {
  * @param {number} startIdx The index to begin removing from (inclusive)
  * @param {number} removeCount How many items to remove
  */
-module.exports = function removeItems(arr, startIdx, removeCount)
-{
+module.exports = function removeItems (arr, startIdx, removeCount) {
   var i, length = arr.length
 
   if (startIdx >= length || removeCount === 0) {
@@ -43199,6 +43553,7 @@ module.exports = function removeItems(arr, startIdx, removeCount)
 'use strict';
 
 exports.__esModule = true;
+exports.Loader = undefined;
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
@@ -43218,8 +43573,6 @@ var async = _interopRequireWildcard(_async);
 
 var _Resource = require('./Resource');
 
-var _Resource2 = _interopRequireDefault(_Resource);
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -43236,7 +43589,7 @@ var rgxExtractUrlHash = /(#[\w-]+)?$/;
  * @class
  */
 
-var Loader = function () {
+var Loader = exports.Loader = function () {
     /**
      * @param {string} [baseUrl=''] - The base url for all resources loaded by this loader.
      * @param {number} [concurrency=10] - The number of resources to load concurrently.
@@ -43289,12 +43642,15 @@ var Loader = function () {
          *
          * // This will request 'image.png?v=1&user=me&password=secret'
          * loader.add('iamge.png?v=1').load();
+         *
+         * @member {string}
          */
         this.defaultQueryString = '';
 
         /**
          * The middleware to run before loading each resource.
          *
+         * @private
          * @member {function[]}
          */
         this._beforeMiddleware = [];
@@ -43302,6 +43658,7 @@ var Loader = function () {
         /**
          * The middleware to run after loading each resource.
          *
+         * @private
          * @member {function[]}
          */
         this._afterMiddleware = [];
@@ -43309,6 +43666,7 @@ var Loader = function () {
         /**
          * The tracks the resources we are currently completing parsing for.
          *
+         * @private
          * @member {Resource[]}
          */
         this._resourcesParsing = [];
@@ -43430,7 +43788,40 @@ var Loader = function () {
          * @callback OnCompleteSignal
          * @param {Loader} loader - The loader that has finished loading resources.
          */
+
+        // Add default before middleware
+        for (var i = 0; i < Loader._defaultBeforeMiddleware.length; ++i) {
+            this.pre(Loader._defaultBeforeMiddleware[i]);
+        }
+
+        // Add default after middleware
+        for (var _i = 0; _i < Loader._defaultAfterMiddleware.length; ++_i) {
+            this.use(Loader._defaultAfterMiddleware[_i]);
+        }
     }
+
+    /**
+     * Options for a call to `.add()`.
+     *
+     * @see Loader#add
+     *
+     * @typedef {object} IAddOptions
+     * @property {string} [name] - The name of the resource to load, if not passed the url is used.
+     * @property {string} [key] - Alias for `name`.
+     * @property {string} [url] - The url for this resource, relative to the baseUrl of this loader.
+     * @property {string|boolean} [crossOrigin] - Is this request cross-origin? Default is to
+     *      determine automatically.
+     * @property {number} [timeout=0] - A timeout in milliseconds for the load. If the load takes
+     *      longer than this time it is cancelled and the load is considered a failure. If this value is
+     *      set to `0` then there is no explicit timeout.
+     * @property {Resource.LOAD_TYPE} [loadType=Resource.LOAD_TYPE.XHR] - How should this resource
+     *      be loaded?
+     * @property {Resource.XHR_RESPONSE_TYPE} [xhrType=Resource.XHR_RESPONSE_TYPE.DEFAULT] - How
+     *      should the data being loaded be interpreted when using XHR?
+     * @property {Loader.OnCompleteSignal} [onComplete] - Callback to add an an onComplete signal istener.
+     * @property {Loader.OnCompleteSignal} [callback] - Alias for `onComplete`.
+     * @property {Resource.IMetadata} [metadata] - Extra configuration for middleware and the Resource object.
+     */
 
     /**
      * Adds a resource (or multiple resources) to the loader queue.
@@ -43476,20 +43867,11 @@ var Loader = function () {
      *     .add('http://...', { crossOrigin: true }, function () {});
      * ```
      *
-     * @param {string} [name] - The name of the resource to load, if not passed the url is used.
+     * @param {string|IAddOptions} [name] - The name of the resource to load, if not passed the url is used.
      * @param {string} [url] - The url for this resource, relative to the baseUrl of this loader.
-     * @param {object} [options] - The options for the load.
-     * @param {boolean} [options.crossOrigin] - Is this request cross-origin? Default is to determine automatically.
-     * @param {Resource.LOAD_TYPE} [options.loadType=Resource.LOAD_TYPE.XHR] - How should this resource be loaded?
-     * @param {Resource.XHR_RESPONSE_TYPE} [options.xhrType=Resource.XHR_RESPONSE_TYPE.DEFAULT] - How should
-     *      the data being loaded be interpreted when using XHR?
-     * @param {object} [options.metadata] - Extra configuration for middleware and the Resource object.
-     * @param {HTMLImageElement|HTMLAudioElement|HTMLVideoElement} [options.metadata.loadElement=null] - The
-     *      element to use for loading, instead of creating one.
-     * @param {boolean} [options.metadata.skipSource=false] - Skips adding source(s) to the load element. This
-     *      is useful if you want to pass in a `loadElement` that you already added load sources to.
-     * @param {function} [cb] - Function to call when this specific resource completes loading.
-     * @return {Loader} Returns itself.
+     * @param {IAddOptions} [options] - The options for the load.
+     * @param {Loader.OnCompleteSignal} [cb] - Function to call when this specific resource completes loading.
+     * @return {this} Returns itself.
      */
 
 
@@ -43543,7 +43925,7 @@ var Loader = function () {
         url = this._prepareUrl(url);
 
         // create the store the resource
-        this.resources[name] = new _Resource2.default(name, url, options);
+        this.resources[name] = new _Resource.Resource(name, url, options);
 
         if (typeof cb === 'function') {
             this.resources[name].onAfterMiddleware.once(cb);
@@ -43554,9 +43936,9 @@ var Loader = function () {
             var parent = options.parentResource;
             var incompleteChildren = [];
 
-            for (var _i = 0; _i < parent.children.length; ++_i) {
-                if (!parent.children[_i].isComplete) {
-                    incompleteChildren.push(parent.children[_i]);
+            for (var _i2 = 0; _i2 < parent.children.length; ++_i2) {
+                if (!parent.children[_i2].isComplete) {
+                    incompleteChildren.push(parent.children[_i2]);
                 }
             }
 
@@ -43566,8 +43948,8 @@ var Loader = function () {
             parent.children.push(this.resources[name]);
             parent.progressChunk = eachChunk;
 
-            for (var _i2 = 0; _i2 < incompleteChildren.length; ++_i2) {
-                incompleteChildren[_i2].progressChunk = eachChunk;
+            for (var _i3 = 0; _i3 < incompleteChildren.length; ++_i3) {
+                incompleteChildren[_i3].progressChunk = eachChunk;
             }
 
             this.resources[name].progressChunk = eachChunk;
@@ -43583,9 +43965,8 @@ var Loader = function () {
      * Sets up a middleware function that will run *before* the
      * resource is loaded.
      *
-     * @method before
      * @param {function} fn - The middleware function to register.
-     * @return {Loader} Returns itself.
+     * @return {this} Returns itself.
      */
 
 
@@ -43599,10 +43980,8 @@ var Loader = function () {
      * Sets up a middleware function that will run *after* the
      * resource is loaded.
      *
-     * @alias use
-     * @method after
      * @param {function} fn - The middleware function to register.
-     * @return {Loader} Returns itself.
+     * @return {this} Returns itself.
      */
 
 
@@ -43615,7 +43994,7 @@ var Loader = function () {
     /**
      * Resets the queue of the loader to prepare for a new load.
      *
-     * @return {Loader} Returns itself.
+     * @return {this} Returns itself.
      */
 
 
@@ -43648,7 +44027,7 @@ var Loader = function () {
      * Starts loading the queued resources.
      *
      * @param {function} [cb] - Optional callback that will be bound to the `complete` event.
-     * @return {Loader} Returns itself.
+     * @return {this} Returns itself.
      */
 
 
@@ -43669,7 +44048,7 @@ var Loader = function () {
         } else {
             // distribute progress chunks
             var numTasks = this._queue._tasks.length;
-            var chunk = 100 / numTasks;
+            var chunk = MAX_PROGRESS / numTasks;
 
             for (var i = 0; i < this._queue._tasks.length; ++i) {
                 this._queue._tasks[i].data.progressChunk = chunk;
@@ -43813,7 +44192,7 @@ var Loader = function () {
         }, function () {
             resource.onAfterMiddleware.dispatch(resource);
 
-            _this3.progress += resource.progressChunk;
+            _this3.progress = Math.min(MAX_PROGRESS, _this3.progress + resource.progressChunk);
             _this3.onProgress.dispatch(_this3, resource);
 
             if (resource.error) {
@@ -43846,12 +44225,59 @@ var Loader = function () {
     return Loader;
 }();
 
-exports.default = Loader;
+/**
+ * A default array of middleware to run before loading each resource.
+ * Each of these middlewares are added to any new Loader instances when they are created.
+ *
+ * @private
+ * @member {function[]}
+ */
+
+
+Loader._defaultBeforeMiddleware = [];
+
+/**
+ * A default array of middleware to run after loading each resource.
+ * Each of these middlewares are added to any new Loader instances when they are created.
+ *
+ * @private
+ * @member {function[]}
+ */
+Loader._defaultAfterMiddleware = [];
+
+/**
+ * Sets up a middleware function that will run *before* the
+ * resource is loaded.
+ *
+ * @static
+ * @param {function} fn - The middleware function to register.
+ * @return {Loader} Returns itself.
+ */
+Loader.pre = function LoaderPreStatic(fn) {
+    Loader._defaultBeforeMiddleware.push(fn);
+
+    return Loader;
+};
+
+/**
+ * Sets up a middleware function that will run *after* the
+ * resource is loaded.
+ *
+ * @static
+ * @param {function} fn - The middleware function to register.
+ * @return {Loader} Returns itself.
+ */
+Loader.use = function LoaderUseStatic(fn) {
+    Loader._defaultAfterMiddleware.push(fn);
+
+    return Loader;
+};
 
 },{"./Resource":202,"./async":203,"mini-signals":13,"parse-uri":15}],202:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
+exports.Resource = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -43867,7 +44293,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-// tests is CORS is supported in XHR, if not we need to use XDR
+// tests if CORS is supported in XHR, if not we need to use XDR
 var useXdr = !!(window.XDomainRequest && !('withCredentials' in new XMLHttpRequest()));
 var tempAnchor = null;
 
@@ -43887,7 +44313,7 @@ function _noop() {} /* empty */
  * @class
  */
 
-var Resource = function () {
+var Resource = exports.Resource = function () {
     /**
      * Sets the load type to be used for a specific extension.
      *
@@ -43919,18 +44345,14 @@ var Resource = function () {
      * @param {object} [options] - The options for the load.
      * @param {string|boolean} [options.crossOrigin] - Is this request cross-origin? Default is to
      *      determine automatically.
+     * @param {number} [options.timeout=0] - A timeout in milliseconds for the load. If the load takes
+     *      longer than this time it is cancelled and the load is considered a failure. If this value is
+     *      set to `0` then there is no explicit timeout.
      * @param {Resource.LOAD_TYPE} [options.loadType=Resource.LOAD_TYPE.XHR] - How should this resource
      *      be loaded?
      * @param {Resource.XHR_RESPONSE_TYPE} [options.xhrType=Resource.XHR_RESPONSE_TYPE.DEFAULT] - How
      *      should the data being loaded be interpreted when using XHR?
-     * @param {object} [options.metadata] - Extra configuration for middleware and the Resource object.
-     * @param {HTMLImageElement|HTMLAudioElement|HTMLVideoElement} [options.metadata.loadElement=null] - The
-     *      element to use for loading, instead of creating one.
-     * @param {boolean} [options.metadata.skipSource=false] - Skips adding source(s) to the load element. This
-     *      is useful if you want to pass in a `loadElement` that you already added load sources to.
-     * @param {string|string[]} [options.metadata.mimeType] - The mime type to use for the source element of a video/audio
-     *      elment. If the urls are an array, you can pass this as an array as well where each index is the mime type to
-     *      use for the corresponding url index.
+     * @param {Resource.IMetadata} [options.metadata] - Extra configuration for middleware and the Resource object.
      */
 
 
@@ -43946,6 +44368,7 @@ var Resource = function () {
         /**
          * The state flags of this resource.
          *
+         * @private
          * @member {number}
          */
         this._flags = 0;
@@ -43956,24 +44379,24 @@ var Resource = function () {
         /**
          * The name of this resource.
          *
-         * @member {string}
          * @readonly
+         * @member {string}
          */
         this.name = name;
 
         /**
          * The url used to load this resource.
          *
-         * @member {string}
          * @readonly
+         * @member {string}
          */
         this.url = url;
 
         /**
          * The extension used to load this resource.
          *
-         * @member {string}
          * @readonly
+         * @member {string}
          */
         this.extension = this._getExtension();
 
@@ -43990,6 +44413,15 @@ var Resource = function () {
          * @member {string}
          */
         this.crossOrigin = options.crossOrigin === true ? 'anonymous' : options.crossOrigin;
+
+        /**
+         * A timeout in milliseconds for the load. If the load takes longer than this time
+         * it is cancelled and the load is considered a failure. If this value is set to `0`
+         * then there is no explicit timeout.
+         *
+         * @member {number}
+         */
+        this.timeout = options.timeout || 0;
 
         /**
          * The method of loading to use for this resource.
@@ -44011,20 +44443,15 @@ var Resource = function () {
          * Note that if you pass in a `loadElement`, the Resource class takes ownership of it.
          * Meaning it will modify it as it sees fit.
          *
-         * @member {object}
-         * @property {HTMLImageElement|HTMLAudioElement|HTMLVideoElement} [loadElement=null] - The
-         *  element to use for loading, instead of creating one.
-         * @property {boolean} [skipSource=false] - Skips adding source(s) to the load element. This
-         *  is useful if you want to pass in a `loadElement` that you already added load sources
-         *  to.
+         * @member {Resource.IMetadata}
          */
         this.metadata = options.metadata || {};
 
         /**
          * The error that occurred while loading (if any).
          *
-         * @member {Error}
          * @readonly
+         * @member {Error}
          */
         this.error = null;
 
@@ -44032,32 +44459,32 @@ var Resource = function () {
          * The XHR object that was used to load this resource. This is only set
          * when `loadType` is `Resource.LOAD_TYPE.XHR`.
          *
-         * @member {XMLHttpRequest}
          * @readonly
+         * @member {XMLHttpRequest}
          */
         this.xhr = null;
 
         /**
          * The child resources this resource owns.
          *
-         * @member {Resource[]}
          * @readonly
+         * @member {Resource[]}
          */
         this.children = [];
 
         /**
          * The resource type.
          *
-         * @member {Resource.TYPE}
          * @readonly
+         * @member {Resource.TYPE}
          */
         this.type = Resource.TYPE.UNKNOWN;
 
         /**
          * The progress chunk owned by this resource.
          *
-         * @member {number}
          * @readonly
+         * @member {number}
          */
         this.progressChunk = 0;
 
@@ -44077,6 +44504,14 @@ var Resource = function () {
          * @member {function}
          */
         this._onLoadBinding = null;
+
+        /**
+         * The timer for element loads to check if they timeout.
+         *
+         * @private
+         * @member {number}
+         */
+        this._elementTimer = 0;
 
         /**
          * The `complete` function bound to this resource's context.
@@ -44102,11 +44537,19 @@ var Resource = function () {
          */
         this._boundOnProgress = this._onProgress.bind(this);
 
+        /**
+         * The `_onTimeout` function bound to this resource's context.
+         *
+         * @private
+         * @member {function}
+         */
+        this._boundOnTimeout = this._onTimeout.bind(this);
+
         // xhr callbacks
         this._boundXhrOnError = this._xhrOnError.bind(this);
+        this._boundXhrOnTimeout = this._xhrOnTimeout.bind(this);
         this._boundXhrOnAbort = this._xhrOnAbort.bind(this);
         this._boundXhrOnLoad = this._xhrOnLoad.bind(this);
-        this._boundXdrOnTimeout = this._xdrOnTimeout.bind(this);
 
         /**
          * Dispatched when the resource beings to load.
@@ -44176,10 +44619,22 @@ var Resource = function () {
     }
 
     /**
+     * @memberof Resource
+     * @typedef {object} IMetadata
+     * @property {HTMLImageElement|HTMLAudioElement|HTMLVideoElement} [loadElement=null] - The
+     *      element to use for loading, instead of creating one.
+     * @property {boolean} [skipSource=false] - Skips adding source(s) to the load element. This
+     *      is useful if you want to pass in a `loadElement` that you already added load sources to.
+     * @property {string|string[]} [mimeType] - The mime type to use for the source element
+     *      of a video/audio elment. If the urls are an array, you can pass this as an array as well
+     *      where each index is the mime type to use for the corresponding url index.
+     */
+
+    /**
      * Stores whether or not this url is a data url.
      *
-     * @member {boolean}
      * @readonly
+     * @member {boolean}
      */
 
 
@@ -44188,36 +44643,8 @@ var Resource = function () {
      *
      */
     Resource.prototype.complete = function complete() {
-        // TODO: Clean this up in a wrapper or something...gross....
-        if (this.data && this.data.removeEventListener) {
-            this.data.removeEventListener('error', this._boundOnError, false);
-            this.data.removeEventListener('load', this._boundComplete, false);
-            this.data.removeEventListener('progress', this._boundOnProgress, false);
-            this.data.removeEventListener('canplaythrough', this._boundComplete, false);
-        }
-
-        if (this.xhr) {
-            if (this.xhr.removeEventListener) {
-                this.xhr.removeEventListener('error', this._boundXhrOnError, false);
-                this.xhr.removeEventListener('abort', this._boundXhrOnAbort, false);
-                this.xhr.removeEventListener('progress', this._boundOnProgress, false);
-                this.xhr.removeEventListener('load', this._boundXhrOnLoad, false);
-            } else {
-                this.xhr.onerror = null;
-                this.xhr.ontimeout = null;
-                this.xhr.onprogress = null;
-                this.xhr.onload = null;
-            }
-        }
-
-        if (this.isComplete) {
-            throw new Error('Complete called again for an already completed resource.');
-        }
-
-        this._setFlag(Resource.STATUS_FLAGS.COMPLETE, true);
-        this._setFlag(Resource.STATUS_FLAGS.LOADING, false);
-
-        this.onComplete.dispatch(this);
+        this._clearEvents();
+        this._finish();
     };
 
     /**
@@ -44235,6 +44662,9 @@ var Resource = function () {
 
         // store error
         this.error = new Error(message);
+
+        // clear events before calling aborts
+        this._clearEvents();
 
         // abort the actual loading
         if (this.xhr) {
@@ -44255,13 +44685,13 @@ var Resource = function () {
         }
 
         // done now.
-        this.complete();
+        this._finish();
     };
 
     /**
      * Kicks off loading of this resource. This method is asynchronous.
      *
-     * @param {function} [cb] - Optional callback to call once the resource is loaded.
+     * @param {OnCompleteSignal} [cb] - Optional callback to call once the resource is loaded.
      */
 
 
@@ -44331,7 +44761,7 @@ var Resource = function () {
 
 
     Resource.prototype._hasFlag = function _hasFlag(flag) {
-        return !!(this._flags & flag);
+        return (this._flags & flag) !== 0;
     };
 
     /**
@@ -44345,6 +44775,57 @@ var Resource = function () {
 
     Resource.prototype._setFlag = function _setFlag(flag, value) {
         this._flags = value ? this._flags | flag : this._flags & ~flag;
+    };
+
+    /**
+     * Clears all the events from the underlying loading source.
+     *
+     * @private
+     */
+
+
+    Resource.prototype._clearEvents = function _clearEvents() {
+        clearTimeout(this._elementTimer);
+
+        if (this.data && this.data.removeEventListener) {
+            this.data.removeEventListener('error', this._boundOnError, false);
+            this.data.removeEventListener('load', this._boundComplete, false);
+            this.data.removeEventListener('progress', this._boundOnProgress, false);
+            this.data.removeEventListener('canplaythrough', this._boundComplete, false);
+        }
+
+        if (this.xhr) {
+            if (this.xhr.removeEventListener) {
+                this.xhr.removeEventListener('error', this._boundXhrOnError, false);
+                this.xhr.removeEventListener('timeout', this._boundXhrOnTimeout, false);
+                this.xhr.removeEventListener('abort', this._boundXhrOnAbort, false);
+                this.xhr.removeEventListener('progress', this._boundOnProgress, false);
+                this.xhr.removeEventListener('load', this._boundXhrOnLoad, false);
+            } else {
+                this.xhr.onerror = null;
+                this.xhr.ontimeout = null;
+                this.xhr.onprogress = null;
+                this.xhr.onload = null;
+            }
+        }
+    };
+
+    /**
+     * Finalizes the load.
+     *
+     * @private
+     */
+
+
+    Resource.prototype._finish = function _finish() {
+        if (this.isComplete) {
+            throw new Error('Complete called again for an already completed resource.');
+        }
+
+        this._setFlag(Resource.STATUS_FLAGS.COMPLETE, true);
+        this._setFlag(Resource.STATUS_FLAGS.LOADING, false);
+
+        this.onComplete.dispatch(this);
     };
 
     /**
@@ -44376,6 +44857,10 @@ var Resource = function () {
         this.data.addEventListener('error', this._boundOnError, false);
         this.data.addEventListener('load', this._boundComplete, false);
         this.data.addEventListener('progress', this._boundOnProgress, false);
+
+        if (this.timeout) {
+            this._elementTimer = setTimeout(this._boundOnTimeout, this.timeout);
+        }
     };
 
     /**
@@ -44402,6 +44887,10 @@ var Resource = function () {
             return;
         }
 
+        if (this.crossOrigin) {
+            this.data.crossOrigin = this.crossOrigin;
+        }
+
         if (!this.metadata.skipSource) {
             // support for CocoonJS Canvas+ runtime, lacks document.createElement('source')
             if (navigator.isCocoonJS) {
@@ -44425,6 +44914,10 @@ var Resource = function () {
         this.data.addEventListener('canplaythrough', this._boundComplete, false);
 
         this.data.load();
+
+        if (this.timeout) {
+            this._elementTimer = setTimeout(this._boundOnTimeout, this.timeout);
+        }
     };
 
     /**
@@ -44442,6 +44935,8 @@ var Resource = function () {
 
         var xhr = this.xhr = new XMLHttpRequest();
 
+        xhr.timeout = this.timeout;
+
         // set the request type and url
         xhr.open('GET', this.url, true);
 
@@ -44454,6 +44949,7 @@ var Resource = function () {
         }
 
         xhr.addEventListener('error', this._boundXhrOnError, false);
+        xhr.addEventListener('timeout', this._boundXhrOnTimeout, false);
         xhr.addEventListener('abort', this._boundXhrOnAbort, false);
         xhr.addEventListener('progress', this._boundOnProgress, false);
         xhr.addEventListener('load', this._boundXhrOnLoad, false);
@@ -44474,15 +44970,15 @@ var Resource = function () {
             this.xhrType = this._determineXhrType();
         }
 
-        var xdr = this.xhr = new XDomainRequest();
+        var xdr = this.xhr = new XDomainRequest(); // eslint-disable-line no-undef
 
         // XDomainRequest has a few quirks. Occasionally it will abort requests
         // A way to avoid this is to make sure ALL callbacks are set even if not used
         // More info here: http://stackoverflow.com/questions/15786966/xdomainrequest-aborts-post-on-ie-9
-        xdr.timeout = 5000;
+        xdr.timeout = this.timeout || 5000; // XDR needs a timeout value or it breaks in IE9
 
         xdr.onerror = this._boundXhrOnError;
-        xdr.ontimeout = this._boundXdrOnTimeout;
+        xdr.ontimeout = this._boundXhrOnTimeout;
         xdr.onprogress = this._boundOnProgress;
         xdr.onload = this._boundXhrOnLoad;
 
@@ -44534,7 +45030,7 @@ var Resource = function () {
     };
 
     /**
-     * Called if a load progress event fires for xhr/xdr.
+     * Called if a load progress event fires for an element or xhr/xdr.
      *
      * @private
      * @param {XMLHttpRequestProgressEvent|Event} event - Progress event.
@@ -44548,10 +45044,20 @@ var Resource = function () {
     };
 
     /**
+     * Called if a timeout event fires for an element.
+     *
+     * @private
+     */
+
+
+    Resource.prototype._onTimeout = function _onTimeout() {
+        this.abort('Load timed out.');
+    };
+
+    /**
      * Called if an error event fires for xhr/xdr.
      *
      * @private
-     * @param {XMLHttpRequestErrorEvent|Event} event - Error event.
      */
 
 
@@ -44562,27 +45068,29 @@ var Resource = function () {
     };
 
     /**
-     * Called if an abort event fires for xhr.
+     * Called if an error event fires for xhr/xdr.
      *
      * @private
-     * @param {XMLHttpRequestAbortEvent} event - Abort Event
+     */
+
+
+    Resource.prototype._xhrOnTimeout = function _xhrOnTimeout() {
+        var xhr = this.xhr;
+
+        this.abort(reqType(xhr) + ' Request timed out.');
+    };
+
+    /**
+     * Called if an abort event fires for xhr/xdr.
+     *
+     * @private
      */
 
 
     Resource.prototype._xhrOnAbort = function _xhrOnAbort() {
-        this.abort(reqType(this.xhr) + ' Request was aborted by the user.');
-    };
+        var xhr = this.xhr;
 
-    /**
-     * Called if a timeout event fires for xdr.
-     *
-     * @private
-     * @param {Event} event - Timeout event.
-     */
-
-
-    Resource.prototype._xdrOnTimeout = function _xdrOnTimeout() {
-        this.abort(reqType(this.xhr) + ' Request timed out.');
+        this.abort(reqType(xhr) + ' Request was aborted by the user.');
     };
 
     /**
@@ -44683,6 +45191,13 @@ var Resource = function () {
         // data: and javascript: urls are considered same-origin
         if (url.indexOf('data:') === 0) {
             return '';
+        }
+
+        // A sandboxed iframe without the 'allow-same-origin' attribute will have a special
+        // origin designed not to match window.location.origin, and will always require
+        // crossOrigin requests regardless of whether the location matches.
+        if (window.origin !== window.location.origin) {
+            return 'anonymous';
         }
 
         // default is window.location
@@ -44792,7 +45307,6 @@ var Resource = function () {
             /* falls through */
             default:
                 return 'text/plain';
-
         }
     };
 
@@ -44806,8 +45320,8 @@ var Resource = function () {
          * Describes if this resource has finished loading. Is true when the resource has completely
          * loaded.
          *
-         * @member {boolean}
          * @readonly
+         * @member {boolean}
          */
 
     }, {
@@ -44820,8 +45334,8 @@ var Resource = function () {
          * Describes if this resource is currently loading. Is true when the resource starts loading,
          * and is false again when complete.
          *
-         * @member {boolean}
          * @readonly
+         * @member {boolean}
          */
 
     }, {
@@ -44843,7 +45357,6 @@ var Resource = function () {
  */
 
 
-exports.default = Resource;
 Resource.STATUS_FLAGS = {
     NONE: 0,
     DATA_URL: 1 << 0,
@@ -45004,6 +45517,11 @@ function reqType(xhr) {
     return xhr.toString().replace('object ', '');
 }
 
+// Backwards compat
+if (typeof module !== 'undefined') {
+    module.exports.default = Resource; // eslint-disable-line no-undef
+}
+
 },{"mini-signals":13,"parse-uri":15}],203:[function(require,module,exports){
 'use strict';
 
@@ -45013,12 +45531,22 @@ exports.queue = queue;
 /**
  * Smaller version of the async library constructs.
  *
+ * @namespace async
+ */
+
+/**
+ * Noop function
+ *
+ * @ignore
+ * @function
+ * @memberof async
  */
 function _noop() {} /* empty */
 
 /**
  * Iterates an array in series.
  *
+ * @memberof async
  * @param {Array.<*>} array - Array to iterate.
  * @param {function} iterator - Function to call for each element.
  * @param {function} callback - Function to call when done, or on error.
@@ -45050,6 +45578,8 @@ function eachSeries(array, iterator, callback, deferNext) {
 /**
  * Ensures a function is only called once.
  *
+ * @ignore
+ * @memberof async
  * @param {function} fn - The function to wrap.
  * @return {function} The wrapping function.
  */
@@ -45069,6 +45599,7 @@ function onlyOnce(fn) {
 /**
  * Async queue implementation,
  *
+ * @memberof async
  * @param {function} worker - The worker function to call for each task.
  * @param {number} concurrency - How many workers to run in parrallel.
  * @return {*} The async queue object.
@@ -45220,6 +45751,12 @@ exports.__esModule = true;
 exports.encodeBinary = encodeBinary;
 var _keyStr = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 
+/**
+ * Encodes binary into base64.
+ *
+ * @param {string} input The input data to encode.
+ * @returns {string} The encoded base64 string
+ */
 function encodeBinary(input) {
     var output = '';
     var inx = 0;
@@ -45281,6 +45818,11 @@ function encodeBinary(input) {
     return output;
 }
 
+// Backwards compat
+if (typeof module !== 'undefined') {
+    module.exports.default = encodeBinary; // eslint-disable-line no-undef
+}
+
 },{}],205:[function(require,module,exports){
 'use strict';
 
@@ -45291,38 +45833,62 @@ function encodeBinary(input) {
 
 /* eslint-disable no-undef */
 
-var Loader = require('./Loader').default;
-var Resource = require('./Resource').default;
+var Loader = require('./Loader').Loader;
+var Resource = require('./Resource').Resource;
 var async = require('./async');
 var b64 = require('./b64');
 
+/**
+ *
+ * @static
+ * @memberof Loader
+ * @member {Resource}
+ */
 Loader.Resource = Resource;
+
+/**
+ *
+ * @static
+ * @memberof Loader
+ * @member {async}
+ */
 Loader.async = async;
+
+/**
+ *
+ * @static
+ * @memberof Loader
+ * @member {encodeBinary}
+ */
+Loader.encodeBinary = b64;
+
+/**
+ *
+ * @deprecated
+ * @see Loader.encodeBinary
+ *
+ * @static
+ * @memberof Loader
+ * @member {encodeBinary}
+ */
 Loader.base64 = b64;
 
 // export manually, and also as default
 module.exports = Loader;
-// export default Loader;
+
+// default & named export
+module.exports.Loader = Loader;
 module.exports.default = Loader;
 
 },{"./Loader":201,"./Resource":202,"./async":203,"./b64":204}],206:[function(require,module,exports){
 'use strict';
 
 exports.__esModule = true;
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 exports.blobMiddlewareFactory = blobMiddlewareFactory;
 
 var _Resource = require('../../Resource');
 
-var _Resource2 = _interopRequireDefault(_Resource);
-
 var _b = require('../../b64');
-
-var _b2 = _interopRequireDefault(_b);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Url = window.URL || window.webkitURL;
 
@@ -45336,7 +45902,7 @@ function blobMiddlewareFactory() {
         }
 
         // if this was an XHR load of a blob
-        if (resource.xhr && resource.xhrType === _Resource2.default.XHR_RESPONSE_TYPE.BLOB) {
+        if (resource.xhr && resource.xhrType === _Resource.Resource.XHR_RESPONSE_TYPE.BLOB) {
             // if there is no blob support we probably got a binary string back
             if (!window.Blob || typeof resource.data === 'string') {
                 var type = resource.xhr.getResponseHeader('content-type');
@@ -45344,9 +45910,9 @@ function blobMiddlewareFactory() {
                 // this is an image, convert the binary string into a data url
                 if (type && type.indexOf('image') === 0) {
                     resource.data = new Image();
-                    resource.data.src = 'data:' + type + ';base64,' + _b2.default.encodeBinary(resource.xhr.responseText);
+                    resource.data.src = 'data:' + type + ';base64,' + (0, _b.encodeBinary)(resource.xhr.responseText);
 
-                    resource.type = _Resource2.default.TYPE.IMAGE;
+                    resource.type = _Resource.Resource.TYPE.IMAGE;
 
                     // wait until the image loads and then callback
                     resource.data.onload = function () {
@@ -45361,31 +45927,25 @@ function blobMiddlewareFactory() {
             }
             // if content type says this is an image, then we should transform the blob into an Image object
             else if (resource.data.type.indexOf('image') === 0) {
-                    var _ret = function () {
-                        var src = Url.createObjectURL(resource.data);
+                    var src = Url.createObjectURL(resource.data);
 
-                        resource.blob = resource.data;
-                        resource.data = new Image();
-                        resource.data.src = src;
+                    resource.blob = resource.data;
+                    resource.data = new Image();
+                    resource.data.src = src;
 
-                        resource.type = _Resource2.default.TYPE.IMAGE;
+                    resource.type = _Resource.Resource.TYPE.IMAGE;
 
-                        // cleanup the no longer used blob after the image loads
-                        // TODO: Is this correct? Will the image be invalid after revoking?
-                        resource.data.onload = function () {
-                            Url.revokeObjectURL(src);
-                            resource.data.onload = null;
+                    // cleanup the no longer used blob after the image loads
+                    // TODO: Is this correct? Will the image be invalid after revoking?
+                    resource.data.onload = function () {
+                        Url.revokeObjectURL(src);
+                        resource.data.onload = null;
 
-                            next();
-                        };
+                        next();
+                    };
 
-                        // next will be called on load.
-                        return {
-                            v: void 0
-                        };
-                    }();
-
-                    if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+                    // next will be called on load.
+                    return;
                 }
         }
 
