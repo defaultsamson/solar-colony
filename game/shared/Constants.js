@@ -18,8 +18,8 @@ try {
   window.IS_SERVER = false
 } */
 
-const LOCAL_DEBUG = true
-const PORT = 7438
+const LOCAL_DEBUG = false
+const PORT = 3141
 
 const USERNAME_REGEX = /^([A-Za-z0-9]{3,20})$/
 const ID_REGEX = /^([A-Za-z0-9]{6})$/

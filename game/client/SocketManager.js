@@ -28,9 +28,9 @@ class SocketManager extends Object {
     secure = exists(secure) ? secure : !LOCAL_DEBUG
 
     if (secure) {
-      this.ws = new WebSocket('wss://' + ip + ':' + PORT)
+      this.ws = new WebSocket('wss:\/\/' + ip + ':' + PORT)
     } else {
-      this.ws = new WebSocket('ws://' + ip + ':' + PORT)
+      this.ws = new WebSocket('ws:\/\/' + ip + ':' + PORT)
     }
 
     let me = this
